@@ -3,7 +3,8 @@ import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { listarEstrategias, dbReady } from "../../lib/db";
 import { montaEstrategias, numeroDa } from "../../lib/estrategias";
-import { segCurado, podeVerTramitacoes } from "../../lib/permissoes";
+import { segCurado, podeVerTramitacoes, podeVerEvolucao } from "../../lib/permissoes";
+import { SEG_TRAMITACOES } from "../../lib/config";
 import NovaEstrategia from "../NovaEstrategia";
 
 export const dynamic = "force-dynamic";
@@ -47,10 +48,22 @@ export default async function Estrategias() {
       </div>
 
       <div className="viewbar">
+        {/* Mesmo menu do segmento de quem está olhando: no CS o dia é carteira
+            e tramitação; no comercial é briefing e aprovação. */}
         <div className="viewtoggle">
           <Link href="/">Diário de bordo</Link>
-          <Link href="/agenda">Agenda do dia</Link>
-          {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+          {seg === SEG_TRAMITACOES ? (
+            <>
+              <Link href="/agenda">Agenda do dia</Link>
+              {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
+              {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+            </>
+          ) : (
+            <>
+              <Link href="/aprovacoes">Aprovações</Link>
+              <Link href="/agenda">Agenda geral</Link>
+            </>
+          )}
           <Link href="/estrategias" className="on">Estratégias</Link>
         </div>
       </div>

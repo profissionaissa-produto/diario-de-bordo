@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
-import { estrategiaPorId, numeroDa } from "../lib/estrategias";
+import { estrategiaPorId as SEMENTES_IDX, numeroDa } from "../lib/estrategias";
 
 const brl = (n) =>
   n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
@@ -16,7 +16,8 @@ const STATUS = {
 
 // O que o closer marcou no último dia útil. Recolhido por padrão: serve de
 // consulta ao montar o dia, não pode competir com o briefing de hoje.
-export default function Ontem({ ontem }) {
+export default function Ontem({ ontem, estrat }) {
+  const estrategiaPorId = estrat?.idx || SEMENTES_IDX;
   const [aberto, setAberto] = useState(false);
   if (!ontem || ontem.itens.length === 0) return null;
 

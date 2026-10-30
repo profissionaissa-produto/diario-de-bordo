@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TEMP_STYLE, dealUrl } from "../lib/config";
-import { estrategiaPorId, numeroDa } from "../lib/estrategias";
+import { estrategiaPorId as SEMENTES_IDX, numeroDa } from "../lib/estrategias";
 
 const brl = (n) =>
   n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
@@ -16,7 +16,8 @@ const ROTULO = {
 
 // Linha do histórico que abre mostrando o que foi aprovado naquele dia.
 // Os negócios são buscados na primeira abertura, não no carregamento da página.
-export default function HistLinha({ registro }) {
+export default function HistLinha({ registro, estrat }) {
+  const estrategiaPorId = estrat?.idx || SEMENTES_IDX;
   const [aberto, setAberto] = useState(false);
   const [itens, setItens] = useState(null);
   const [erro, setErro] = useState(false);

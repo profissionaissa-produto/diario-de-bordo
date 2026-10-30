@@ -18,7 +18,9 @@ import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, apl
 import { getDealsByIds, retornoDasTarefas } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
-import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, segCurado } from "../lib/permissoes";
+import { listarEstrategias } from "../lib/db";
+import { montaEstrategias, indexaPorId } from "../lib/estrategias";
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
 import { atividadeDoDia } from "../lib/atividade";
@@ -84,6 +86,8 @@ export default async function Page({ searchParams }) {
   const isAdmin = !!session.user.isAdmin;
   // Líder também gere briefings, porém só do time dele — e tem funil próprio.
   const gestor = ehGestor(session.user);
+  // Segmento em que a pessoa cadastra estratégia; null para quase todo mundo.
+  const curaEstrategia = segCurado(session.user);
   const meusSegs = segmentosDe(session.user);
   // Sempre um segmento ativo: B2B é o padrão ao abrir o painel.
   const segPedido = SEGMENTOS.includes(searchParams?.seg) ? searchParams.seg : "B2B";
@@ -347,6 +351,10 @@ export default async function Page({ searchParams }) {
   // Foto de quem está logado, nunca a do closer que ele está visualizando.
   const avatar = meuOwnerId ? fotoDe(meuOwnerId) : null;
 
+  // As dez originais vêm do código; o que a curadoria cadastrou vem do banco.
+  const porSeg = montaEstrategias(await listarEstrategias());
+  const estrat = { porSeg, idx: indexaPorId(porSeg) };
+
   return (
     <div className="wrap">
       <div className="top">
@@ -389,6 +397,7 @@ export default async function Page({ searchParams }) {
                   {/* Sem contador aqui: o número exigiria buscar os tickets do
                       funil só para desenhar o menu. */}
                   {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
+                  {curaEstrategia && <Link href="/estrategias">Estratégias</Link>}
                   <Link href="/ajuda">Como funciona</Link>
                 </>
               ) : (
@@ -398,6 +407,7 @@ export default async function Page({ searchParams }) {
                     {pendentes > 0 && <span className="aba-cont">{pendentes}</span>}
                   </Link>
                   <Link href="/agenda">Agenda geral</Link>
+                  {curaEstrategia && <Link href="/estrategias">Estratégias</Link>}
                 </>
               )}
             </div>
@@ -451,7 +461,7 @@ export default async function Page({ searchParams }) {
       </div>
       )}
 
-      {viewOwner && ontem && !ehFarmer && <Ontem ontem={ontem} />}
+      {viewOwner && ontem && !ehFarmer && <Ontem ontem={ontem} estrat={estrat} />}
 
       {viewOwner && (
         <div className="viewbar">
@@ -498,6 +508,7 @@ export default async function Page({ searchParams }) {
           fechamento={fechamento}
           atividade={atividadeCrm}
           tarefas={tarefaPorDeal}
+          estrat={estrat}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,
@@ -510,6 +521,7 @@ export default async function Page({ searchParams }) {
           briefing={briefing}
           options={tempOptions}
           seg={seg}
+          estrat={estrat}
           ctx={{ diaLabel: dayLabel(dia), closerName: viewOwner ? viewOwner.name : "" }}
         />
       ) : (
@@ -526,6 +538,7 @@ export default async function Page({ searchParams }) {
         emptyLabel={isAdmin && !viewOwner ? "Selecione um closer acima para ver o diário." : "Nenhum negócio ativo no funil."}
         briefing={briefing}
         seg={seg}
+        estrat={estrat}
         ctx={{
           ownerId: viewOwner ? String(viewOwner.ownerId) : "",
           dia,

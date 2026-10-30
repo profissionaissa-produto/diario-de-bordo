@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
-import { ESTRATEGIAS, numeroDa } from "../lib/estrategias";
+import { SEMENTES, numeroDa } from "../lib/estrategias";
 import { GRUPOS } from "../lib/funil";
 import BotaoWhats from "./BotaoWhats";
 
@@ -13,8 +13,11 @@ const STATUS_LABEL = {
   reprovado: "Reprovado",
 };
 
-export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx, seg = "B2B", totalFunil = 0, aviso = "", listaFixa = false }) {
-  const estrategias = ESTRATEGIAS[seg] || [];
+// `estrat` traz as estratégias já resolvidas pelo servidor (as do código mais
+// as cadastradas). Sem ele a tela cai nas originais — é o que vale quando o
+// banco não está configurado.
+export default function DealsTable({ deals, options, closerName, emptyLabel, briefing, ctx, seg = "B2B", totalFunil = 0, aviso = "", listaFixa = false, estrat }) {
+  const estrategias = (estrat?.porSeg || SEMENTES)[seg] || [];
   const [rows, setRows] = useState(() => deals.map((d) => ({ ...d, _obs: d.observacoes })));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -165,6 +168,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
           <BotaoWhats
             closer={closerName}
             diaLabel={ctx.diaLabel}
+            estrategiaPorId={estrat?.idx}
             itens={rows
               .filter((r) => r.id in items)
               .map((r) => ({

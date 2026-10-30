@@ -1,5 +1,5 @@
 import { TEMP_STYLE, dealUrl } from "../lib/config";
-import { estrategiaPorId, numeroDa } from "../lib/estrategias";
+import { estrategiaPorId as SEMENTES_IDX, numeroDa } from "../lib/estrategias";
 import BotaoWhats from "./BotaoWhats";
 
 const brl = (n) => (n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 }));
@@ -12,7 +12,8 @@ const STATUS = {
 };
 
 // Visão pessoal do closer: só o que ele decidiu tocar hoje, em cartões.
-export default function FocoDia({ rows, briefing, ctx, options = [] }) {
+export default function FocoDia({ rows, briefing, ctx, options = [], estrat }) {
+  const estrategiaPorId = estrat?.idx || SEMENTES_IDX;
   const items = briefing?.items || {};
   const status = briefing?.status || "rascunho";
   const label = (v) => options.find((o) => o.value === v)?.label || v;
@@ -54,6 +55,7 @@ export default function FocoDia({ rows, briefing, ctx, options = [] }) {
           <BotaoWhats
             closer={ctx.closerName || ""}
             diaLabel={ctx.diaLabel}
+            estrategiaPorId={estrat?.idx}
             itens={ordenados.map((r) => ({
               nome: r.name,
               valor: r.amount,

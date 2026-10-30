@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TEMP_STYLE, dealUrl } from "../lib/config";
 import { formatNextActivity } from "../lib/activity";
-import { ESTRATEGIAS, estrategiaPorId, numeroDa } from "../lib/estrategias";
+import { SEMENTES, estrategiaPorId as SEMENTES_IDX, numeroDa } from "../lib/estrategias";
 
 const STATUS_LABEL = {
   rascunho: "Não enviado",
@@ -16,7 +16,9 @@ const STATUS_LABEL = {
 const brl = (n) =>
   n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 
-export default function ApprovalCard({ plano, deals, dia, options = [] }) {
+export default function ApprovalCard({ plano, deals, dia, options = [], estrat }) {
+  const ESTRATEGIAS = estrat?.porSeg || SEMENTES;
+  const estrategiaPorId = estrat?.idx || SEMENTES_IDX;
   const router = useRouter();
   const [status, setStatus] = useState(plano.status);
   const [motivo, setMotivo] = useState(plano.motivo || "");

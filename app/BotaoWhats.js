@@ -6,11 +6,11 @@ import { resumoWhatsApp, enqueteWhatsApp } from "../lib/resumo";
 // Resumo e enquete do briefing aprovado, prontos para o WhatsApp.
 // A enquete é digitada no app (+ → Enquete): o WhatsApp não cria enquete por
 // link, então aqui entregamos a pergunta e as opções para colar.
-export default function BotaoWhats({ closer, diaLabel, itens }) {
+export default function BotaoWhats({ closer, diaLabel, itens, estrategiaPorId }) {
   const [modo, setModo] = useState(null); // "resumo" | "enquete"
   const [copiado, setCopiado] = useState("");
 
-  const texto = resumoWhatsApp({ closer, diaLabel, itens });
+  const texto = resumoWhatsApp({ closer, diaLabel, itens, ...(estrategiaPorId ? { estrategiaPorId } : {}) });
   const enquete = enqueteWhatsApp({ closer, diaLabel, itens });
 
   async function copiar(valor, marca) {

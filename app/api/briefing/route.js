@@ -1,7 +1,7 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail, getDealsByIds, updateDeal, propriedadeDeal, criarTarefaNoDeal } from "../../../lib/hubspot";
-import { valorDaEstrategia } from "../../../lib/estrategias";
-import { saveBriefing, reviewBriefing, getBriefing, dbReady, dealsComTarefa, registraTarefa } from "../../../lib/db";
+import { valorDaEstrategia, montaEstrategias, indexaPorId } from "../../../lib/estrategias";
+import { saveBriefing, reviewBriefing, getBriefing, dbReady, dealsComTarefa, registraTarefa, listarEstrategias } from "../../../lib/db";
 import { dayKey, prazoDoDia } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
 
@@ -163,6 +163,8 @@ export async function PATCH(req) {
   // A estratégia só vai junto se a propriedade já existir na conta, e o valor
   // é resolvido contra as opções reais dela — ver valorDaEstrategia.
   const propEstrategia = await propriedadeDeal("estrategia");
+  // Índice completo: sem as cadastradas, uma estratégia nova não resolveria.
+  const estratIdx = indexaPorId(montaEstrategias(await listarEstrategias()));
 
   // Tarefa só para quem ainda não tem: reaprovar não pode encher o negócio de
   // tarefas repetidas.
@@ -185,7 +187,7 @@ export async function PATCH(req) {
   for (const [dealId, v] of alvos) {
     try {
       const patch = { temperatura_atual: v.para };
-      const estrat = valorDaEstrategia(propEstrategia, v.estrategia);
+      const estrat = valorDaEstrategia(propEstrategia, v.estrategia, estratIdx);
       if (estrat !== undefined) patch.estrategia = estrat;
       await updateDeal(dealId, patch);
       aplicados++;

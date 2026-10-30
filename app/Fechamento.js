@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TEMP_STYLE } from "../lib/config";
-import { estrategiaPorId, numeroDa } from "../lib/estrategias";
+import { estrategiaPorId as SEMENTES_IDX, numeroDa } from "../lib/estrategias";
 
 const brl = (n) => (n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 }));
 
@@ -31,7 +31,7 @@ const temAtividade = (a) => !!a && (a.ligacoes > 0 || a.reunioes > 0 || a.outras
 
 // Um card por negócio do briefing. Salva um de cada vez: o closer fecha
 // conforme termina cada contato, não tudo no fim do dia.
-function Card({ r, item, inicial, crm, tarefa, ctx, onSalvo }) {
+function Card({ r, item, inicial, crm, tarefa, ctx, onSalvo, estrategiaPorId = SEMENTES_IDX }) {
   // A tarefa concluída no HubSpot é o registro do time, que não anota ligação.
   // Vindo dela, já entra preenchido; da atividade solta, entra como sugestão.
   const [resultado, setResultado] = useState(
@@ -170,7 +170,7 @@ function Card({ r, item, inicial, crm, tarefa, ctx, onSalvo }) {
   );
 }
 
-export default function Fechamento({ rows, briefing, fechamento, atividade, tarefas, ctx }) {
+export default function Fechamento({ rows, briefing, fechamento, atividade, tarefas, ctx, estrat }) {
   const items = briefing?.items || {};
   const doDia = rows.filter((r) => r.id in items);
   const [feitos, setFeitos] = useState(() => {
@@ -219,6 +219,7 @@ export default function Fechamento({ rows, briefing, fechamento, atividade, tare
             inicial={fechamento?.[r.id]}
             crm={atividade?.[r.id]}
             tarefa={tarefas?.[r.id]}
+            estrategiaPorId={estrat?.idx || SEMENTES_IDX}
             ctx={ctx}
             onSalvo={(id, resultado) => setFeitos((f) => ({ ...f, [id]: resultado }))}
           />

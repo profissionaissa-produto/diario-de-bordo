@@ -2,11 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { getDealsByIds, getTemperaturaOptions, getOwnerNames } from "../../lib/hubspot";
-import { getDayBriefings, getBriefingHistory, dbReady } from "../../lib/db";
+import { getDayBriefings, getBriefingHistory, listarEstrategias, dbReady } from "../../lib/db";
+import { montaEstrategias, indexaPorId } from "../../lib/estrategias";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
-import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser , podeVerTramitacoes } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser , podeVerTramitacoes, segCurado } from "../../lib/permissoes";
 import ApprovalCard from "../ApprovalCard";
 import HistLinha from "../HistLinha";
 
@@ -76,6 +77,11 @@ export default async function Aprovacoes({ searchParams }) {
   const ids = lista.flatMap((p) => Object.keys(p.items));
   const dealsById = ids.length ? await getDealsByIds(ids, { withTasks: true }) : {};
 
+  // As dez originais vêm do código; o que a curadoria cadastrou vem do banco.
+  const porSeg = montaEstrategias(await listarEstrategias());
+  const estrat = { porSeg, idx: indexaPorId(porSeg) };
+  const curaEstrategia = segCurado(session.user);
+
   return (
     <div className="wrap">
       <div className="top">
@@ -102,6 +108,7 @@ export default async function Aprovacoes({ searchParams }) {
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
           <Link href="/agenda">Agenda geral</Link>
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+          {curaEstrategia && <Link href="/estrategias">Estratégias</Link>}
         </div>
         <div className="seg-toggle">
           {[["pendentes", "Aguardando"], ["decididos", "Decididos"], ["todos", "Todos"], ["historico", "Histórico"]].map(([v, l]) => (
@@ -122,7 +129,7 @@ export default async function Aprovacoes({ searchParams }) {
                 <div className="hist-semana">{dayLabel(sem)}</div>
                 <div className="hist-linhas">
                   {planos.map((p) => (
-                    <HistLinha key={p.ownerId + sem} registro={p} />
+                    <HistLinha key={p.ownerId + sem} registro={p} estrat={estrat} />
                   ))}
                 </div>
               </div>
@@ -150,7 +157,7 @@ export default async function Aprovacoes({ searchParams }) {
 
       <div className="aprov-list">
         {lista.map((p) => (
-          <ApprovalCard key={p.ownerId} plano={p} deals={dealsById} dia={dia} options={tempOptions} />
+          <ApprovalCard key={p.ownerId} plano={p} deals={dealsById} dia={dia} options={tempOptions} estrat={estrat} />
         ))}
       </div>
     </div>

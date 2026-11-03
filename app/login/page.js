@@ -10,14 +10,6 @@ const ERROS = {
   Configuration: "O login está mal configurado no servidor. Avise quem cuida do painel.",
 };
 
-// O painel nunca foi só de closer: quem chega precisa saber se a ferramenta é
-// dele antes de tentar entrar e ser recusado.
-const QUEM = [
-  ["Closers", "briefing do dia e fechamento"],
-  ["Farmers", "carteira, tramitações e evolução"],
-  ["Líderes", "aprovação, agenda do time e estratégias"],
-];
-
 export default async function LoginPage({ searchParams }) {
   const session = await auth();
   if (session?.user) redirect("/");
@@ -30,19 +22,6 @@ export default async function LoginPage({ searchParams }) {
       <div className="login-card">
         <img className="login-logo" src="/logo-psa-laranja.png" alt="PSA" />
         <h1>Diário de Bordo</h1>
-        <p className="login-sub">
-          O dia do time comercial e de CS da PSA, em cima do HubSpot.
-        </p>
-
-        <ul className="login-quem">
-          {QUEM.map(([papel, oque]) => (
-            <li key={papel}>
-              <span className="ctx-dot" />
-              <b>{papel}:</b>
-              <span>{oque}</span>
-            </li>
-          ))}
-        </ul>
 
         {erro && <p className="login-erro">{erro}</p>}
 

@@ -304,11 +304,6 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
    preto porque divide a linha com o nome da tela; aqui ela é a tela. */
 .login-logo { height: 34px; width: auto; display: block; }
 .login-card h1 { font-family: "Bruta Pro"; text-transform: uppercase; font-size: 32px; letter-spacing: .3px; margin: 2px 0 0; }
-.login-sub { color: var(--muted); font-size: 14px; margin: 0; }
-.login-quem { list-style: none; margin: 4px 0 2px; padding: 14px 16px; width: 100%; text-align: left;
-  background: var(--bg); border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 10px; }
-.login-quem li { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 9px; }
-.login-quem b { color: var(--ink); font-weight: 700; }
 /* Laranja é o alerta deste painel, o mesmo do KPI de atrasadas e do briefing
    reprovado. Vermelho entraria uma cor nova só para esta tela. */
 .login-erro { margin: 0; width: 100%; font-size: 13px; line-height: 1.45; color: #8f3907;

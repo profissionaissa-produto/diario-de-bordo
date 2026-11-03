@@ -7,7 +7,9 @@
 }
 :root {
   --bg: #ffffff; --surface: #f6f7f9; --surface-2: #fbfcfd;
-  --ink: #16181d; --muted: #667085; --line: #e7e9ee;
+  /* --muted escureceu: em #667085 o texto secundário sobre fundo branco ficava
+     no limite da leitura, e é nele que vivem descrição, rótulo e rodapé. */
+  --ink: #16181d; --muted: #4b5563; --line: #dcdfe6;
   --laranja: #f46411; --azul: #183caa;
   --laranja-soft: #fef0e7; --azul-soft: #eaf0fb; --ink-soft: #eef0f3;
   --shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
@@ -583,7 +585,7 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .fech-rodape { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .fech-falta { color: var(--laranja); font-size: 12px; font-weight: 600; margin-right: auto; }
 .fech-ok { color: #17803d; font-size: 12px; font-weight: 600; margin-right: auto; }
-.fech-opcional { color: var(--muted); font-size: 12px; margin-right: auto; }
+.fech-opcional { color: var(--muted); font-size: 12.5px; margin-right: auto; }
 
 /* -------------------------------------------------------------- evolução */
 .evo-bloco { padding: 18px 20px; margin-bottom: 16px; }
@@ -792,7 +794,8 @@ td .emp-orientacao { margin-top: 6px; font-size: 12px; }
 .est-input:focus { outline: none; background: var(--bg); border-color: var(--azul);
   box-shadow: 0 0 0 3px var(--azul-soft); }
 .est-form .fech-rodape { padding: 0 18px; }
-.est-desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+/* "Quando usar" é conteúdo, não legenda: lê-se a tabela inteira por ele. */
+.est-desc { font-size: 13.5px; color: var(--ink); line-height: 1.5; }
 .est-sem { color: var(--muted); font-size: 12px; }
 /* Removida continua na tabela, apagada, para dar para restaurar. */
 .est-removida td { opacity: .5; }

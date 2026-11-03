@@ -300,15 +300,20 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .login-card { width: 100%; max-width: 440px; text-align: center; display: flex; flex-direction: column;
   align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius); box-shadow: var(--shadow); padding: 38px 32px 30px; }
-.login-card .logo { filter: brightness(0); height: 36px; }
+/* A marca entra em laranja, como ela é. No cabeçalho do painel ela aparece em
+   preto porque divide a linha com o nome da tela; aqui ela é a tela. */
+.login-logo { height: 34px; width: auto; display: block; }
 .login-card h1 { font-family: "Bruta Pro"; text-transform: uppercase; font-size: 32px; letter-spacing: .3px; margin: 2px 0 0; }
 .login-sub { color: var(--muted); font-size: 14px; margin: 0; }
 .login-quem { list-style: none; margin: 4px 0 2px; padding: 14px 16px; width: 100%; text-align: left;
-  background: var(--bg); border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 8px; }
-.login-quem li { font-size: 13px; color: var(--muted); }
+  background: var(--bg); border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 10px; }
+.login-quem li { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 9px; }
 .login-quem b { color: var(--ink); font-weight: 700; }
-.login-erro { margin: 0; width: 100%; font-size: 13px; line-height: 1.45; color: #9a3412;
-  background: var(--laranja-soft); border: 1px solid #f7cdb4; border-radius: 12px; padding: 11px 14px; text-align: left; }
+/* Laranja é o alerta deste painel, o mesmo do KPI de atrasadas e do briefing
+   reprovado. Vermelho entraria uma cor nova só para esta tela. */
+.login-erro { margin: 0; width: 100%; font-size: 13px; line-height: 1.45; color: #8f3907;
+  background: var(--laranja-soft); border: 1px solid #f7cdb4; border-radius: 12px;
+  padding: 11px 14px 11px 13px; border-left: 3px solid var(--laranja); text-align: left; }
 .login-rodape { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 2px 0 0; }
 .gbtn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 15px; padding: 13px 22px; border-radius: 12px; cursor: pointer; }
 @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } .title { font-size: 24px; } }

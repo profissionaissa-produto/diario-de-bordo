@@ -794,6 +794,10 @@ td .emp-orientacao { margin-top: 6px; font-size: 12px; }
 .est-form .fech-rodape { padding: 0 18px; }
 .est-desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
 .est-sem { color: var(--muted); font-size: 12px; }
+/* Removida continua na tabela, apagada, para dar para restaurar. */
+.est-removida td { opacity: .5; }
+.est-removida .deal { text-decoration: line-through; }
+.est-falta { font-style: normal; font-size: 11px; color: var(--muted); font-weight: 400; }
 
 @media (max-width: 860px) {
   .est-campos { grid-template-columns: 1fr; }

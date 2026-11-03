@@ -16,7 +16,15 @@ export default function NovaEstrategia({ seg }) {
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
 
-  const curto = titulo.trim().length < MIN_TITULO || desc.trim().length < MIN_DESC;
+  // O botão cinza sem explicação é o que trava quem está cadastrando: aqui o
+  // que falta é dito em caracteres, campo a campo.
+  const faltaTitulo = Math.max(0, MIN_TITULO - titulo.trim().length);
+  const faltaDesc = Math.max(0, MIN_DESC - desc.trim().length);
+  const curto = faltaTitulo > 0 || faltaDesc > 0;
+  const pendencias = [
+    faltaTitulo && `${faltaTitulo} no título`,
+    faltaDesc && `${faltaDesc} em "quando usar"`,
+  ].filter(Boolean);
 
   async function salvar(e) {
     e.preventDefault();
@@ -51,7 +59,7 @@ export default function NovaEstrategia({ seg }) {
 
       <div className="est-campos">
         <label className="est-campo">
-          <span className="ctx-lab">Título</span>
+          <span className="ctx-lab">Título {faltaTitulo > 0 && <em className="est-falta">mínimo {MIN_TITULO}</em>}</span>
           <input
             className="est-input"
             value={titulo}
@@ -62,7 +70,7 @@ export default function NovaEstrategia({ seg }) {
         </label>
 
         <label className="est-campo">
-          <span className="ctx-lab">Quando usar</span>
+          <span className="ctx-lab">Quando usar {faltaDesc > 0 && <em className="est-falta">mínimo {MIN_DESC}</em>}</span>
           <textarea
             className="obs"
             value={desc}
@@ -76,6 +84,9 @@ export default function NovaEstrategia({ seg }) {
       <div className="fech-rodape">
         {erro && <span className="err">{erro}</span>}
         {ok && !erro && <span className="saved">{ok}</span>}
+        {curto && !erro && (
+          <span className="fech-opcional">Faltam {pendencias.join(" e ")} caracteres para cadastrar.</span>
+        )}
         <button className="btn-primary" type="submit" disabled={busy || curto}>
           {busy ? "Cadastrando…" : "Cadastrar"}
         </button>

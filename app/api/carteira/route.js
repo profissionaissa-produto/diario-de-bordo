@@ -1,8 +1,8 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, listarEstrategias, dbReady } from "../../../lib/db";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, listarEstrategias, listarOcultas, dbReady } from "../../../lib/db";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
-import { montaEstrategias } from "../../../lib/estrategias";
+import { montaEstrategias, semOcultas } from "../../../lib/estrategias";
 import { SEG_TRAMITACOES } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
@@ -51,7 +51,8 @@ export async function POST(req) {
   // "" é desmarcar; qualquer outro valor tem que ser uma estratégia do Farmer,
   // senão o id gravado no dia não resolve para nada depois.
   if (estrategia) {
-    const doFarmer = montaEstrategias(await listarEstrategias())[SEG_TRAMITACOES] || [];
+    const porSeg = montaEstrategias(await listarEstrategias());
+    const doFarmer = semOcultas(porSeg, await listarOcultas())[SEG_TRAMITACOES] || [];
     if (!doFarmer.some((e) => e.id === estrategia)) {
       return Response.json({ error: "Estratégia inválida." }, { status: 400 });
     }

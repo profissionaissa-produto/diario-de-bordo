@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { getDealsByIds, getTemperaturaOptions, getOwnerNames } from "../../lib/hubspot";
-import { getDayBriefings, getBriefingHistory, listarEstrategias, dbReady } from "../../lib/db";
-import { montaEstrategias, indexaPorId } from "../../lib/estrategias";
+import { getDayBriefings, getBriefingHistory, listarEstrategias, listarOcultas, dbReady } from "../../lib/db";
+import { montaEstrategias, indexaPorId, semOcultas } from "../../lib/estrategias";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
@@ -78,8 +78,10 @@ export default async function Aprovacoes({ searchParams }) {
   const dealsById = ids.length ? await getDealsByIds(ids, { withTasks: true }) : {};
 
   // As dez originais vêm do código; o que a curadoria cadastrou vem do banco.
+  // idx sai da lista inteira: uma estratégia removida ainda precisa ter nome no
+  // briefing antigo que a gravou. porSeg é só o que ainda dá para escolher.
   const porSeg = montaEstrategias(await listarEstrategias());
-  const estrat = { porSeg, idx: indexaPorId(porSeg) };
+  const estrat = { porSeg: semOcultas(porSeg, await listarOcultas()), idx: indexaPorId(porSeg) };
   const configura = podeConfigurar(session.user);
 
   return (

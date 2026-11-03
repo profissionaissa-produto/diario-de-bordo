@@ -19,8 +19,8 @@ import { getDealsByIds, retornoDasTarefas } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../lib/permissoes";
-import { listarEstrategias } from "../lib/db";
-import { montaEstrategias, indexaPorId } from "../lib/estrategias";
+import { listarEstrategias, listarOcultas } from "../lib/db";
+import { montaEstrategias, indexaPorId, semOcultas } from "../lib/estrategias";
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
 import { atividadeDoDia } from "../lib/atividade";
@@ -352,8 +352,10 @@ export default async function Page({ searchParams }) {
   const avatar = meuOwnerId ? fotoDe(meuOwnerId) : null;
 
   // As dez originais vêm do código; o que a curadoria cadastrou vem do banco.
+  // idx sai da lista inteira: uma estratégia removida ainda precisa ter nome no
+  // briefing antigo que a gravou. porSeg é só o que ainda dá para escolher.
   const porSeg = montaEstrategias(await listarEstrategias());
-  const estrat = { porSeg, idx: indexaPorId(porSeg) };
+  const estrat = { porSeg: semOcultas(porSeg, await listarOcultas()), idx: indexaPorId(porSeg) };
 
   return (
     <div className="wrap">

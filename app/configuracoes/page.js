@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { listarEstrategias, dbReady } from "../../lib/db";
+import { listarEstrategias, listarOcultas, dbReady } from "../../lib/db";
 import { montaEstrategias, numeroDa } from "../../lib/estrategias";
 import { segsConfiguraveis, podeVerTramitacoes, podeVerEvolucao } from "../../lib/permissoes";
 import { SEG_TRAMITACOES } from "../../lib/config";
 import NovaEstrategia from "../NovaEstrategia";
+import AcaoEstrategia from "../AcaoEstrategia";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,11 @@ export default async function Configuracoes({ searchParams }) {
   const seg = segs.includes(pedido) ? pedido : segs[0];
 
   const userName = session.user.name || session.user.email;
+  // A tabela mostra a lista inteira, removidas inclusive: sem elas na tela não
+  // haveria como restaurar o que foi tirado por engano.
   const lista = montaEstrategias(await listarEstrategias())[seg] || [];
-  const cadastradas = lista.filter((e) => e.criadoPor).length;
+  const ocultas = (await listarOcultas())[seg] || {};
+  const naLista = lista.filter((e) => !ocultas[e.id]).length;
 
   return (
     <div className="wrap">
@@ -40,7 +44,7 @@ export default async function Configuracoes({ searchParams }) {
           <div>
             <div className="title">Configurações</div>
             <div className="subtitle">
-              Estratégias que o time de {seg} pode escolher no briefing · {lista.length} na lista
+              Estratégias que o time de {seg} pode escolher no briefing · {naLista} na lista
             </div>
           </div>
         </div>
@@ -96,7 +100,7 @@ export default async function Configuracoes({ searchParams }) {
         <div className="planbar">
           <span className="plan-week">Lista de {seg}</span>
           <span className="plan-badge">
-            {lista.length} no total{cadastradas ? ` · ${cadastradas} cadastrada${cadastradas === 1 ? "" : "s"} aqui` : ""}
+            {naLista} em uso{lista.length - naLista ? ` · ${lista.length - naLista} removida(s)` : ""}
           </span>
         </div>
         <div className="tscroll">
@@ -104,18 +108,27 @@ export default async function Configuracoes({ searchParams }) {
             <thead>
               <tr>
                 <th style={{ width: "6%" }}>#</th>
-                <th style={{ width: "28%" }}>Título</th>
-                <th style={{ width: "48%" }}>Quando usar</th>
-                <th style={{ width: "18%" }}>Cadastrada por</th>
+                <th style={{ width: "26%" }}>Título</th>
+                <th style={{ width: "40%" }}>Quando usar</th>
+                <th style={{ width: "16%" }}>Cadastrada por</th>
+                <th style={{ width: "12%" }} />
               </tr>
             </thead>
             <tbody>
               {lista.map((e) => (
-                <tr key={e.id}>
+                <tr key={e.id} className={ocultas[e.id] ? "est-removida" : ""}>
                   <td>{numeroDa(e.id)}</td>
                   <td className="deal">{e.titulo}</td>
                   <td className="est-desc">{e.desc}</td>
-                  <td>{e.criadoPor || <span className="est-sem">original</span>}</td>
+                  <td>
+                    {e.criadoPor || <span className="est-sem">original</span>}
+                    {ocultas[e.id] && (
+                      <span className="est-sem"> · removida por {ocultas[e.id] || "alguém"}</span>
+                    )}
+                  </td>
+                  <td>
+                    {dbReady() && <AcaoEstrategia seg={seg} id={e.id} oculta={!!ocultas[e.id]} />}
+                  </td>
                 </tr>
               ))}
             </tbody>

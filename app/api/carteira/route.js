@@ -1,7 +1,9 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, dbReady } from "../../../lib/db";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, listarEstrategias, dbReady } from "../../../lib/db";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
+import { montaEstrategias } from "../../../lib/estrategias";
+import { SEG_TRAMITACOES } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
 
@@ -41,14 +43,28 @@ export async function POST(req) {
   }
   if (!ownerId) return Response.json({ error: "Farmer não encontrado." }, { status: 403 });
 
-  const { companyId, abordagem, contexto } = body;
+  const { companyId, abordagem, contexto, estrategia } = body;
   if (!companyId) return Response.json({ error: "Informe a empresa." }, { status: 400 });
   if (abordagem && !ABORDAGENS.includes(abordagem)) {
     return Response.json({ error: "Abordagem inválida." }, { status: 400 });
   }
+  // "" é desmarcar; qualquer outro valor tem que ser uma estratégia do Farmer,
+  // senão o id gravado no dia não resolve para nada depois.
+  if (estrategia) {
+    const doFarmer = montaEstrategias(await listarEstrategias())[SEG_TRAMITACOES] || [];
+    if (!doFarmer.some((e) => e.id === estrategia)) {
+      return Response.json({ error: "Estratégia inválida." }, { status: 400 });
+    }
+  }
 
   try {
-    const achou = await salvarAbordagem(ownerId, body.dia || dayKey(), companyId, abordagem, contexto, editor);
+    const achou = await salvarAbordagem(
+      ownerId,
+      body.dia || dayKey(),
+      companyId,
+      { abordagem, contexto, estrategia },
+      editor
+    );
     if (!achou) {
       return Response.json({ error: "Essa empresa não está na lista de hoje." }, { status: 400 });
     }

@@ -494,6 +494,7 @@ export default async function Page({ searchParams }) {
       ) : carteiraDoDia ? (
         <ListaDoDia
           itens={carteiraDoDia}
+          estrategias={estrat.porSeg[SEG_TRAMITACOES] || []}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,

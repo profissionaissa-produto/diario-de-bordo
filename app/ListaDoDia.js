@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ABORDAGENS, BALDES } from "../lib/carteira";
+import { numeroDa } from "../lib/estrategias";
 
 // Contexto de quem já apareceu antes: é o que responde "por que ela voltou?".
 function historicoTexto(h) {
@@ -18,8 +19,9 @@ function historicoTexto(h) {
 
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
 
-function Linha({ e, ctx, onAbordagem }) {
+function Linha({ e, ctx, estrategias, onAbordagem }) {
   const [abordagem, setAbordagem] = useState(e.abordagem || "");
+  const [estrategia, setEstrategia] = useState(e.estrategia || "");
   const [contexto, setContexto] = useState(e.contexto || "");
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
@@ -52,6 +54,12 @@ function Linha({ e, ctx, onAbordagem }) {
     // Não finge que salvou: volta ao anterior se a gravação falhar.
     if (await salvar({ abordagem: valor })) onAbordagem(e.id, valor);
     else setAbordagem(anterior);
+  }
+
+  async function escolherEstrategia(valor) {
+    const anterior = estrategia;
+    setEstrategia(valor);
+    if (!(await salvar({ estrategia: valor }))) setEstrategia(anterior);
   }
 
   const hist = historicoTexto(e.historico);
@@ -102,6 +110,26 @@ function Linha({ e, ctx, onAbordagem }) {
       </td>
 
       <td>
+        {/* Opcional: a abordagem é o compromisso do dia, a estratégia é como
+            ele vai conduzir. Sem lista cadastrada a coluna não cobra nada. */}
+        <div className="select-wrap">
+          <select
+            className="emp-abordagem"
+            value={estrategia}
+            disabled={busy || estrategias.length === 0}
+            onChange={(ev) => escolherEstrategia(ev.target.value)}
+          >
+            <option value="">{estrategias.length ? "Escolher estratégia…" : "Nenhuma cadastrada"}</option>
+            {estrategias.map((s) => (
+              <option key={s.id} value={s.id} title={s.desc}>
+                {numeroDa(s.id)}. {s.titulo}
+              </option>
+            ))}
+          </select>
+        </div>
+      </td>
+
+      <td>
         {/* Salva ao sair do campo: digitar não pode disparar uma chamada por tecla. */}
         <textarea
           className="obs emp-contexto"
@@ -115,23 +143,24 @@ function Linha({ e, ctx, onAbordagem }) {
   );
 }
 
-function Tabela({ itens, ctx, onAbordagem }) {
+function Tabela({ itens, ctx, estrategias, onAbordagem }) {
   return (
     <div className="tscroll">
       <table>
         <thead>
           <tr>
-            <th style={{ width: "26%" }}>Empresa</th>
-            <th style={{ width: "10%" }}>Fase</th>
-            <th style={{ width: "11%" }}>Última compra</th>
-            <th style={{ width: "17%" }}>Por que voltou</th>
-            <th style={{ width: "19%" }}>Abordagem</th>
-            <th style={{ width: "17%" }}>Contexto</th>
+            <th style={{ width: "22%" }}>Empresa</th>
+            <th style={{ width: "9%" }}>Fase</th>
+            <th style={{ width: "10%" }}>Última compra</th>
+            <th style={{ width: "14%" }}>Por que voltou</th>
+            <th style={{ width: "17%" }}>Abordagem</th>
+            <th style={{ width: "16%" }}>Estratégia</th>
+            <th style={{ width: "12%" }}>Contexto</th>
           </tr>
         </thead>
         <tbody>
           {itens.map((e) => (
-            <Linha key={e.id} e={e} ctx={ctx} onAbordagem={onAbordagem} />
+            <Linha key={e.id} e={e} ctx={ctx} estrategias={estrategias} onAbordagem={onAbordagem} />
           ))}
         </tbody>
       </table>
@@ -139,7 +168,7 @@ function Tabela({ itens, ctx, onAbordagem }) {
   );
 }
 
-export default function ListaDoDia({ itens, ctx }) {
+export default function ListaDoDia({ itens, ctx, estrategias = [] }) {
   const [abordagens, setAbordagens] = useState(() => {
     const m = {};
     for (const e of itens) if (e.abordagem) m[e.id] = e.abordagem;
@@ -192,14 +221,14 @@ export default function ListaDoDia({ itens, ctx }) {
         </div>
       </div>
 
-      <Tabela itens={doCompromisso} ctx={ctx} onAbordagem={marcar} />
+      <Tabela itens={doCompromisso} ctx={ctx} estrategias={estrategias} onAbordagem={marcar} />
 
       {extras.length > 0 && (
         <>
           <div className="tab-secao">
             Extras — clientes recentes, fora da conta das {doCompromisso.length}
           </div>
-          <Tabela itens={extras} ctx={ctx} onAbordagem={marcar} />
+          <Tabela itens={extras} ctx={ctx} estrategias={estrategias} onAbordagem={marcar} />
         </>
       )}
     </div>

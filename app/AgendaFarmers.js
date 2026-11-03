@@ -120,21 +120,31 @@ function Comentario({ ownerId, dia, inicial }) {
   const [revisado, setRevisado] = useState(!!inicial?.revisado);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
+  const [crm, setCrm] = useState("");
 
   async function revisar() {
     setBusy(true);
     setErro("");
+    setCrm("");
     try {
       const res = await fetch("/api/carteira/lider", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ acao: "revisado", ownerId, dia }),
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "Falha ao marcar.");
-      }
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Falha ao marcar.");
       setRevisado(true);
+      // Revisar é o que leva o plano para o CRM: o líder precisa saber se
+      // chegou lá, senão descobre semanas depois com o campo vazio.
+      const h = d.hubspot;
+      if (h) {
+        const avisos = [];
+        if (h.gravadas) avisos.push(`${h.gravadas} empresa(s) gravada(s) no HubSpot`);
+        if (h.semPropriedade?.length) avisos.push(`a conta não tem a propriedade ${h.semPropriedade.join(" nem ")} em empresas`);
+        if (h.falhas?.length) avisos.push(`falhou em ${h.falhas.join(", ")}`);
+        setCrm(avisos.join(" · ") || "nada a gravar neste dia");
+      }
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -178,6 +188,7 @@ function Comentario({ ownerId, dia, inicial }) {
             Marcar como revisado
           </button>
         )}
+        {crm && <span className="emp-editado">{crm}</span>}
       </div>
       <textarea
         className="obs"

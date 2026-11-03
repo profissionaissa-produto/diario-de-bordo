@@ -3,7 +3,7 @@ import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { listarEstrategias, dbReady } from "../../lib/db";
 import { montaEstrategias, numeroDa } from "../../lib/estrategias";
-import { segCurado, podeVerTramitacoes, podeVerEvolucao } from "../../lib/permissoes";
+import { segsConfiguraveis, podeVerTramitacoes, podeVerEvolucao } from "../../lib/permissoes";
 import { SEG_TRAMITACOES } from "../../lib/config";
 import NovaEstrategia from "../NovaEstrategia";
 
@@ -13,13 +13,19 @@ function initials(name) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
-export default async function Estrategias() {
+export default async function Configuracoes({ searchParams }) {
   const session = await auth();
   if (!session?.user?.email) redirect("/login");
 
-  // A curadoria é nominal: quem não cura não tem o que fazer nesta tela.
-  const seg = segCurado(session.user);
-  if (!seg) redirect("/");
+  // A configuração é nominal: quem não configura nenhum segmento não tem o
+  // que fazer nesta tela.
+  const segs = segsConfiguraveis(session.user);
+  if (segs.length === 0) redirect("/");
+
+  // Curador cai direto no segmento dele; quem alcança mais de um escolhe pela
+  // aba, e um ?seg= de fora da lista não vira porta dos fundos.
+  const pedido = searchParams?.seg;
+  const seg = segs.includes(pedido) ? pedido : segs[0];
 
   const userName = session.user.name || session.user.email;
   const lista = montaEstrategias(await listarEstrategias())[seg] || [];
@@ -32,9 +38,9 @@ export default async function Estrategias() {
           <img className="logo" src="/logo-psa.png" alt="PSA" />
           <div className="divider" />
           <div>
-            <div className="title">Estratégias</div>
+            <div className="title">Configurações</div>
             <div className="subtitle">
-              O que o time de {seg} pode escolher no briefing · {lista.length} na lista
+              Estratégias que o time de {seg} pode escolher no briefing · {lista.length} na lista
             </div>
           </div>
         </div>
@@ -64,8 +70,15 @@ export default async function Estrategias() {
               <Link href="/agenda">Agenda geral</Link>
             </>
           )}
-          <Link href="/estrategias" className="on">Estratégias</Link>
+          <Link href="/configuracoes" className="on">Configurações</Link>
         </div>
+        {segs.length > 1 && (
+          <div className="seg-toggle">
+            {segs.map((s) => (
+              <Link key={s} href={`/configuracoes?seg=${s}`} className={s === seg ? "on" : ""}>{s}</Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {!dbReady() && (

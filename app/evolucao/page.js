@@ -4,7 +4,7 @@ import { auth, signOut } from "../../auth";
 import { getEvolucaoCarteira, dbReady } from "../../lib/db";
 import { dayKey, dayLabel, ultimosDiasUteis } from "../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER, SEGMENTOS, EQUIPES_DE, closersDe, fotoDe, SEG_TRAMITACOES } from "../../lib/config";
-import { ehGestor, segmentosDe, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -109,6 +109,7 @@ export default async function Evolucao({ searchParams }) {
           <Link href="/agenda">Agenda do dia</Link>
           <Link href="/evolucao" className="on">Evolução</Link>
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+          {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
           <Link href="/ajuda">Como funciona</Link>
         </div>
         {!equipeTravada && EQUIPES_DE(seg).length > 0 && (

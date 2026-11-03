@@ -5,7 +5,7 @@ import { getTicketsCS, getOwnerByEmail, getOwnerNames } from "../../lib/hubspot"
 import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
-import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao } from "../../lib/permissoes";
+import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
 import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_TICKET, pendenciasDoTicket, TIPOS, diasEntre } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
@@ -159,6 +159,7 @@ export default async function Tramitacoes({ searchParams }) {
           <Link href="/tramitacoes" className="on">
             Tramitações{abertas.length ? ` (${abertas.length})` : ""}
           </Link>
+          {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
           <Link href="/ajuda">Como funciona</Link>
         </div>
         <div className="seg-toggle">

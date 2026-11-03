@@ -18,7 +18,7 @@ import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, apl
 import { getDealsByIds, retornoDasTarefas } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
-import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, segCurado } from "../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../lib/permissoes";
 import { listarEstrategias } from "../lib/db";
 import { montaEstrategias, indexaPorId } from "../lib/estrategias";
 import { listaDoDia } from "../lib/dia-farmer";
@@ -87,7 +87,7 @@ export default async function Page({ searchParams }) {
   // Líder também gere briefings, porém só do time dele — e tem funil próprio.
   const gestor = ehGestor(session.user);
   // Segmento em que a pessoa cadastra estratégia; null para quase todo mundo.
-  const curaEstrategia = segCurado(session.user);
+  const configura = podeConfigurar(session.user);
   const meusSegs = segmentosDe(session.user);
   // Sempre um segmento ativo: B2B é o padrão ao abrir o painel.
   const segPedido = SEGMENTOS.includes(searchParams?.seg) ? searchParams.seg : "B2B";
@@ -397,7 +397,7 @@ export default async function Page({ searchParams }) {
                   {/* Sem contador aqui: o número exigiria buscar os tickets do
                       funil só para desenhar o menu. */}
                   {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
-                  {curaEstrategia && <Link href="/estrategias">Estratégias</Link>}
+                  {configura && <Link href="/configuracoes">Configurações</Link>}
                   <Link href="/ajuda">Como funciona</Link>
                 </>
               ) : (
@@ -407,7 +407,7 @@ export default async function Page({ searchParams }) {
                     {pendentes > 0 && <span className="aba-cont">{pendentes}</span>}
                   </Link>
                   <Link href="/agenda">Agenda geral</Link>
-                  {curaEstrategia && <Link href="/estrategias">Estratégias</Link>}
+                  {configura && <Link href="/configuracoes">Configurações</Link>}
                 </>
               )}
             </div>

@@ -7,7 +7,7 @@ import { montaEstrategias, indexaPorId } from "../../lib/estrategias";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
-import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser , podeVerTramitacoes, segCurado } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser , podeVerTramitacoes, podeConfigurar } from "../../lib/permissoes";
 import ApprovalCard from "../ApprovalCard";
 import HistLinha from "../HistLinha";
 
@@ -80,7 +80,7 @@ export default async function Aprovacoes({ searchParams }) {
   // As dez originais vêm do código; o que a curadoria cadastrou vem do banco.
   const porSeg = montaEstrategias(await listarEstrategias());
   const estrat = { porSeg, idx: indexaPorId(porSeg) };
-  const curaEstrategia = segCurado(session.user);
+  const configura = podeConfigurar(session.user);
 
   return (
     <div className="wrap">
@@ -108,7 +108,7 @@ export default async function Aprovacoes({ searchParams }) {
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
           <Link href="/agenda">Agenda geral</Link>
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
-          {curaEstrategia && <Link href="/estrategias">Estratégias</Link>}
+          {configura && <Link href="/configuracoes">Configurações</Link>}
         </div>
         <div className="seg-toggle">
           {[["pendentes", "Aguardando"], ["decididos", "Decididos"], ["todos", "Todos"], ["historico", "Histórico"]].map(([v, l]) => (

@@ -10,7 +10,6 @@ export default function AdminBar({
   selected,
   seg,
   segs = [],
-  papel = "Admin",
   equipes = [],
   equipe = "",
   semEquipe = 0,
@@ -32,8 +31,8 @@ export default function AdminBar({
 
   return (
     <div className="ctxbar">
-      <span className="admin-tag">{papel}</span>
-
+      {/* O papel saiu daqui para o cabeçalho, junto do nome: solto antes dos
+          filtros ele parecia um filtro a mais e empurrava a linha. */}
       {segs.length > 1 && (
         <div className="ctx-campo">
           <span className="ctx-lab">Segmento</span>

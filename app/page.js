@@ -377,6 +377,7 @@ export default async function Page({ searchParams }) {
         <div className="who">
           <div className="pfp">{avatar ? <img src={avatar} alt={userName} /> : initials(userName)}</div>
           <div className="who-name">{userName}</div>
+          {gestor && <span className="admin-tag">{isAdmin ? "Admin" : "Líder " + seg}</span>}
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button className="signout" type="submit">Sair</button>
           </form>
@@ -419,7 +420,6 @@ export default async function Page({ searchParams }) {
             selected={viewOwner ? String(viewOwner.ownerId) : ""}
             seg={seg}
             segs={meusSegs}
-            papel={isAdmin ? "Admin" : "Líder " + seg}
             rotuloPessoa={ehFarmer ? "farmer" : "closer"}
             equipes={equipeTravada ? [] : EQUIPES_DE(seg)}
             equipe={equipeAtiva}

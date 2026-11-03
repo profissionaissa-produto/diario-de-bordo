@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Diário de Bordo — Closers",
+  title: "Diário de Bordo | PSA",
   description: "Negócios ativos no funil, sincronizados com o HubSpot.",
 };
 

@@ -8,7 +8,7 @@ import {
   dbReady,
 } from "../../../lib/db";
 import { montaEstrategias, indexaPorId } from "../../../lib/estrategias";
-import { BALDES } from "../../../lib/carteira";
+import { BALDES, OBJETIVO_ABORDAGEM } from "../../../lib/carteira";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../lib/canal";
 import { geraMensagem } from "../../../lib/gemini";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../lib/gmail";
@@ -74,7 +74,13 @@ export async function POST(req) {
       canal: c.body.canal,
       tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
       estrategia,
+      // A abordagem é a decisão da manhã e é ela que diz a que a mensagem
+      // serve. Ficou de fora do prompt até 04/11/2026, e por isso o texto
+      // saía genérico, servindo para qualquer empresa.
+      abordagem: c.empresa.abordagem,
+      objetivoAbordagem: OBJETIVO_ABORDAGEM[c.empresa.abordagem],
       fase: BALDES[c.empresa.balde]?.label || c.empresa.balde,
+      faseFaixa: BALDES[c.empresa.balde]?.faixa,
       ultimaCompra: c.empresa.ultimaCompra,
       observacao: c.empresa.contexto,
     });

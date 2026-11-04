@@ -822,9 +822,9 @@ td .emp-orientacao { margin-top: 6px; font-size: 12px; }
    pessoa não perder de vista de quem está falando. */
 /* Link discreto, não botão: ele divide a célula com o nome da empresa e uma
    pílula ali competia com o que importa ler primeiro. */
-.btn-msg { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; padding: 0;
+.btn-msg { display: flex; align-items: center; gap: 5px; margin-top: 9px; padding: 0;
   background: transparent; border: 0; color: var(--azul); font: inherit; font-size: 12px;
-  font-weight: 600; cursor: pointer; }
+  font-weight: 600; cursor: pointer; width: fit-content; }
 .btn-msg::after { content: "▸"; font-size: 9px; }
 .btn-msg.on::after { content: "▾"; }
 .btn-msg:hover:not(:disabled) { text-decoration: underline; }

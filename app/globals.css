@@ -841,7 +841,7 @@ td .emp-orientacao { margin-top: 6px; font-size: 12px; }
    pessoa não perder de vista de quem está falando. */
 /* Entra na linha da empresa, abaixo do nome: mesmo sistema dos outros,
    em tamanho menor porque divide a célula. */
-.btn-msg { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+.btn-msg { display: flex; width: fit-content; align-items: center; gap: 6px; margin-top: 10px;
   padding: 6px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
   color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: .15s; }
 .btn-msg:hover:not(:disabled) { border-color: var(--laranja); color: var(--laranja); }

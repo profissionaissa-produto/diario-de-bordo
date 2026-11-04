@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL, rotuloCanal } from "../lib/canal";
 import { telefoneLegivel, paraWhatsApp } from "../lib/telefone";
@@ -61,11 +61,25 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
     };
   }, [onFechar]);
 
+  // Canais já tentados nesta abertura. O botão chama "Gerar mensagem", então
+  // abrir sem texto e esperar um segundo clique é pedir o mesmo duas vezes.
+  // É ref e não estado porque mudar isto não precisa repintar a tela.
+  const jaTentou = useRef(new Set());
+
   const contato = contatos.find((c) => c.id === contatoId) || null;
   const proxima = tentativasNo(tentativas, canal) + 1;
   const assunto = canal === "email" ? separaAssunto(texto, "").assunto : "";
   const desde = tempoDesde(empresa.ultimaCompra);
   const semCanal = liberados.length === 0;
+
+  useEffect(() => {
+    if (!canal || texto || busy || jaTentou.current.has(canal)) return;
+    jaTentou.current.add(canal);
+    gerar();
+    // Só o canal dispara: incluir texto ou busy aqui faria a geração
+    // recomeçar sozinha a cada tecla digitada na caixa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canal]);
 
   async function chama(method, corpo) {
     const res = await fetch("/api/mensagem", {
@@ -224,7 +238,7 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
                           className={canal === c.key ? "on" : ""}
                           disabled={fechado}
                           title={fechado ? `${LIMITE_POR_CANAL} tentativas sem resposta neste canal` : undefined}
-                          onClick={() => { setCanal(c.key); setTexto(""); setEnviada(false); }}
+                          onClick={() => { setCanal(c.key); setTexto(""); setEnviada(false); setErro(""); }}
                         >
                           {c.label}
                           <span className="msg-cont">{tentativasNo(tentativas, c.key)}/{LIMITE_POR_CANAL}</span>
@@ -281,9 +295,11 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
                   className="obs modal-texto"
                   value={texto}
                   placeholder={
-                    canal === "email"
-                      ? "Clique em Gerar. A primeira linha vira o assunto (Assunto: ...) e o resto, o corpo."
-                      : "Clique em Gerar para o texto aparecer aqui. Você pode editar antes de enviar."
+                    busy === "gerar"
+                      ? "Escrevendo a mensagem…"
+                      : canal === "email"
+                        ? "A primeira linha vira o assunto (Assunto: ...) e o resto, o corpo. Você pode editar antes de enviar."
+                        : "Leia e ajuste antes de enviar."
                   }
                   onChange={(e) => { setTexto(e.target.value); setEnviada(false); }}
                 />

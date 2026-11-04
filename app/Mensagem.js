@@ -76,9 +76,8 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
     if (!canal || texto || busy || jaTentou.current.has(canal)) return;
     jaTentou.current.add(canal);
     gerar();
-    // Só o canal dispara: incluir texto ou busy aqui faria a geração
-    // recomeçar sozinha a cada tecla digitada na caixa.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Só o canal na lista: incluir texto ou busy faria a geração recomeçar
+    // sozinha a cada tecla digitada na caixa.
   }, [canal]);
 
   async function chama(method, corpo) {

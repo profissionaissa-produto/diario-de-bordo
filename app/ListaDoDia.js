@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ABORDAGENS, BALDES } from "../lib/carteira";
 import { numeroDa } from "../lib/estrategias";
+import { canaisLiberados } from "../lib/canal";
+import Mensagem from "./Mensagem";
 
 // Contexto de quem já apareceu antes: é o que responde "por que ela voltou?".
 function historicoTexto(h) {
@@ -19,12 +21,13 @@ function historicoTexto(h) {
 
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
 
-function Linha({ e, ctx, estrategias, onAbordagem }) {
+function Linha({ e, ctx, estrategias, contatos, tentativas, onAbordagem }) {
   const [abordagem, setAbordagem] = useState(e.abordagem || "");
   const [estrategia, setEstrategia] = useState(e.estrategia || "");
   const [contexto, setContexto] = useState(e.contexto || "");
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
+  const [aberta, setAberta] = useState(false);
 
   async function salvar(campos) {
     setBusy(true);
@@ -64,7 +67,10 @@ function Linha({ e, ctx, estrategias, onAbordagem }) {
 
   const hist = historicoTexto(e.historico);
 
+  const semCanal = canaisLiberados(tentativas).length === 0;
+
   return (
+    <>
     <tr className={abordagem ? "linha-pronta" : ""}>
       <td className="deal">
         {e.extra && <span className="emp-tag">extra</span>}
@@ -75,6 +81,14 @@ function Linha({ e, ctx, estrategias, onAbordagem }) {
           </span>
         )}
         <a className="deal-link" href={e.url} target="_blank" rel="noreferrer">{e.nome}</a>
+        <button
+          type="button"
+          className={"btn-msg" + (aberta ? " on" : "")}
+          onClick={() => setAberta((v) => !v)}
+          title={semCanal ? "Os tres canais ja esgotaram nesta empresa" : undefined}
+        >
+          {semCanal ? "Canais esgotados" : aberta ? "Fechar mensagem" : "Mensagem"}
+        </button>
         {e.orientacao && (
           <div className="emp-orientacao">
             {e.orientacao.texto}
@@ -140,10 +154,25 @@ function Linha({ e, ctx, estrategias, onAbordagem }) {
         />
       </td>
     </tr>
+
+    {aberta && (
+      <tr className="linha-msg">
+        <td colSpan={7}>
+          <Mensagem
+            empresa={e}
+            contatos={contatos}
+            tentativas={tentativas}
+            ctx={ctx}
+            onFechar={() => setAberta(false)}
+          />
+        </td>
+      </tr>
+    )}
+    </>
   );
 }
 
-function Tabela({ itens, ctx, estrategias, onAbordagem }) {
+function Tabela({ itens, ctx, estrategias, contatos, tentativas, onAbordagem }) {
   return (
     <div className="tscroll">
       <table>
@@ -160,7 +189,15 @@ function Tabela({ itens, ctx, estrategias, onAbordagem }) {
         </thead>
         <tbody>
           {itens.map((e) => (
-            <Linha key={e.id} e={e} ctx={ctx} estrategias={estrategias} onAbordagem={onAbordagem} />
+            <Linha
+              key={e.id}
+              e={e}
+              ctx={ctx}
+              estrategias={estrategias}
+              contatos={contatos[e.id] || []}
+              tentativas={tentativas[e.id] || {}}
+              onAbordagem={onAbordagem}
+            />
           ))}
         </tbody>
       </table>
@@ -168,7 +205,7 @@ function Tabela({ itens, ctx, estrategias, onAbordagem }) {
   );
 }
 
-export default function ListaDoDia({ itens, ctx, estrategias = [] }) {
+export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {} }) {
   const [abordagens, setAbordagens] = useState(() => {
     const m = {};
     for (const e of itens) if (e.abordagem) m[e.id] = e.abordagem;
@@ -221,14 +258,14 @@ export default function ListaDoDia({ itens, ctx, estrategias = [] }) {
         </div>
       </div>
 
-      <Tabela itens={doCompromisso} ctx={ctx} estrategias={estrategias} onAbordagem={marcar} />
+      <Tabela itens={doCompromisso} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} onAbordagem={marcar} />
 
       {extras.length > 0 && (
         <>
           <div className="tab-secao">
             Extras — clientes recentes, fora da conta das {doCompromisso.length}
           </div>
-          <Tabela itens={extras} ctx={ctx} estrategias={estrategias} onAbordagem={marcar} />
+          <Tabela itens={extras} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} onAbordagem={marcar} />
         </>
       )}
     </div>

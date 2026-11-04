@@ -15,11 +15,11 @@ import ListaDoDia from "./ListaDoDia";
 import FecharDia from "./FecharDia";
 import Link from "next/link";
 import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, aplicarRetornoDeTarefa, MIN_OBS } from "../lib/db";
-import { getDealsByIds, retornoDasTarefas } from "../lib/hubspot";
+import { getDealsByIds, retornoDasTarefas, contatosDasEmpresas } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../lib/permissoes";
-import { listarEstrategias, listarOcultas } from "../lib/db";
+import { listarEstrategias, listarOcultas, tentativasPorEmpresa } from "../lib/db";
 import { montaEstrategias, indexaPorId, semOcultas } from "../lib/estrategias";
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
@@ -164,6 +164,8 @@ export default async function Page({ searchParams }) {
   const ehFarmer = seg === SEG_TRAMITACOES;
   let carteiraDoDia = null;
   let resumoMes = null;
+  let contatosDoDia = {};
+  let tentativasDoDia = {};
   if (ehFarmer && viewOwner) {
     try {
       let [{ itens }, linhas] = await Promise.all([
@@ -202,6 +204,16 @@ export default async function Page({ searchParams }) {
 
       // Relê depois de aplicar, senão a tela mostra o estado anterior.
       itens = await getListaDia(String(viewOwner.ownerId), dayKey());
+
+      // Para quem mandar a mensagem e quantas tentativas cada canal já teve.
+      // Contato falha sem derrubar o dia: some o botão, não a lista. Já a
+      // contagem não pode falhar calada, senão a cascata liberaria tudo.
+      const ids = itens.map((e) => String(e.id));
+      contatosDoDia = await contatosDasEmpresas(ids).catch((err) => {
+        console.error("[mensagem] falha ao ler os contatos das empresas:", err?.message);
+        return {};
+      });
+      tentativasDoDia = await tentativasPorEmpresa(ids);
 
       carteiraDoDia = itens.map((e) => ({
         ...e,
@@ -497,6 +509,8 @@ export default async function Page({ searchParams }) {
         <ListaDoDia
           itens={carteiraDoDia}
           estrategias={estrat.porSeg[SEG_TRAMITACOES] || []}
+          contatos={contatosDoDia}
+          tentativas={tentativasDoDia}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,

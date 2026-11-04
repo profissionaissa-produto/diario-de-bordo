@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, listarEstrategias, listarOcultas, dbReady } from "../../../lib/db";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, dbReady } from "../../../lib/db";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
 import { montaEstrategias, semOcultas } from "../../../lib/estrategias";
 import { SEG_TRAMITACOES } from "../../../lib/config";
@@ -110,6 +110,9 @@ export async function PATCH(req) {
     const achou = await salvarResultadoCarteira(ownerId, body.dia || dayKey(), companyId, resultado, observacao, editor);
     if (!achou) return Response.json({ error: "Essa empresa não está na lista de hoje." }, { status: 400 });
     // O pedido é o que segura a empresa fora do rodízio até o líder decidir.
+    // O contato aconteceu: a cascata de canais zera e os três voltam a valer.
+    // O teto de 3 é de tentativas sem sucesso, não de mensagens enviadas.
+    if (resultado === "efetivo") await resolveTentativas(companyId);
     if (resultado === "trocar_segmento") {
       await pedirTroca(ownerId, companyId, body.nome || null, observacao);
     } else {

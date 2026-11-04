@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ABORDAGENS, BALDES } from "../lib/carteira";
 import { numeroDa } from "../lib/estrategias";
 import { canaisLiberados } from "../lib/canal";
+import { briefingDoContato } from "../lib/briefing-contato";
 import Mensagem from "./Mensagem";
 
 // Contexto de quem já apareceu antes: é o que responde "por que ela voltou?".
@@ -21,7 +22,7 @@ function historicoTexto(h) {
 
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
 
-function Linha({ e, ctx, estrategias, contatos, tentativas, onAbordagem }) {
+function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordagem }) {
   const [abordagem, setAbordagem] = useState(e.abordagem || "");
   const [estrategia, setEstrategia] = useState(e.estrategia || "");
   const [contexto, setContexto] = useState(e.contexto || "");
@@ -68,6 +69,11 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, onAbordagem }) {
   const hist = historicoTexto(e.historico);
 
   const semCanal = canaisLiberados(tentativas).length === 0;
+  const briefing = briefingDoContato({
+    contatos: historico,
+    abordagem,
+    estrategia: estrategias.find((s) => s.id === estrategia) || null,
+  });
 
   return (
     <>
@@ -85,9 +91,10 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, onAbordagem }) {
           type="button"
           className={"btn-msg" + (aberta ? " on" : "")}
           onClick={() => setAberta((v) => !v)}
-          title={semCanal ? "Os tres canais ja esgotaram nesta empresa" : undefined}
+          disabled={semCanal}
+          title={semCanal ? "Os três canais já esgotaram nesta empresa" : undefined}
         >
-          {semCanal ? "Canais esgotados" : aberta ? "Fechar mensagem" : "Mensagem"}
+          {semCanal ? "canais esgotados" : "mensagem"}
         </button>
         {e.orientacao && (
           <div className="emp-orientacao">
@@ -144,14 +151,24 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, onAbordagem }) {
       </td>
 
       <td>
-        {/* Salva ao sair do campo: digitar não pode disparar uma chamada por tecla. */}
-        <textarea
-          className="obs emp-contexto"
-          placeholder="Contexto (opcional)"
-          value={contexto}
-          onChange={(ev) => setContexto(ev.target.value)}
-          onBlur={() => contexto !== (e.contexto || "") && salvar({ contexto })}
-        />
+        {/* Antes do primeiro contato a coluna é entrada: o que o farmer
+            escreve aqui entra no prompt. Depois dele vira registro do que foi
+            feito, que é o que o líder precisa ler. */}
+        {briefing ? (
+          <div className="emp-briefing">
+            {briefing}
+            {contexto && <span className="emp-briefing-nota">{contexto}</span>}
+          </div>
+        ) : (
+          // Salva ao sair do campo: digitar não pode disparar uma chamada por tecla.
+          <textarea
+            className="obs emp-contexto"
+            placeholder="Contexto (opcional)"
+            value={contexto}
+            onChange={(ev) => setContexto(ev.target.value)}
+            onBlur={() => contexto !== (e.contexto || "") && salvar({ contexto })}
+          />
+        )}
       </td>
     </tr>
 
@@ -172,7 +189,7 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, onAbordagem }) {
   );
 }
 
-function Tabela({ itens, ctx, estrategias, contatos, tentativas, onAbordagem }) {
+function Tabela({ itens, ctx, estrategias, contatos, tentativas, historicoContato, onAbordagem }) {
   return (
     <div className="tscroll">
       <table>
@@ -196,6 +213,7 @@ function Tabela({ itens, ctx, estrategias, contatos, tentativas, onAbordagem }) 
               estrategias={estrategias}
               contatos={contatos[e.id] || []}
               tentativas={tentativas[e.id] || {}}
+              historico={historicoContato[e.id] || []}
               onAbordagem={onAbordagem}
             />
           ))}
@@ -205,7 +223,7 @@ function Tabela({ itens, ctx, estrategias, contatos, tentativas, onAbordagem }) 
   );
 }
 
-export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {} }) {
+export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {}, historicoContato = {} }) {
   const [abordagens, setAbordagens] = useState(() => {
     const m = {};
     for (const e of itens) if (e.abordagem) m[e.id] = e.abordagem;
@@ -258,14 +276,14 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
         </div>
       </div>
 
-      <Tabela itens={doCompromisso} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} onAbordagem={marcar} />
+      <Tabela itens={doCompromisso} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} historicoContato={historicoContato} onAbordagem={marcar} />
 
       {extras.length > 0 && (
         <>
           <div className="tab-secao">
             Extras — clientes recentes, fora da conta das {doCompromisso.length}
           </div>
-          <Tabela itens={extras} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} onAbordagem={marcar} />
+          <Tabela itens={extras} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} historicoContato={historicoContato} onAbordagem={marcar} />
         </>
       )}
     </div>

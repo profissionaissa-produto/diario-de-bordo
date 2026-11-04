@@ -19,7 +19,7 @@ import { getDealsByIds, retornoDasTarefas, contatosDasEmpresas } from "../lib/hu
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
 import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../lib/permissoes";
-import { listarEstrategias, listarOcultas, tentativasPorEmpresa } from "../lib/db";
+import { listarEstrategias, listarOcultas, tentativasPorEmpresa, detalheTentativas } from "../lib/db";
 import { montaEstrategias, indexaPorId, semOcultas } from "../lib/estrategias";
 import { listaDoDia } from "../lib/dia-farmer";
 import { resumoDoMes } from "../lib/metricas-farmer";
@@ -166,6 +166,7 @@ export default async function Page({ searchParams }) {
   let resumoMes = null;
   let contatosDoDia = {};
   let tentativasDoDia = {};
+  let historicoContato = {};
   if (ehFarmer && viewOwner) {
     try {
       let [{ itens }, linhas] = await Promise.all([
@@ -214,6 +215,7 @@ export default async function Page({ searchParams }) {
         return {};
       });
       tentativasDoDia = await tentativasPorEmpresa(ids);
+      historicoContato = await detalheTentativas(ids);
 
       carteiraDoDia = itens.map((e) => ({
         ...e,
@@ -511,6 +513,7 @@ export default async function Page({ searchParams }) {
           estrategias={estrat.porSeg[SEG_TRAMITACOES] || []}
           contatos={contatosDoDia}
           tentativas={tentativasDoDia}
+          historicoContato={historicoContato}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,

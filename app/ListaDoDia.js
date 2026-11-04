@@ -69,6 +69,11 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
   const hist = historicoTexto(e.historico);
 
   const semCanal = canaisLiberados(tentativas).length === 0;
+  // A mensagem vem depois da decisão, não antes: sem abordagem o texto não
+  // tem a que servir. Estratégia só é exigida quando há alguma para escolher,
+  // senão o botão nunca liberaria enquanto a lista do Farmer estiver vazia.
+  const faltaEstrategia = estrategias.length > 0 && !estrategia;
+  const falta = [!abordagem && "abordagem", faltaEstrategia && "estratégia"].filter(Boolean);
   const briefing = briefingDoContato({
     contatos: historico,
     abordagem,
@@ -89,12 +94,18 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
         <a className="deal-link" href={e.url} target="_blank" rel="noreferrer">{e.nome}</a>
         <button
           type="button"
-          className={"btn-msg" + (aberta ? " on" : "")}
+          className="btn-msg"
           onClick={() => setAberta((v) => !v)}
-          disabled={semCanal}
-          title={semCanal ? "Os três canais já esgotaram nesta empresa" : undefined}
+          disabled={semCanal || falta.length > 0}
+          title={
+            semCanal
+              ? "Os três canais já esgotaram nesta empresa"
+              : falta.length > 0
+                ? `Defina ${falta.join(" e ")} para liberar a mensagem`
+                : undefined
+          }
         >
-          {semCanal ? "canais esgotados" : "mensagem"}
+          {semCanal ? "canais esgotados" : falta.length > 0 ? `falta ${falta.join(" e ")}` : "mensagem"}
         </button>
         {e.orientacao && (
           <div className="emp-orientacao">
@@ -171,20 +182,17 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
       </td>
     </tr>
 
+
     {aberta && (
-      <tr className="linha-msg">
-        <td colSpan={7}>
-          <Mensagem
-            empresa={e}
-            contatos={contatos}
-            tentativas={tentativas}
-            historico={historico}
-            remetente={ctx.remetente}
-            ctx={ctx}
-            onFechar={() => setAberta(false)}
-          />
-        </td>
-      </tr>
+      <Mensagem
+        empresa={e}
+        contatos={contatos}
+        tentativas={tentativas}
+        historico={historico}
+        estrategia={estrategias.find((x) => x.id === estrategia) || null}
+        ctx={ctx}
+        onFechar={() => setAberta(false)}
+      />
     )}
     </>
   );

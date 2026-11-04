@@ -859,3 +859,38 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .btn-zerar { background: transparent; border: 0; padding: 0; font: inherit; font-size: 12px;
   color: var(--muted); cursor: pointer; }
 .btn-zerar:hover:not(:disabled) { color: var(--laranja); text-decoration: underline; }
+
+/* Janela da mensagem. Fora da tabela: ela rola na horizontal e tem 1400px de
+   largura mínima, então nada que nasça dentro de uma linha dela respira. */
+.modal-fundo { position: fixed; inset: 0; z-index: 50; background: rgba(16,24,40,.45);
+  display: grid; place-items: center; padding: 24px; }
+.modal { width: min(1040px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column;
+  background: var(--bg); border-radius: var(--radius); box-shadow: 0 24px 64px rgba(16,24,40,.24); overflow: hidden; }
+.modal-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--line); }
+.modal-topo h2 { font-family: "Bruta Pro"; text-transform: uppercase; font-size: 22px; margin: 0; letter-spacing: .3px; }
+.modal-sub { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 7px;
+  font-size: 12.5px; color: var(--muted); }
+.modal-sub a { color: var(--azul); font-weight: 600; text-decoration: none; }
+.modal-sub a:hover { text-decoration: underline; }
+.modal-x { background: transparent; border: 0; font-size: 26px; line-height: 1; color: var(--muted);
+  cursor: pointer; padding: 0 4px; }
+.modal-x:hover { color: var(--ink); }
+.modal-corpo { display: grid; grid-template-columns: 290px 1fr; gap: 0; overflow: auto; flex: 1; }
+.modal-lado { background: var(--surface); border-right: 1px solid var(--line); padding: 18px 20px;
+  display: grid; gap: 16px; align-content: start; }
+.modal-campo { display: grid; gap: 5px; }
+.modal-campo b { font-size: 13px; line-height: 1.4; }
+.modal-campo p { margin: 0; }
+.modal-principal { padding: 20px 24px; display: grid; gap: 14px; align-content: start; }
+.modal-texto { min-height: 240px; width: 100%; font-size: 14px; line-height: 1.55; }
+.modal-rodape { display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+  border-top: 1px solid var(--line); background: var(--surface-2); }
+.modal-rodape .err, .modal-rodape .saved { margin-right: auto; }
+.modal-rodape .btn-ghost:first-of-type:not(:first-child) { margin-left: 0; }
+.modal-rodape > button:first-of-type { margin-left: auto; }
+.modal-rodape .err ~ button:first-of-type, .modal-rodape .saved ~ button:first-of-type { margin-left: 0; }
+@media (max-width: 860px) {
+  .modal-corpo { grid-template-columns: 1fr; }
+  .modal-lado { border-right: 0; border-bottom: 1px solid var(--line); }
+}

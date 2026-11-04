@@ -4,6 +4,8 @@ import {
   getListaDia,
   listarEstrategias,
   tentativasPorEmpresa,
+  lerTexto,
+  chaveContexto,
   registraTentativa,
   dbReady,
 } from "../../../lib/db";
@@ -70,6 +72,7 @@ export async function POST(req) {
 
   try {
     const texto = await geraMensagem({
+      contextoBase: await lerTexto(chaveContexto(SEG_TRAMITACOES)),
       empresa: c.empresa.nome,
       contato: c.body.contato || null,
       canal: c.body.canal,

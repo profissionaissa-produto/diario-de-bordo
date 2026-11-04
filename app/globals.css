@@ -894,3 +894,4 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
   .modal-corpo { grid-template-columns: 1fr; }
   .modal-lado { border-right: 0; border-bottom: 1px solid var(--line); }
 }
+.ctx-base { min-height: 150px; width: 100%; font-size: 13.5px; line-height: 1.55; }

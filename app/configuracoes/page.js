@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { listarEstrategias, listarOcultas, dbReady } from "../../lib/db";
+import { listarEstrategias, listarOcultas, lerTexto, chaveContexto, dbReady } from "../../lib/db";
 import { montaEstrategias, numeroDa } from "../../lib/estrategias";
 import { segsConfiguraveis, podeVerTramitacoes, podeVerEvolucao } from "../../lib/permissoes";
 import { SEG_TRAMITACOES } from "../../lib/config";
 import NovaEstrategia from "../NovaEstrategia";
 import AcaoEstrategia from "../AcaoEstrategia";
+import ContextoBase from "../ContextoBase";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function Configuracoes({ searchParams }) {
   // haveria como restaurar o que foi tirado por engano.
   const lista = montaEstrategias(await listarEstrategias())[seg] || [];
   const ocultas = (await listarOcultas())[seg] || {};
+  const contexto = await lerTexto(chaveContexto(seg));
   const naLista = lista.filter((e) => !ocultas[e.id]).length;
 
   return (
@@ -93,6 +95,8 @@ export default async function Configuracoes({ searchParams }) {
           </div>
         </div>
       )}
+
+      {dbReady() && <ContextoBase seg={seg} inicial={contexto} />}
 
       {dbReady() && <NovaEstrategia seg={seg} />}
 

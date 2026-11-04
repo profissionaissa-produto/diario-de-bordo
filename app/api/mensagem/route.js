@@ -12,7 +12,7 @@ import {
 import { montaEstrategias, indexaPorId } from "../../../lib/estrategias";
 import { BALDES, OBJETIVO_ABORDAGEM } from "../../../lib/carteira";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../lib/canal";
-import { geraMensagem } from "../../../lib/gemini";
+import { geraMensagem } from "../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../lib/gmail";
 import { paraWhatsApp } from "../../../lib/telefone";
 import { empresaUrl, SEG_TRAMITACOES } from "../../../lib/config";

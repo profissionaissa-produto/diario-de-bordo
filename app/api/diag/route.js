@@ -32,6 +32,9 @@ export async function GET(req) {
   // valor: a chave não sai do ambiente nem para o admin.
   if (searchParams.has("env")) {
     return Response.json({
+      IA_PROVEDOR: process.env.IA_PROVEDOR || "openai (padrão)",
+      OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+      OPENAI_MODELO: process.env.OPENAI_MODELO || "gpt-5-mini (padrão)",
       GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
       GEMINI_MODELO: process.env.GEMINI_MODELO || "gemini-2.5-flash (padrão)",
       GOOGLE_SA_EMAIL: !!process.env.GOOGLE_SA_EMAIL,

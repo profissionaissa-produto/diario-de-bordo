@@ -844,3 +844,13 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .msg-texto { min-height: 120px; width: 100%; }
 .msg-sem { margin: 0; font-size: 13px; color: var(--muted); }
 .seg-toggle button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Prévia do e-mail e histórico do que já foi mandado. */
+.msg-env { display: grid; gap: 6px; background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 13px; font-size: 13px; }
+.msg-env > div { display: flex; align-items: baseline; gap: 10px; }
+.msg-env .ctx-lab { min-width: 54px; flex: none; }
+.msg-hist { font-size: 13px; }
+.msg-hist summary { cursor: pointer; color: var(--azul); font-weight: 600; font-size: 12px; }
+.msg-hist-item { margin-top: 9px; padding-left: 11px; border-left: 2px solid var(--line); }
+.msg-hist-item p { margin: 3px 0 0; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }

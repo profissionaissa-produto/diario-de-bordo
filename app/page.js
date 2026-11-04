@@ -519,6 +519,8 @@ export default async function Page({ searchParams }) {
             dia,
             diaLabel: dayLabel(dia),
             urlFechamento: qs("fechar"),
+            // O e-mail sai da caixa de quem está operando a tela.
+            remetente: session.user.email,
           }}
         />
       ) : isFechar ? (

@@ -179,6 +179,8 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
             empresa={e}
             contatos={contatos}
             tentativas={tentativas}
+            historico={historico}
+            remetente={ctx.remetente}
             ctx={ctx}
             onFechar={() => setAberta(false)}
           />

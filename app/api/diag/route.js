@@ -28,6 +28,20 @@ export async function GET(req) {
     return Response.json(await historicoDeProps(hist, props));
   }
 
+  // ?env responde só quais integrações estão configuradas. Booleano, nunca o
+  // valor: a chave não sai do ambiente nem para o admin.
+  if (searchParams.has("env")) {
+    return Response.json({
+      GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+      GEMINI_MODELO: process.env.GEMINI_MODELO || "gemini-2.5-flash (padrão)",
+      GOOGLE_SA_EMAIL: !!process.env.GOOGLE_SA_EMAIL,
+      GOOGLE_SA_KEY: !!process.env.GOOGLE_SA_KEY,
+      HUBSPOT_BCC: !!process.env.HUBSPOT_BCC,
+      HUBSPOT_TOKEN: !!process.env.HUBSPOT_TOKEN,
+      DATABASE_URL: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL),
+    });
+  }
+
   const dia = searchParams.get("dia") || dayKey();
   const briefings = await getDayBriefings(dia);
 

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL } from "../lib/canal";
 import { telefoneLegivel, paraWhatsApp } from "../lib/telefone";
+import { separaAssunto } from "../lib/gmail-texto";
+import { rotuloCanal } from "../lib/canal";
 
 // O que o botão faz em cada canal. O WhatsApp abre o wa.me com o texto, o
 // e-mail sai pela caixa de quem está mandando, e a ligação leva ao registro da
@@ -28,7 +30,7 @@ const ACAO = {
 // Geração da mensagem de abordagem. Dois passos de propósito: gerar não conta
 // tentativa nem manda nada, só mostra o texto para a pessoa ler e corrigir.
 // Quem conta e dispara é o segundo botão.
-export default function Mensagem({ empresa, contatos = [], tentativas = {}, ctx, onFechar }) {
+export default function Mensagem({ empresa, contatos = [], tentativas = {}, historico = [], remetente, ctx, onFechar }) {
   const liberados = canaisLiberados(tentativas);
   const [canal, setCanal] = useState(canalSugerido(tentativas) || "");
   const [contatoId, setContatoId] = useState(contatos[0]?.id || "");
@@ -40,6 +42,7 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, ctx,
 
   const contato = contatos.find((c) => c.id === contatoId) || null;
   const proxima = tentativasNo(tentativas, canal) + 1;
+  const assunto = canal === "email" ? separaAssunto(texto, "").assunto : "";
 
   async function chama(method, corpo) {
     const res = await fetch("/api/mensagem", {
@@ -173,10 +176,41 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, ctx,
         )}
       </div>
 
+      {/* O que já foi mandado para esta empresa. Estava gravado e não
+          aparecia em lugar nenhum: quem abre o painel na segunda tentativa
+          precisa ler o que foi dito na primeira. */}
+      {historico.length > 0 && (
+        <details className="msg-hist">
+          <summary>{historico.length} mensagem{historico.length === 1 ? "" : "s"} já enviada{historico.length === 1 ? "" : "s"}</summary>
+          {historico.map((h, i) => (
+            <div className="msg-hist-item" key={i}>
+              <span className="est-sem">
+                {h.dia?.slice(8, 10)}/{h.dia?.slice(5, 7)} · {rotuloCanal(h.canal)} · {h.tentativaNoCanal}ª
+              </span>
+              <p>{h.texto || "(sem texto gravado)"}</p>
+            </div>
+          ))}
+        </details>
+      )}
+
+      {canal === "email" && (
+        // O e-mail não é um texto solto: quem envia precisa ver de quem sai,
+        // para quem vai e com que assunto, antes de clicar.
+        <div className="msg-env">
+          <div><span className="ctx-lab">De</span>{remetente || "sua conta"}</div>
+          <div><span className="ctx-lab">Para</span>{contato?.email || <span className="err">sem e-mail</span>}</div>
+          <div><span className="ctx-lab">Assunto</span>{assunto || <span className="est-sem">sai da primeira linha do texto</span>}</div>
+        </div>
+      )}
+
       <textarea
         className="obs msg-texto"
         value={texto}
-        placeholder="Clique em Gerar para o texto aparecer aqui. Você pode editar antes de enviar."
+        placeholder={
+          canal === "email"
+            ? "Clique em Gerar. A primeira linha vira o assunto (Assunto: ...) e o resto, o corpo."
+            : "Clique em Gerar para o texto aparecer aqui. Você pode editar antes de enviar."
+        }
         onChange={(e) => { setTexto(e.target.value); setEnviada(false); }}
       />
 

@@ -12,6 +12,9 @@
   --ink: #16181d; --muted: #4b5563; --line: #dcdfe6;
   --laranja: #f46411; --azul: #183caa;
   --laranja-soft: #fef0e7; --azul-soft: #eaf0fb; --ink-soft: #eef0f3;
+  /* O laranja é a marca e passou a ser a cor da ação principal. Erro
+     precisou de cor própria: falha vestida de CTA confunde. */
+  --laranja-forte: #d8540a; --erro: #b42318;
   --shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
   --radius: 16px;
 }
@@ -110,7 +113,7 @@ tbody tr:hover { background: var(--surface-2); }
 .pager button { width: 28px; height: 28px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--ink); }
 .pager button:disabled { opacity: .4; cursor: default; }
 .foot .saved { color: var(--azul); font-weight: 600; }
-.foot .err { color: var(--laranja); font-weight: 600; }
+.foot .err { color: var(--erro); font-weight: 600; }
 .save { background: var(--ink); color: var(--bg); border: 0; font: inherit; font-weight: 600; font-size: 13px; padding: 9px 18px; border-radius: 10px; cursor: pointer; }
 .save:disabled { opacity: .45; cursor: default; }
 
@@ -181,12 +184,25 @@ tbody tr:hover { background: var(--surface-2); }
 .brief-ativ { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .brief-ativ .aprov-ativ-desc { margin-top: 0; }
 .planbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }
-.btn-primary { background: var(--ink); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 13px;
-  padding: 9px 18px; border-radius: 10px; cursor: pointer; }
-.btn-primary:disabled { opacity: .45; cursor: default; }
-.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font: inherit;
-  font-weight: 600; font-size: 13px; padding: 9px 16px; border-radius: 10px; cursor: pointer; }
-.btn-ghost:hover { color: var(--ink); border-color: #d3d7de; }
+/* Três pesos e nada mais. Mesma altura, mesmo raio, mesmo tamanho de
+   letra: o que muda é o peso da ação, não o formato. */
+.btn-primary, .btn-ghost, .btn-link {
+  font: inherit; font-size: 13px; font-weight: 600; line-height: 1.2;
+  border-radius: 10px; cursor: pointer; transition: .15s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+}
+/* Ação principal: o laranja da PSA. */
+.btn-primary { background: var(--laranja); color: #fff; border: 1px solid var(--laranja); padding: 9px 18px; }
+.btn-primary:hover:not(:disabled) { background: var(--laranja-forte); border-color: var(--laranja-forte); }
+.btn-primary:disabled { opacity: .4; cursor: default; }
+/* Ação secundária: mesma caixa, sem peso de cor. */
+.btn-ghost { background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 9px 16px; }
+.btn-ghost:hover:not(:disabled) { border-color: var(--ink); }
+.btn-ghost:disabled { opacity: .4; cursor: default; }
+/* Ação de baixo peso: texto, sem caixa. */
+.btn-link { background: transparent; color: var(--azul); border: 0; padding: 2px 0; }
+.btn-link:hover:not(:disabled) { color: var(--laranja); }
+.btn-link:disabled { color: var(--muted); cursor: default; }
 .btn-danger { background: var(--laranja); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 13px;
   padding: 9px 16px; border-radius: 10px; cursor: pointer; }
 .reprova { display: flex; gap: 10px; width: 100%; margin-top: 4px; flex-wrap: wrap; }
@@ -310,7 +326,10 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
   background: var(--laranja-soft); border: 1px solid #f7cdb4; border-radius: 12px;
   padding: 11px 14px 11px 13px; border-left: 3px solid var(--laranja); text-align: left; }
 .login-rodape { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 2px 0 0; }
-.gbtn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: #fff; border: 0; font: inherit; font-weight: 600; font-size: 15px; padding: 13px 22px; border-radius: 12px; cursor: pointer; }
+.gbtn { display: inline-flex; align-items: center; gap: 10px; background: var(--laranja); color: #fff;
+  border: 0; font: inherit; font-weight: 600; font-size: 15px; padding: 13px 22px; border-radius: 12px;
+  cursor: pointer; transition: .15s; }
+.gbtn:hover { background: var(--laranja-forte); }
 @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } .title { font-size: 24px; } }
 
 .aprov-pfp { width: 34px; height: 34px; border-radius: 999px; background: var(--azul); color: #fff;
@@ -728,7 +747,7 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .g-compra_18m { background: #eaf7ee; color: #17803d; }
 .g-budget_alto { background: var(--azul-soft); color: var(--azul); }
 .g-sem_criterio { background: var(--surface-2); color: var(--muted); }
-a.btn-primary { text-decoration: none; display: inline-block; }
+a.btn-primary { text-decoration: none; }
 a.btn-primary.desativado { opacity: .45; pointer-events: none; }
 
 /* --------------------------------------------------------- página de ajuda */
@@ -793,7 +812,7 @@ td .emp-orientacao { margin-top: 6px; font-size: 12px; }
 /* -------------------------------------------- estratégias (curadoria) */
 /* .err e .saved existiam só dentro de .foot; outras telas já usavam os dois
    soltos e ficavam sem cor nenhuma. Aqui valem em qualquer lugar. */
-.err { color: var(--laranja); font-weight: 600; font-size: 12px; }
+.err { color: var(--erro); font-weight: 600; font-size: 12px; }
 .saved { color: var(--azul); font-weight: 600; font-size: 12px; }
 
 .est-form { padding: 0 0 14px; }
@@ -820,16 +839,13 @@ td .emp-orientacao { margin-top: 6px; font-size: 12px; }
 
 /* Mensagem de abordagem: o painel abre dentro da linha da empresa, para a
    pessoa não perder de vista de quem está falando. */
-/* Link discreto, não botão: ele divide a célula com o nome da empresa e uma
-   pílula ali competia com o que importa ler primeiro. */
-.btn-msg { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 4px 9px 4px 8px;
-  background: var(--surface); border: 0; border-radius: 8px; color: var(--azul); font: inherit;
-  font-size: 12px; font-weight: 600; cursor: pointer; width: fit-content; transition: .15s; }
-.btn-msg:hover:not(:disabled) { background: var(--azul-soft); }
-.btn-msg::after { content: "▸"; font-size: 9px; }
-.btn-msg.on::after { content: "▾"; }
-.btn-msg.on { color: var(--ink); }
-.btn-msg:disabled { color: var(--muted); cursor: default; }
+/* Entra na linha da empresa, abaixo do nome: mesmo sistema dos outros,
+   em tamanho menor porque divide a célula. */
+.btn-msg { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  padding: 6px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: .15s; }
+.btn-msg:hover:not(:disabled) { border-color: var(--laranja); color: var(--laranja); }
+.btn-msg:disabled { color: var(--muted); border-style: dashed; cursor: default; }
 .emp-briefing { font-size: 12.5px; color: var(--ink); line-height: 1.5; }
 .emp-briefing-nota { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
 tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
@@ -857,8 +873,8 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 
 .msg-topo-acoes { display: flex; align-items: center; gap: 10px; }
 .btn-zerar { background: transparent; border: 0; padding: 0; font: inherit; font-size: 12px;
-  color: var(--muted); cursor: pointer; }
-.btn-zerar:hover:not(:disabled) { color: var(--laranja); text-decoration: underline; }
+  font-weight: 600; color: var(--muted); cursor: pointer; text-align: left; }
+.btn-zerar:hover:not(:disabled) { color: var(--erro); }
 
 /* Janela da mensagem. Fora da tabela: ela rola na horizontal e tem 1400px de
    largura mínima, então nada que nasça dentro de uma linha dela respira. */

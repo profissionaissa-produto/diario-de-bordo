@@ -105,7 +105,11 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
                 : undefined
           }
         >
-          {semCanal ? "canais esgotados" : falta.length > 0 ? `falta ${falta.join(" e ")}` : "mensagem"}
+          {semCanal
+            ? "Canais esgotados"
+            : falta.length > 0
+              ? `Defina ${falta.join(" e ")}`
+              : "Gerar mensagem"}
         </button>
         {e.orientacao && (
           <div className="emp-orientacao">

@@ -197,7 +197,7 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
                 ))}
                 {ctx.podeZerar && (
                   <button className="btn-zerar" onClick={zerar} disabled={!!busy}>
-                    {busy === "zerar" ? "Zerando…" : "zerar tentativas desta empresa"}
+                    {busy === "zerar" ? "Zerando…" : "Zerar tentativas desta empresa"}
                   </button>
                 )}
               </div>

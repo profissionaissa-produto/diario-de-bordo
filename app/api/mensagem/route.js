@@ -15,7 +15,7 @@ import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CA
 import { geraMensagem } from "../../../lib/gemini";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../lib/gmail";
 import { paraWhatsApp } from "../../../lib/telefone";
-import { empresaUrl } from "../../../lib/config";
+import { empresaUrl, SEG_TRAMITACOES } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
 import { resolveTentativas } from "../../../lib/db";

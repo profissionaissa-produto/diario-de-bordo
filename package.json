@@ -5,13 +5,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "node lib/week.check.mjs && node lib/config.check.mjs && node lib/tramitacoes.check.mjs && node lib/carteira.check.mjs && node lib/funil.check.mjs && node lib/canal.check.mjs && node lib/telefone.check.mjs && node lib/gmail.check.mjs && node lib/briefing-contato.check.mjs && node lib/gemini.check.mjs"
+    "check": "eslint app lib && node lib/week.check.mjs && node lib/config.check.mjs && node lib/tramitacoes.check.mjs && node lib/carteira.check.mjs && node lib/funil.check.mjs && node lib/canal.check.mjs && node lib/telefone.check.mjs && node lib/gmail.check.mjs && node lib/briefing-contato.check.mjs && node lib/gemini.check.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "next": "^14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "next-auth": "5.0.0-beta.20",
-    "@neondatabase/serverless": "^0.10.4"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0"
   }
 }

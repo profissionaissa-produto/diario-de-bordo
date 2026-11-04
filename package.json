@@ -5,7 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "node lib/week.check.mjs && node lib/config.check.mjs && node lib/tramitacoes.check.mjs && node lib/carteira.check.mjs && node lib/funil.check.mjs && node lib/canal.check.mjs && node lib/telefone.check.mjs"
+    "check": "node lib/week.check.mjs && node lib/config.check.mjs && node lib/tramitacoes.check.mjs && node lib/carteira.check.mjs && node lib/funil.check.mjs && node lib/canal.check.mjs && node lib/telefone.check.mjs && node lib/gmail.check.mjs"
   },
   "dependencies": {
     "next": "^14.2.5",

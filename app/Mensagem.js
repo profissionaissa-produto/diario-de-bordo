@@ -1,12 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL, rotuloCanal } from "../lib/canal";
+import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL } from "../lib/canal";
 import { telefoneLegivel, paraWhatsApp } from "../lib/telefone";
+
+// O que o botão faz em cada canal. O WhatsApp abre o wa.me com o texto, o
+// e-mail sai pela caixa de quem está mandando, e a ligação leva ao registro da
+// empresa no HubSpot, que é onde fica o discador.
+const ACAO = {
+  whatsapp: {
+    rotulo: "Abrir no WhatsApp",
+    fazendo: "Registrando…",
+    feito: "Tentativa registrada e gravada no HubSpot.",
+  },
+  email: {
+    rotulo: "Enviar e-mail",
+    fazendo: "Enviando…",
+    feito: "E-mail enviado pela sua caixa, com cópia para a timeline.",
+  },
+  ligacao: {
+    rotulo: "Registrar e abrir no HubSpot",
+    fazendo: "Registrando…",
+    feito: "Tentativa registrada. A chamada em si é o HubSpot que registra.",
+  },
+};
 
 // Geração da mensagem de abordagem. Dois passos de propósito: gerar não conta
 // tentativa nem manda nada, só mostra o texto para a pessoa ler e corrigir.
-// Quem conta e grava no CRM é o botão de abrir no WhatsApp.
+// Quem conta e dispara é o segundo botão.
 export default function Mensagem({ empresa, contatos = [], tentativas = {}, ctx, onFechar }) {
   const liberados = canaisLiberados(tentativas);
   const [canal, setCanal] = useState(canalSugerido(tentativas) || "");
@@ -123,7 +144,13 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, ctx,
             {contato?.nome}
             {contato?.cargo ? `, ${contato.cargo}` : ""}
             {contato?.papel === "DECISION_MAKER" && <span className="emp-tag">decisor</span>}
-            <span className="est-sem">{telefoneLegivel(contato?.telefone) || "sem telefone"}</span>
+            {/* O dado que importa muda com o canal: no e-mail o telefone não
+                diz nada sobre a mensagem chegar. */}
+            <span className="est-sem">
+              {canal === "email"
+                ? contato?.email || "sem e-mail"
+                : telefoneLegivel(contato?.telefone) || "sem telefone"}
+            </span>
           </span>
         ) : (
           // Mais de um vinculado: a escolha é de quem conhece a empresa.
@@ -156,18 +183,12 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, ctx,
       <div className="fech-rodape">
         {erro && <span className="err">{erro}</span>}
         {aviso && !erro && <span className="err">{aviso}</span>}
-        {enviada && !erro && !aviso && (
-          <span className="saved">Tentativa {proxima - 1} registrada e gravada no HubSpot.</span>
-        )}
+        {enviada && !erro && !aviso && <span className="saved">{ACAO[canal]?.feito}</span>}
         <button className="btn-ghost" onClick={gerar} disabled={!!busy || !canal}>
           {busy === "gerar" ? "Gerando…" : texto ? "Gerar outro" : "Gerar"}
         </button>
         <button className="btn-primary" onClick={enviar} disabled={!!busy || !texto.trim() || enviada}>
-          {busy === "enviar"
-            ? "Registrando…"
-            : canal === "whatsapp"
-              ? "Abrir no WhatsApp"
-              : `Registrar ${rotuloCanal(canal).toLowerCase()}`}
+          {busy === "enviar" ? ACAO[canal]?.fazendo : ACAO[canal]?.rotulo}
         </button>
       </div>
     </div>

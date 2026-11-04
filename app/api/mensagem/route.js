@@ -11,7 +11,9 @@ import { montaEstrategias, indexaPorId } from "../../../lib/estrategias";
 import { BALDES } from "../../../lib/carteira";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../lib/canal";
 import { geraMensagem } from "../../../lib/gemini";
+import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../lib/gmail";
 import { paraWhatsApp } from "../../../lib/telefone";
+import { empresaUrl } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
 
@@ -94,14 +96,53 @@ export async function PUT(req) {
 
   const contato = c.body.contato || {};
   const numero = paraWhatsApp(contato.telefone);
+  // Recusa antes de contar: tentativa queimada sem mensagem enviada é pior do
+  // que erro na tela.
   if (c.body.canal === "whatsapp" && !numero) {
     return Response.json(
       { error: "Esse contato não tem um telefone que dê para abrir no WhatsApp." },
       { status: 400 }
     );
   }
+  if (c.body.canal === "email") {
+    if (!contato.email) {
+      return Response.json({ error: "Esse contato não tem e-mail no HubSpot." }, { status: 400 });
+    }
+    if (!envioConfigurado()) {
+      return Response.json(
+        { error: "O envio de e-mail não está configurado. Faltam GOOGLE_SA_EMAIL e GOOGLE_SA_KEY no ambiente." },
+        { status: 503 }
+      );
+    }
+  }
 
   const tentativa = tentativasNo(c.tentativas, c.body.canal) + 1;
+
+  // O e-mail sai antes de contar: se o Gmail recusar, nada aconteceu e a
+  // chance continua de pé. Sai da caixa de quem está operando a tela, porque
+  // é para lá que a resposta do cliente tem que voltar.
+  if (c.body.canal === "email") {
+    const { assunto, corpo } = separaAssunto(texto);
+    const bcc = bccDeLog();
+    try {
+      await enviar(
+        { nome: c.session.user.name || c.session.user.email, email: c.session.user.email },
+        {
+          assunto,
+          para: [contato.email],
+          cc: [],
+          // O BCC de log é o que põe o e-mail na timeline do HubSpot. Por isso
+          // este canal não ganha nota: ela duplicaria o registro.
+          bcc: bcc ? [bcc] : [],
+          html: paraHtml(corpo),
+        }
+      );
+    } catch (e) {
+      console.error("[mensagem] falha ao enviar o e-mail:", e);
+      return Response.json({ error: e.message || "Falha ao enviar o e-mail." }, { status: 502 });
+    }
+  }
+
   try {
     await registraTentativa({
       companyId: c.body.companyId,
@@ -116,26 +157,35 @@ export async function PUT(req) {
     return Response.json({ error: "Falha ao registrar a tentativa." }, { status: 500 });
   }
 
-  // A nota é o registro da conversa no CRM. Se ela falhar, a tentativa já
-  // contou e isso precisa aparecer, não virar silêncio.
+  // Cada canal deixa o registro no CRM pelo caminho dele, e nenhum duplica:
+  //   e-mail   -> o BCC de log já pôs na timeline, nada a fazer aqui
+  //   ligação  -> quem registra é o discador do HubSpot, onde a chamada é feita
+  //   WhatsApp -> não passa pelo CRM, então a nota é o único registro
   let aviso = "";
-  try {
-    await criarNotaNaEmpresa(c.body.companyId, {
-      corpo:
-        `<p><b>Diário de bordo · ${rotuloCanal(c.body.canal)} · tentativa ${tentativa}</b></p>` +
-        `<p>Para: ${contato.nome || "contato não identificado"}</p>` +
-        `<p>${texto.replace(/\n/g, "<br>")}</p>`,
-      ownerId: c.ownerId,
-    });
-  } catch (e) {
-    console.error("[mensagem] falha ao gravar a nota no HubSpot:", e);
-    aviso = "A tentativa foi contada, mas o registro não chegou ao HubSpot. Veja o log.";
+  if (c.body.canal === "whatsapp") {
+    try {
+      await criarNotaNaEmpresa(c.body.companyId, {
+        corpo:
+          `<p><b>Diário de bordo · WhatsApp · tentativa ${tentativa}</b></p>` +
+          `<p>Para: ${contato.nome || "contato não identificado"}</p>` +
+          `<p>${texto.replace(/\n/g, "<br>")}</p>`,
+        ownerId: c.ownerId,
+      });
+    } catch (e) {
+      console.error("[mensagem] falha ao gravar a nota no HubSpot:", e);
+      aviso = "A tentativa foi contada, mas o registro não chegou ao HubSpot. Veja o log.";
+    }
   }
 
-  return Response.json({
-    ok: true,
-    tentativa,
-    aviso,
-    url: numero ? `https://wa.me/${numero}?text=${encodeURIComponent(texto)}` : "",
-  });
+  // Para onde a tela manda a pessoa depois de registrar.
+  const url =
+    c.body.canal === "whatsapp"
+      ? numero
+        ? `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`
+        : ""
+      : c.body.canal === "ligacao"
+        ? empresaUrl(c.body.companyId)
+        : "";
+
+  return Response.json({ ok: true, tentativa, aviso, url });
 }

@@ -79,7 +79,6 @@ function Card({ e, ctx, onFechou }) {
         <div className="emp-meta emp-hist">sem abordagem definida de manhã</div>
       )}
       {e.contexto && <div className="emp-orientacao">{e.contexto}</div>}
-      {e.editadoPor && <span className="emp-editado">ajustado por {e.editadoPor}</span>}
 
       {/* O fechamento é conferência: o CRM responde o que já sabe. */}
       {ativ && (

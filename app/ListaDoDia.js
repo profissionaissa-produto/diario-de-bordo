@@ -127,7 +127,6 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
           </select>
         </div>
         {erro && <span className="err">{erro}</span>}
-        {e.editadoPor && <span className="emp-editado">ajustado por {e.editadoPor}</span>}
       </td>
 
       <td>

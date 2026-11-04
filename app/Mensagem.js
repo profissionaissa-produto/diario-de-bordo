@@ -35,19 +35,35 @@ const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`
 // Janela da mensagem de abordagem. É modal e não painel dentro da linha porque
 // a tabela do dia rola na horizontal: o que coubesse ali nasceria espremido.
 //
-// Dois passos de propósito: gerar não conta tentativa nem manda nada, só
-// mostra o texto para a pessoa ler e corrigir. Quem conta e dispara é o
-// segundo botão.
+// A geração é automática: o botão que abre esta janela já se chama "Gerar
+// mensagem", então pedir um segundo clique era pedir a mesma coisa duas vezes.
+// O farmer lê, ajusta e envia.
 export default function Mensagem({ empresa, contatos = [], tentativas = {}, historico = [], estrategia, ctx, onFechar }) {
   const router = useRouter();
   const liberados = canaisLiberados(tentativas);
   const [canal, setCanal] = useState(canalSugerido(tentativas) || "");
   const [contatoId, setContatoId] = useState(contatos[0]?.id || "");
-  const [texto, setTexto] = useState("");
+  // Um texto por canal: trocar de canal e voltar não pode apagar o que já
+  // estava escrito nem cobrar uma geração nova.
+  const [textos, setTextos] = useState({});
+  const [assunto, setAssunto] = useState("");
+  const [cc, setCc] = useState("");
   const [busy, setBusy] = useState("");
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
-  const [enviada, setEnviada] = useState(false);
+  const [enviados, setEnviados] = useState({});
+
+  // Canais já pedidos nesta abertura. É ref e não estado porque mudar isto
+  // não repinta nada, e sem ele um erro viraria laço de chamadas ao modelo.
+  const jaPediu = useRef(new Set());
+
+  const texto = textos[canal] || "";
+  const setTexto = (v) => setTextos((t) => ({ ...t, [canal]: v }));
+  const enviada = !!enviados[canal];
+  const contato = contatos.find((c) => c.id === contatoId) || null;
+  const proxima = tentativasNo(tentativas, canal) + 1;
+  const desde = tempoDesde(empresa.ultimaCompra);
+  const semCanal = liberados.length === 0;
 
   // Esc fecha, e o fundo para de rolar enquanto a janela está aberta.
   useEffect(() => {
@@ -61,23 +77,12 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
     };
   }, [onFechar]);
 
-  // Canais já tentados nesta abertura. O botão chama "Gerar mensagem", então
-  // abrir sem texto e esperar um segundo clique é pedir o mesmo duas vezes.
-  // É ref e não estado porque mudar isto não precisa repintar a tela.
-  const jaTentou = useRef(new Set());
-
-  const contato = contatos.find((c) => c.id === contatoId) || null;
-  const proxima = tentativasNo(tentativas, canal) + 1;
-  const assunto = canal === "email" ? separaAssunto(texto, "").assunto : "";
-  const desde = tempoDesde(empresa.ultimaCompra);
-  const semCanal = liberados.length === 0;
-
   useEffect(() => {
-    if (!canal || texto || busy || jaTentou.current.has(canal)) return;
-    jaTentou.current.add(canal);
+    if (!canal || textos[canal] || busy || jaPediu.current.has(canal)) return;
+    jaPediu.current.add(canal);
     gerar();
-    // Só o canal na lista: incluir texto ou busy faria a geração recomeçar
-    // sozinha a cada tecla digitada na caixa.
+    // Só o canal na lista: incluir o texto faria a geração recomeçar sozinha
+    // a cada tecla digitada na caixa.
   }, [canal]);
 
   async function chama(method, corpo) {
@@ -103,7 +108,16 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
     setErro("");
     setAviso("");
     try {
-      setTexto((await chama("POST")).texto);
+      const d = await chama("POST");
+      if (canal === "email") {
+        // O assunto vira campo próprio: repetido dentro do corpo, ele sai no
+        // e-mail como primeira linha do texto, o que ninguém escreve à mão.
+        const { assunto: a, corpo } = separaAssunto(d.texto, "");
+        setAssunto(a);
+        setTexto(corpo);
+      } else {
+        setTexto(d.texto);
+      }
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -111,13 +125,19 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
     }
   }
 
+  function tentarDeNovo() {
+    jaPediu.current.delete(canal);
+    setErro("");
+    gerar();
+  }
+
   async function enviar() {
     setBusy("enviar");
     setErro("");
     setAviso("");
     try {
-      const d = await chama("PUT", { texto });
-      setEnviada(true);
+      const d = await chama("PUT", { texto, assunto, cc });
+      setEnviados((e) => ({ ...e, [canal]: true }));
       if (d.aviso) setAviso(d.aviso);
       // Abre depois de contar: se a contagem falhar, nada é enviado.
       if (d.url) window.open(d.url, "_blank", "noopener");
@@ -147,6 +167,9 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
       setBusy("");
     }
   }
+
+  const faltaEnviar =
+    !texto.trim() || (canal === "email" && (!assunto.trim() || !contato?.email));
 
   return (
     <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && onFechar()}>
@@ -237,7 +260,7 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
                           className={canal === c.key ? "on" : ""}
                           disabled={fechado}
                           title={fechado ? `${LIMITE_POR_CANAL} tentativas sem resposta neste canal` : undefined}
-                          onClick={() => { setCanal(c.key); setTexto(""); setEnviada(false); setErro(""); }}
+                          onClick={() => { setCanal(c.key); setErro(""); setAviso(""); }}
                         >
                           {c.label}
                           <span className="msg-cont">{tentativasNo(tentativas, c.key)}/{LIMITE_POR_CANAL}</span>
@@ -281,12 +304,39 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
                 </div>
 
                 {canal === "email" && (
-                  // O e-mail não é um texto solto: quem envia precisa ver de
-                  // quem sai, para quem vai e com que assunto, antes de clicar.
+                  // Assunto e cópia são campos, não texto corrido: o assunto
+                  // dentro do corpo saía como primeira linha do e-mail.
                   <div className="msg-env">
-                    <div><span className="ctx-lab">De</span>{ctx.remetente || "sua conta"}</div>
-                    <div><span className="ctx-lab">Para</span>{contato?.email || <span className="err">sem e-mail</span>}</div>
-                    <div><span className="ctx-lab">Assunto</span>{assunto || <span className="est-sem">sai da primeira linha do texto</span>}</div>
+                    <div>
+                      <span className="ctx-lab">De</span>
+                      <span className="msg-fixo">{ctx.remetente || "sua conta"}</span>
+                    </div>
+                    <div>
+                      <span className="ctx-lab">Para</span>
+                      <span className="msg-fixo">
+                        {contato?.email || <span className="err">sem e-mail</span>}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="ctx-lab" htmlFor="msg-cc">Cópia</label>
+                      <input
+                        id="msg-cc"
+                        className="est-input"
+                        value={cc}
+                        placeholder="opcional, separe por vírgula"
+                        onChange={(e) => setCc(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="ctx-lab" htmlFor="msg-assunto">Assunto</label>
+                      <input
+                        id="msg-assunto"
+                        className="est-input"
+                        value={assunto}
+                        placeholder={busy === "gerar" ? "Escrevendo…" : "Assunto do e-mail"}
+                        onChange={(e) => { setAssunto(e.target.value); setEnviados((x) => ({ ...x, email: false })); }}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -296,11 +346,9 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
                   placeholder={
                     busy === "gerar"
                       ? "Escrevendo a mensagem…"
-                      : canal === "email"
-                        ? "A primeira linha vira o assunto (Assunto: ...) e o resto, o corpo. Você pode editar antes de enviar."
-                        : "Leia e ajuste antes de enviar."
+                      : "Leia e ajuste antes de enviar."
                   }
-                  onChange={(e) => { setTexto(e.target.value); setEnviada(false); }}
+                  onChange={(e) => { setTexto(e.target.value); setEnviados((x) => ({ ...x, [canal]: false })); }}
                 />
               </>
             )}
@@ -313,10 +361,14 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
           {enviada && !erro && !aviso && <span className="saved">{ACAO[canal]?.feito}</span>}
           {!semCanal && (
             <>
-              <button className="btn-ghost" onClick={gerar} disabled={!!busy || !canal}>
-                {busy === "gerar" ? "Gerando…" : texto ? "Gerar outro" : "Gerar"}
-              </button>
-              <button className="btn-primary" onClick={enviar} disabled={!!busy || !texto.trim() || enviada}>
+              {/* Só aparece quando a geração falhou. Fora disso não há botão de
+                  gerar: a mensagem chega pronta e o farmer ajusta o que quiser. */}
+              {erro && (
+                <button className="btn-ghost" onClick={tentarDeNovo} disabled={!!busy}>
+                  {busy === "gerar" ? "Escrevendo…" : "Tentar de novo"}
+                </button>
+              )}
+              <button className="btn-primary" onClick={enviar} disabled={!!busy || faltaEnviar || enviada}>
                 {busy === "enviar" ? ACAO[canal]?.fazendo : ACAO[canal]?.rotulo}
               </button>
             </>

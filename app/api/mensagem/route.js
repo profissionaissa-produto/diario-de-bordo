@@ -132,7 +132,28 @@ export async function PUT(req) {
   // chance continua de pé. Sai da caixa de quem está operando a tela, porque
   // é para lá que a resposta do cliente tem que voltar.
   if (c.body.canal === "email") {
-    const { assunto, corpo } = separaAssunto(texto);
+    // Assunto e cópia são campos da tela. O separaAssunto fica de reserva
+    // para quem chamar sem assunto, não como caminho normal.
+    const temAssunto = String(c.body.assunto || "").trim();
+    const assunto = temAssunto || separaAssunto(texto).assunto;
+    const corpo = temAssunto ? texto : separaAssunto(texto).corpo;
+    if (!assunto) {
+      return Response.json({ error: "O e-mail está sem assunto." }, { status: 400 });
+    }
+
+    // Cópia é digitada à mão: endereço errado aqui some com o e-mail sem
+    // ninguém saber, então é recusado antes de a tentativa contar.
+    const copias = String(c.body.cc || "")
+      .split(/[,;]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const invalido = copias.find((x) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+    if (invalido) {
+      return Response.json(
+        { error: `"${invalido}" não é um e-mail válido na cópia.` },
+        { status: 400 }
+      );
+    }
     const bcc = bccDeLog();
     try {
       await enviar(
@@ -140,7 +161,7 @@ export async function PUT(req) {
         {
           assunto,
           para: [contato.email],
-          cc: [],
+          cc: copias,
           // O BCC de log é o que põe o e-mail na timeline do HubSpot. Por isso
           // este canal não ganha nota: ela duplicaria o registro.
           bcc: bcc ? [bcc] : [],

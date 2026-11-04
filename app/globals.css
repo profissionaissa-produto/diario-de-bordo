@@ -911,3 +911,6 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
   .modal-lado { border-right: 0; border-bottom: 1px solid var(--line); }
 }
 .ctx-base { min-height: 150px; width: 100%; font-size: 13.5px; line-height: 1.55; }
+.msg-env > div { min-height: 30px; }
+.msg-env .est-input { font-size: 13px; padding: 6px 10px; flex: 1; min-width: 0; }
+.msg-fixo { font-size: 13px; color: var(--ink); }

@@ -521,6 +521,8 @@ export default async function Page({ searchParams }) {
             urlFechamento: qs("fechar"),
             // O e-mail sai da caixa de quem está operando a tela.
             remetente: session.user.email,
+            // Zerar a cascata é decisão de quem responde pelo farmer.
+            podeZerar: gestor,
           }}
         />
       ) : isFechar ? (

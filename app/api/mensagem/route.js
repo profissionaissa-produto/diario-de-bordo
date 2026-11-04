@@ -16,6 +16,7 @@ import { paraWhatsApp } from "../../../lib/telefone";
 import { empresaUrl } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
 import { podeGerirCloser } from "../../../lib/permissoes";
+import { resolveTentativas } from "../../../lib/db";
 
 // De quem é o dia. O líder pode gerar pelo farmer, como já faz na carteira.
 async function resolveOwner(session, bodyOwnerId) {
@@ -194,4 +195,29 @@ export async function PUT(req) {
         : "";
 
   return Response.json({ ok: true, tentativa, aviso, url });
+}
+
+// Zera a cascata de uma empresa: teste, engano, ou mensagem que não era para
+// ter saído. Não apaga o log, marca como resolvido, que é o mesmo caminho do
+// contato efetivo. O registro fica, só sai da conta e da tela.
+export async function DELETE(req) {
+  const session = await auth();
+  if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
+  if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
+
+  const { companyId, ownerId } = await req.json().catch(() => ({}));
+  if (!companyId) return Response.json({ error: "Informe a empresa." }, { status: 400 });
+  // Zerar é decisão de quem responde pelo farmer, não do próprio farmer: o
+  // teto de 3 perde o sentido se quem esbarra nele pode reiniciá-lo.
+  if (!podeGerirCloser(session.user, ownerId)) {
+    return Response.json({ error: "Só quem responde por este farmer pode zerar." }, { status: 403 });
+  }
+
+  try {
+    const n = await resolveTentativas(companyId);
+    return Response.json({ ok: true, zeradas: n });
+  } catch (e) {
+    console.error("[mensagem] falha ao zerar as tentativas:", e);
+    return Response.json({ error: "Falha ao zerar." }, { status: 500 });
+  }
 }

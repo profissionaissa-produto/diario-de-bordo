@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL } from "../lib/canal";
 import { telefoneLegivel, paraWhatsApp } from "../lib/telefone";
 import { separaAssunto } from "../lib/gmail-texto";
@@ -31,6 +32,7 @@ const ACAO = {
 // tentativa nem manda nada, só mostra o texto para a pessoa ler e corrigir.
 // Quem conta e dispara é o segundo botão.
 export default function Mensagem({ empresa, contatos = [], tentativas = {}, historico = [], remetente, ctx, onFechar }) {
+  const router = useRouter();
   const liberados = canaisLiberados(tentativas);
   const [canal, setCanal] = useState(canalSugerido(tentativas) || "");
   const [contatoId, setContatoId] = useState(contatos[0]?.id || "");
@@ -76,6 +78,25 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
     }
   }
 
+  async function zerar() {
+    setBusy("zerar");
+    setErro("");
+    try {
+      const res = await fetch("/api/mensagem", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId: empresa.id, ownerId: ctx.ownerId }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Falha ao zerar.");
+      router.refresh();
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function enviar() {
     setBusy("enviar");
     setErro("");
@@ -112,7 +133,14 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
     <div className="msg-painel">
       <div className="msg-topo">
         <b>{empresa.nome}</b>
-        <button className="btn-ghost" onClick={onFechar}>Fechar</button>
+        <div className="msg-topo-acoes">
+          {ctx.podeZerar && historico.length > 0 && (
+            <button className="btn-zerar" onClick={zerar} disabled={!!busy}>
+              {busy === "zerar" ? "Zerando…" : "zerar tentativas"}
+            </button>
+          )}
+          <button className="btn-ghost" onClick={onFechar}>Fechar</button>
+        </div>
       </div>
 
       <div className="msg-linha">

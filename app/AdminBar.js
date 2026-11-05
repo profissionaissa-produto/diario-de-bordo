@@ -14,6 +14,10 @@ export default function AdminBar({
   equipe = "",
   semEquipe = 0,
   rotuloPessoa = "closer",
+  // A mesma barra serve o Diário e as Tramitações. Sem isto a de lá empurrava
+  // a navegação para "/" e o filtro se perdia ao trocar de equipe.
+  base = "/",
+  paramPessoa = "closer",
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -24,7 +28,7 @@ export default function AdminBar({
       if (v) p.set(k, v);
       else p.delete(k);
     }
-    router.push("/?" + p.toString());
+    router.push(base + "?" + p.toString());
   }
 
   const escolhido = owners.find((o) => String(o.ownerId) === String(selected));
@@ -42,7 +46,7 @@ export default function AdminBar({
                 key={val}
                 className={seg === val ? "on" : ""}
                 // Trocar de segmento zera equipe e pessoa: elas são de cada um.
-                onClick={() => nav({ seg: val, equipe: "", closer: "" })}
+                onClick={() => nav({ seg: val, equipe: "", [paramPessoa]: "" })}
               >
                 {val}
               </button>
@@ -55,14 +59,14 @@ export default function AdminBar({
         <div className="ctx-campo">
           <span className="ctx-lab">Equipe</span>
           <div className="seg-toggle">
-            <button className={equipe ? "" : "on"} onClick={() => nav({ equipe: "", closer: "" })}>
+            <button className={equipe ? "" : "on"} onClick={() => nav({ equipe: "", [paramPessoa]: "" })}>
               Todas
             </button>
             {equipes.map((val) => (
               <button
                 key={val}
                 className={equipe === val ? "on" : ""}
-                onClick={() => nav({ equipe: val, closer: "" })}
+                onClick={() => nav({ equipe: val, [paramPessoa]: "" })}
               >
                 {val}
               </button>
@@ -80,7 +84,7 @@ export default function AdminBar({
           <select
             className="closer-select"
             value={selected || ""}
-            onChange={(e) => nav({ closer: e.target.value })}
+            onChange={(e) => nav({ [paramPessoa]: e.target.value })}
           >
             <option value="">Selecione um {rotuloPessoa}…</option>
             {owners.map((o) => (
@@ -100,7 +104,7 @@ export default function AdminBar({
       )}
 
       {escolhido && (
-        <button className="ctx-limpar" onClick={() => nav({ closer: "" })}>
+        <button className="ctx-limpar" onClick={() => nav({ [paramPessoa]: "" })}>
           limpar seleção
         </button>
       )}

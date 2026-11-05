@@ -4,10 +4,11 @@ import { auth, signOut } from "../../auth";
 import { getTicketsCS, getOwnerByEmail, getOwnerNames, ganhoDosTickets } from "../../lib/hubspot";
 import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
-import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
+import { NOME_CLOSER, closersDe, SEG_TRAMITACOES, EQUIPES_DE, semEquipe } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
 import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPA_LOGISTICA, ETAPAS_ATIVAS, ETAPAS_TICKET, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
+import AdminBar from "../AdminBar";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,14 @@ export default async function Tramitacoes({ searchParams }) {
   const tudo = todas;
 
   const farmerSel = searchParams?.owner || "";
-  const doFarmer = farmerSel ? tudo.filter((p) => donoDo(p) === farmerSel) : tudo;
+  // Equipe antes da pessoa, igual ao Diário: o líder olha a equipe dele e só
+  // então desce para um farmer. Equipe travada para quem lidera uma só.
+  const equipeSel = eqLider ? eqLider.equipe : searchParams?.equipe || "";
+  const daEquipe = equipeSel
+    ? new Set(closersDe(SEG_TRAMITACOES, equipeSel).map((c) => String(c.id)))
+    : null;
+  const noRecorte = daEquipe ? tudo.filter((p) => daEquipe.has(donoDo(p))) : tudo;
+  const doFarmer = farmerSel ? noRecorte.filter((p) => donoDo(p) === farmerSel) : noRecorte;
 
   const abertas = doFarmer.filter((p) => p.status !== "aguardando");
   const aguardando = doFarmer.filter((p) => p.status === "aguardando");
@@ -97,16 +105,19 @@ export default async function Tramitacoes({ searchParams }) {
   // Tickets do recorte da tela — com farmer escolhido, só os dele.
   const ticketsDoRecorte = farmerSel
     ? tickets.filter((t) => String(t.ownerId) === farmerSel)
-    : tickets;
+    : daEquipe
+      ? tickets.filter((t) => daEquipe.has(String(t.ownerId)))
+      : tickets;
   const bruta = filtro === "aguardando" ? aguardando : filtro === "todas" ? doFarmer : abertas;
 
-  // Evento já realizado vai para o fim, em bloco próprio: o ticket segue
-  // aberto, mas a ação perdeu a hora e não pode disputar espaço com o resto.
-  const lista = bruta.filter((p) => !p.eventoPassado);
-  const vencidas = bruta.filter((p) => p.eventoPassado);
+  // Nada é filtrado fora aqui. O bloco separado de evento realizado saiu
+  // quando a tela virou quadro, e este filtro ficou para trás sumindo com os
+  // tickets de NF e NPS, que são justamente os de evento passado: 22 dos 47
+  // da Luiza não apareciam. A gravidade já os põe no topo da coluna deles.
+  const lista = bruta;
 
   // Farmers que o usuário alcança, com a contagem ao lado do nome.
-  const equipeDoFiltro = eqLider ? eqLider.equipe : "";
+  const equipeDoFiltro = equipeSel;
   const farmersVisiveis = gestor
     ? closersDe(SEG_TRAMITACOES, equipeDoFiltro)
         .map((c) => ({ ...c, n: porFarmer[c.id] || 0 }))
@@ -173,27 +184,21 @@ export default async function Tramitacoes({ searchParams }) {
         </div>
       </div>
 
-      {/* Quem está com o quê. Sem isto, o board é uma pilha sem dono. */}
+      {/* A mesma barra do Diário: equipe e depois a pessoa. Uma fileira de
+          nomes soltos não diz a quem cada um responde. */}
       {farmersVisiveis.length > 0 && (
-        <div className="bar">
-          <div className="admin-controls">
-            <span className="tram-tipo">Farmer</span>
-            <div className="seg-toggle tram-farmers">
-              <Link href={`/tramitacoes?f=${filtro}`} className={farmerSel ? "" : "on"}>
-                Todos
-              </Link>
-              {farmersVisiveis.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/tramitacoes?f=${filtro}&owner=${c.id}`}
-                  className={farmerSel === c.id ? "on" : ""}
-                >
-                  {c.nome.split(" ")[0]} <b>{c.n}</b>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
+        <AdminBar
+          base="/tramitacoes"
+          paramPessoa="owner"
+          rotuloPessoa="farmer"
+          owners={farmersVisiveis.map((c) => ({ ownerId: c.id, name: `${c.nome} (${c.n})` }))}
+          selected={farmerSel}
+          seg={SEG_TRAMITACOES}
+          segs={[]}
+          equipes={eqLider ? [] : EQUIPES_DE(SEG_TRAMITACOES)}
+          equipe={equipeSel}
+          semEquipe={eqLider ? 0 : semEquipe(SEG_TRAMITACOES)}
+        />
       )}
 
       {erro && (

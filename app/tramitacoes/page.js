@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
-import { getTicketsCS, getOwnerByEmail, getOwnerNames } from "../../lib/hubspot";
+import { getTicketsCS, getOwnerByEmail, getOwnerNames, ganhoDosTickets } from "../../lib/hubspot";
 import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
-import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_ATIVAS, ETAPAS_TICKET, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
+import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPA_LOGISTICA, ETAPAS_ATIVAS, ETAPAS_TICKET, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +39,17 @@ export default async function Tramitacoes({ searchParams }) {
   let erro = null;
   try {
     tickets = await getTicketsCS(PIPELINE_CS, ETAPAS_TRAMITACAO);
+    // A aquisição da logística vence 5 dias após o ganho do negócio, não perto
+    // do evento. Sem esta data o relógio fica cinza dizendo que não há de onde
+    // contar, então ela é buscada, mas só para os tickets dessa etapa.
+    const naLogistica = tickets.filter((t) => t.etapa === ETAPA_LOGISTICA);
+    if (naLogistica.length) {
+      const ganho = await ganhoDosTickets(naLogistica.map((t) => t.id)).catch((e) => {
+        console.error("[tramitacoes] data de ganho do negócio não carregou:", e?.message);
+        return {};
+      });
+      for (const t of naLogistica) t.ganhoNegocio = ganho[t.id] || "";
+    }
   } catch (e) {
     console.error("[tramitacoes] falha ao buscar tickets:", e);
     erro = e;

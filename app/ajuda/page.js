@@ -6,7 +6,7 @@ import {
   COOLDOWN_POR_RESULTADO, COOLDOWN_SEM_RESULTADO, TENTATIVAS_ATE_AUXILIO,
   MINIMO_OBSERVACAO, EXIGE_OBSERVACAO, FORA_DO_PLACAR,
 } from "../../lib/carteira";
-import { RESULTADOS_TRAMITACAO, ETAPAS_TICKET, ETAPAS_ATIVAS, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
+import { RESULTADOS_TRAMITACAO, ETAPAS_TICKET, ETAPAS_ATIVAS } from "../../lib/tramitacoes";
 import { MINIMO_REUNIOES } from "../../lib/relacionamento";
 
 export const dynamic = "force-dynamic";
@@ -176,10 +176,10 @@ export default async function Ajuda() {
                   <td><b>{ETAPAS_TICKET[id].label}</b></td>
                   <td>
                     {ETAPAS_TICKET[id].fase === "pre"
-                      ? `evento em até ${PRE_AMARELO} dias avisa, em até ${PRE_VERMELHO} grita, e passou do evento é o caso mais grave`
+                      ? "marco próprio da etapa, e evento que já passou com ela aberta é o caso mais grave"
                       : ETAPAS_TICKET[id].fase === "espera"
                         ? "tranquila até a data do evento; depois dela, parada"
-                        : `${POS_AMARELO} dias após o evento avisa, ${POS_VERMELHO} grita`}
+                        : "o prazo começa na data do evento"}
                   </td>
                 </tr>
               ))}

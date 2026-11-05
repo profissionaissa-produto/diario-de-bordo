@@ -6,7 +6,7 @@ import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
-import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_TICKET, pendenciasDoTicket, TIPOS, diasEntre } from "../../lib/tramitacoes";
+import { PIPELINE_CS, ETAPAS_TRAMITACAO, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +57,10 @@ export default async function Tramitacoes({ searchParams }) {
     getEvolucaoTramitacoes(tickets.map((t) => t.id), hoje),
   ]);
 
-  const todas = tickets.flatMap((t) => pendenciasDoTicket(t, hoje, registros));
+  // Já vem ordenado da regra: evento passado e ainda aberto primeiro, depois
+  // evento próximo com etapa de preparação pendente.
+  const todas = pendenciasDosTickets(tickets, hoje, registros);
+  const placarBoard = placar(todas);
 
   const donoDo = (p) => String(tickets.find((t) => t.id === p.ticketId)?.ownerId || "");
 
@@ -69,27 +72,9 @@ export default async function Tramitacoes({ searchParams }) {
     if (t.ownerId) porFarmer[t.ownerId] = (porFarmer[t.ownerId] || 0) + 1;
   }
 
-  // Nenhum ticket ativo some do board: o que não tem pendência hoje entra como
-  // acompanhamento, mostrando a etapa em que está. Sem isso o farmer via menos
-  // tickets do que tem na mão — 4 onde o CRM mostrava 45.
-  const comPendencia = new Set(todas.map((p) => p.ticketId));
-  const acompanhamento = tickets
-    .filter((t) => !comPendencia.has(t.id))
-    .map((t) => ({
-      ticketId: t.id,
-      tipo: "nenhuma",
-      label: ETAPAS_TICKET[t.etapa] || "Em tramitação",
-      prazo: t.evento || null,
-      faltam: t.evento ? diasEntre(hoje, t.evento) : 0,
-      atrasada: false,
-      semPrazo: true,
-      eventoPassado: false,
-      status: "aberta",
-      marcadoPor: "",
-      decididoPor: "",
-      motivo: "",
-    }));
-  const tudo = [...todas, ...acompanhamento];
+  // Com a etapa virando a pendência, nenhum ticket ativo fica de fora: cada
+  // um tem exatamente uma, que é a ação que o nome da etapa pede.
+  const tudo = todas;
 
   const farmerSel = searchParams?.owner || "";
   const doFarmer = farmerSel ? tudo.filter((p) => donoDo(p) === farmerSel) : tudo;
@@ -286,12 +271,13 @@ export default async function Tramitacoes({ searchParams }) {
       )}
 
       <div className="evo-nota">
-        <b>Os prazos.</b> {TIPOS.minuta.label}: 1 dia útil após o onboarding. {TIPOS.assinatura.label}:
-        20 dias após o onboarding, entrando na lista faltando 5. {TIPOS.checklist.label}: 2 dias
-        antes do evento. Depois do evento o ticket continua sendo tramitação: em{" "}
-        {TIPOS.pagamento.label} e {TIPOS.nota_fiscal.label} a pendência é a própria etapa e vale
-        enquanto o ticket estiver nela, ordenada pela palestra mais antiga — essas duas ainda não
-        têm prazo definido no processo. A baixa é em duas mãos — quem executa marca, o líder confirma. Devolver
+        <b>A régua.</b> A etapa diz a ação, e a gravidade sai da distância até o
+        evento. Antes da palestra: evento em até {PRE_AMARELO} dias avisa, em
+        até {PRE_VERMELHO} grita, e o caso mais grave é o evento que já passou
+        com a etapa ainda de preparação. Depois da palestra, nas etapas de NPS,
+        pagamento e nota, conta o tempo parado: {POS_AMARELO} dias avisa,{" "}
+        {POS_VERMELHO} grita. Ticket sem data de evento fica cinza pedindo o
+        dado, nunca verde. A baixa é em duas mãos — quem executa marca, o líder confirma. Devolver
         traz a pendência de volta com o prazo original, então vencida volta vencida. Contrato com
         status <b>Assinado</b> baixa a assinatura e a minuta sozinho.
       </div>

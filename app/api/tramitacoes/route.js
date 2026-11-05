@@ -1,7 +1,7 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
 import { marcarTramitacao, decidirTramitacao, salvarEvolucaoTramitacao, dbReady } from "../../../lib/db";
-import { TIPOS, RESULTADOS_TRAMITACAO, TRAMITACAO_EXIGE_OBSERVACAO } from "../../../lib/tramitacoes";
+import { ETAPAS_TICKET, RESULTADOS_TRAMITACAO, TRAMITACAO_EXIGE_OBSERVACAO } from "../../../lib/tramitacoes";
 import { dayKey } from "../../../lib/week";
 import { ehGestor } from "../../../lib/permissoes";
 
@@ -15,7 +15,7 @@ export async function POST(req) {
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const { ticketId, tipo } = await req.json().catch(() => ({}));
-  if (!ticketId || !(tipo in TIPOS)) {
+  if (!ticketId || !(tipo in ETAPAS_TICKET)) {
     return Response.json({ error: "Tramitação inválida." }, { status: 400 });
   }
 
@@ -48,7 +48,7 @@ export async function PATCH(req) {
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const { ticketId, tipo, decisao, motivo } = await req.json().catch(() => ({}));
-  if (!ticketId || !(tipo in TIPOS) || !["confirmado", "devolvido"].includes(decisao)) {
+  if (!ticketId || !(tipo in ETAPAS_TICKET) || !["confirmado", "devolvido"].includes(decisao)) {
     return Response.json({ error: "Dados inválidos." }, { status: 400 });
   }
   if (decisao === "devolvido" && !String(motivo || "").trim()) {
@@ -75,7 +75,7 @@ export async function PUT(req) {
   const { ticketId, tipo, resultado } = body;
   const observacao = String(body.observacao || "").trim();
 
-  if (!ticketId || !(tipo in TIPOS)) {
+  if (!ticketId || !(tipo in ETAPAS_TICKET)) {
     return Response.json({ error: "Tramitação inválida." }, { status: 400 });
   }
   if (!RESULTADOS_TRAMITACAO.some((r) => r.key === resultado)) {

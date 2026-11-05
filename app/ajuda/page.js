@@ -6,7 +6,7 @@ import {
   COOLDOWN_POR_RESULTADO, COOLDOWN_SEM_RESULTADO, TENTATIVAS_ATE_AUXILIO,
   MINIMO_OBSERVACAO, EXIGE_OBSERVACAO, FORA_DO_PLACAR,
 } from "../../lib/carteira";
-import { TIPOS, RESULTADOS_TRAMITACAO, ETAPAS_TICKET, ETAPAS_POS_EVENTO } from "../../lib/tramitacoes";
+import { RESULTADOS_TRAMITACAO, ETAPAS_TICKET, ETAPAS_ATIVAS, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
 import { MINIMO_REUNIOES } from "../../lib/relacionamento";
 
 export const dynamic = "force-dynamic";
@@ -168,24 +168,21 @@ export default async function Ajuda() {
           <h2>Tramitações</h2>
           <table className="ajuda-tab">
             <thead>
-              <tr><th>Pendência</th><th>Prazo</th><th>Como sai da lista</th></tr>
+              <tr><th>Etapa</th><th>Quando fica grave</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <td><b>{TIPOS.minuta.label}</b></td>
-                <td>1 dia útil após o onboarding</td>
-                <td>você marca como feito e o líder confirma</td>
-              </tr>
-              <tr>
-                <td><b>{TIPOS.assinatura.label}</b></td>
-                <td>20 dias após o onboarding, entra faltando {TIPOS.assinatura.antecedencia}</td>
-                <td>sozinha, quando o contrato fica como Assinado no HubSpot</td>
-              </tr>
-              <tr>
-                <td><b>{TIPOS.checklist.label}</b></td>
-                <td>2 dias antes do evento</td>
-                <td>você marca como feito e o líder confirma</td>
-              </tr>
+              {ETAPAS_ATIVAS.map((id) => (
+                <tr key={id}>
+                  <td><b>{ETAPAS_TICKET[id].label}</b></td>
+                  <td>
+                    {ETAPAS_TICKET[id].fase === "pre"
+                      ? `evento em até ${PRE_AMARELO} dias avisa, em até ${PRE_VERMELHO} grita, e passou do evento é o caso mais grave`
+                      : ETAPAS_TICKET[id].fase === "espera"
+                        ? "tranquila até a data do evento; depois dela, parada"
+                        : `${POS_AMARELO} dias após o evento avisa, ${POS_VERMELHO} grita`}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
           <p>
@@ -194,10 +191,11 @@ export default async function Ajuda() {
             mostra ao líder o que depende de terceiro e não de você.
           </p>
           <p className="ajuda-nota">
-            A lista sai dos tickets abertos onde você é o proprietário, no funil de CS — fora{" "}
-            {ETAPAS_POS_EVENTO.map((e) => ETAPAS_TICKET[e]).join(" e ")}: ali o evento já aconteceu e
-            o que falta é nota e pagamento, trabalho do CS. Feriado não é considerado nos prazos.
-            Negar devolve a pendência com o prazo original — vencida volta vencida.
+            A lista sai dos tickets abertos onde você é o proprietário, no funil de
+            CS, nas {ETAPAS_ATIVAS.length} etapas de atuação. A ordem é por
+            gravidade, não por data de entrada: o que já passou do evento e
+            continua aberto vem primeiro. Feriado não é considerado. Negar
+            devolve a pendência, e vencida volta vencida.
           </p>
         </section>
       </div>

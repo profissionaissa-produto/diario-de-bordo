@@ -6,7 +6,7 @@ import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
-import { PIPELINE_CS, ETAPAS_TRAMITACAO, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
+import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPAS_ATIVAS, ETAPAS_TICKET, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 
 export const dynamic = "force-dynamic";
@@ -228,7 +228,7 @@ export default async function Tramitacoes({ searchParams }) {
         </div>
       )}
 
-      {!erro && lista.length === 0 && vencidas.length === 0 ? (
+      {!erro && lista.length === 0 ? (
         <div className="card">
           <div className="cal-empty">
             {filtro === "abertas"
@@ -239,35 +239,51 @@ export default async function Tramitacoes({ searchParams }) {
           </div>
         </div>
       ) : (
-        <div className="tram-grid">
-          {lista.map((p) => (
-            <TramitacaoCard
-              key={p.ticketId + p.tipo}
-              p={p}
-              ticket={ticketsById[p.ticketId]}
-              ehGestor={gestor}
-              evolucao={evolucoes[p.ticketId + "|" + p.tipo] || null}
-            />
-          ))}
-        </div>
-      )}
+        <div className="kanban">
+        {ETAPAS_ATIVAS.map((id) => {
+          const coluna = lista.filter((p) => p.etapa === id);
+          const pl = placar(coluna);
+          return (
+            <section className="kcol" key={id}>
+              <header className="kcol-topo">
+                <div className="kcol-nome">
+                  <h3>{ETAPAS_TICKET[id].label}</h3>
+                  <span className="kcol-n">{coluna.length}</span>
+                </div>
+                {/* Quantos de cada cor, para a gravidade da coluna aparecer
+                    antes de alguém rolar os cards. */}
+                <div className="kcol-pontos">
+                  {["vermelho", "amarelo", "verde", "cinza"]
+                    .filter((c) => pl[c] > 0)
+                    .map((c) => (
+                      <span key={c} className={"kcol-pt p-" + c}>
+                        <span className={"tram-ponto p-" + c} />
+                        {pl[c]}
+                      </span>
+                    ))}
+                </div>
+              </header>
 
-      {vencidas.length > 0 && (
-        <details className="tram-passados">
-          <summary>
-            {vencidas.length} de evento já realizado — o ticket segue aberto, mas a data passou
-          </summary>
-          <div className="tram-grid">
-            {vencidas.map((p) => (
-              <TramitacaoCard
-                key={p.ticketId + p.tipo}
-                p={p}
-                ticket={ticketsById[p.ticketId]}
-                ehGestor={gestor}
-              />
-            ))}
-          </div>
-        </details>
+              <div className="kcol-cards">
+                {coluna.length === 0 ? (
+                  <p className="kcol-vazia">nada aqui</p>
+                ) : (
+                  coluna.map((p) => (
+                    <TramitacaoCard
+                      key={p.ticketId + p.tipo}
+                      p={p}
+                      ticket={ticketsById[p.ticketId]}
+                      ehGestor={gestor}
+                      evolucao={evolucoes[p.ticketId + "|" + p.tipo] || null}
+                      mostrarDono={!farmerSel}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
       )}
 
       <div className="evo-nota">

@@ -9,6 +9,8 @@ import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConf
 import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPA_LOGISTICA, ETAPAS_ATIVAS, ETAPAS_TICKET, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 import AdminBar from "../AdminBar";
+import { listarEstrategias, listarOcultas } from "../../lib/db";
+import { montaEstrategias, semOcultas } from "../../lib/estrategias";
 
 export const dynamic = "force-dynamic";
 
@@ -64,9 +66,15 @@ export default async function Tramitacoes({ searchParams }) {
     tickets = tickets.filter((t) => daEquipe.has(String(t.ownerId)));
   }
 
-  const [registros, evolucoes] = await Promise.all([
+  // A estratégia do registro é a mesma lista que a curadoria cadastra em
+  // Configurações, no segmento Farmer. Não é uma lista própria daqui.
+  const [registros, evolucoes, estrategiasFarmer] = await Promise.all([
     getTramitacoes(tickets.map((t) => t.id)),
     getEvolucaoTramitacoes(tickets.map((t) => t.id), hoje),
+    (async () =>
+      semOcultas(montaEstrategias(await listarEstrategias()), await listarOcultas())[
+        SEG_TRAMITACOES
+      ] || [])(),
   ]);
 
   // Já vem ordenado da regra: evento passado e ainda aberto primeiro, depois
@@ -291,6 +299,7 @@ export default async function Tramitacoes({ searchParams }) {
                       ticket={ticketsById[p.ticketId]}
                       ehGestor={gestor}
                       evolucao={evolucoes[p.ticketId + "|" + p.tipo] || null}
+                      estrategias={estrategiasFarmer}
                       mostrarDono={!farmerSel}
                     />
                   ))

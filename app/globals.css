@@ -959,3 +959,12 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .tram-painel { display: grid; gap: 9px; border-top: 1px solid var(--line); padding-top: 9px; }
 .tram-painel .fech-rodape { flex-wrap: wrap; gap: 8px; }
 .kanban-vazias { margin: 2px 0 14px; font-size: 12px; color: var(--muted); }
+
+/* Registro da tratativa: janela estreita, porque são quatro campos e não uma
+   tela de trabalho. */
+.modal-estreito { width: min(560px, 100%); }
+.reg-corpo { gap: 16px; }
+.reg-grav { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.reg-texto { min-height: 120px; width: 100%; }
+.modal-estreito .modal-principal { padding: 20px 24px 22px; }
+.modal-estreito .reprova { padding: 0 24px 18px; }

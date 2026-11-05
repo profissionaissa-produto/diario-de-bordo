@@ -1,7 +1,15 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
 import { marcarTramitacao, decidirTramitacao, salvarEvolucaoTramitacao, dbReady } from "../../../lib/db";
-import { ETAPAS_TICKET, RESULTADOS_TRAMITACAO, TRAMITACAO_EXIGE_OBSERVACAO } from "../../../lib/tramitacoes";
+import {
+  ETAPAS_TICKET,
+  RESULTADOS_TRAMITACAO,
+  TRAMITACAO_EXIGE_OBSERVACAO,
+  ABORDAGENS_TRAMITACAO,
+} from "../../../lib/tramitacoes";
+import { listarEstrategias, listarOcultas } from "../../../lib/db";
+import { montaEstrategias, semOcultas, indexaPorId, rotuloDa } from "../../../lib/estrategias";
+import { SEG_TRAMITACOES } from "../../../lib/config";
 import { criarNotaNoTicket } from "../../../lib/hubspot";
 import { dayKey } from "../../../lib/week";
 import { ehGestor } from "../../../lib/permissoes";
@@ -75,6 +83,8 @@ export async function PUT(req) {
   const body = await req.json().catch(() => ({}));
   const { ticketId, tipo, resultado } = body;
   const observacao = String(body.observacao || "").trim();
+  const abordagem = String(body.abordagem || "").trim();
+  const estrategiaId = String(body.estrategia || "").trim();
 
   if (!ticketId || !(tipo in ETAPAS_TICKET)) {
     return Response.json({ error: "Tramitação inválida." }, { status: 400 });
@@ -82,6 +92,22 @@ export async function PUT(req) {
   if (!RESULTADOS_TRAMITACAO.some((r) => r.key === resultado)) {
     return Response.json({ error: "Resultado inválido." }, { status: 400 });
   }
+  if (abordagem && !ABORDAGENS_TRAMITACAO.includes(abordagem)) {
+    return Response.json({ error: "Abordagem inválida." }, { status: 400 });
+  }
+
+  // A estratégia é a mesma lista que a curadoria cadastra em Configurações,
+  // no segmento Farmer. Id que não está nela não entra no registro.
+  let estrategia = null;
+  if (estrategiaId) {
+    const porSeg = montaEstrategias(await listarEstrategias());
+    const visiveis = semOcultas(porSeg, await listarOcultas())[SEG_TRAMITACOES] || [];
+    if (!visiveis.some((e) => e.id === estrategiaId)) {
+      return Response.json({ error: "Estratégia inválida." }, { status: 400 });
+    }
+    estrategia = rotuloDa(estrategiaId, indexaPorId(porSeg));
+  }
+
   // Travado sem explicação não vira pedido de ajuda: vira número.
   if (TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado) && observacao.length < 10) {
     return Response.json(
@@ -91,7 +117,12 @@ export async function PUT(req) {
   }
 
   try {
-    await salvarEvolucaoTramitacao(ticketId, tipo, body.dia || dayKey(), resultado, observacao, quem(session));
+    await salvarEvolucaoTramitacao(ticketId, tipo, body.dia || dayKey(), {
+      resultado,
+      observacao,
+      abordagem,
+      estrategia: estrategiaId,
+    }, quem(session));
   } catch (e) {
     console.error("[tramitacoes] falha ao registrar a evolução:", e);
     return Response.json({ error: "Falha ao registrar." }, { status: 500 });
@@ -106,6 +137,8 @@ export async function PUT(req) {
     await criarNotaNoTicket(ticketId, {
       corpo:
         `<p><b>Diário de bordo · ${ETAPAS_TICKET[tipo].label} · ${rotulo}</b></p>` +
+        (abordagem ? `<p><b>Abordagem:</b> ${abordagem}</p>` : "") +
+        (estrategia ? `<p><b>Estratégia:</b> ${estrategia}</p>` : "") +
         `<p>${(observacao || "sem observação").replace(/\n/g, "<br>")}</p>` +
         `<p><i>registrado por ${quem(session)}</i></p>`,
       ownerId: session.user.ownerId || null,

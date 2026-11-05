@@ -1,0 +1,231 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  RESULTADOS_TRAMITACAO,
+  TRAMITACAO_EXIGE_OBSERVACAO,
+  ABORDAGENS_TRAMITACAO,
+  clienteDo,
+  palestranteDo,
+} from "../lib/tramitacoes";
+import { numeroDa } from "../lib/estrategias";
+
+const MIN_TEXTO = 10;
+const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "");
+
+// Janela do registro da tratativa. É modal e não painel dentro do card porque
+// o card vive numa coluna de 310px: abordagem, estratégia e um texto de
+// verdade não cabem ali sem virar sopa.
+//
+// O que for escrito aqui vira observação no ticket de CS. É o que evidencia no
+// CRM que houve ação no dia.
+export default function RegistroTramitacao({ p, ticket, estrategias = [], evolucao, ehGestor, onFechar }) {
+  const router = useRouter();
+  const [abordagem, setAbordagem] = useState(evolucao?.abordagem || "");
+  const [estrategia, setEstrategia] = useState(evolucao?.estrategia || "");
+  const [resultado, setResultado] = useState(evolucao?.resultado || "");
+  const [texto, setTexto] = useState(evolucao?.observacao || "");
+  const [busy, setBusy] = useState("");
+  const [erro, setErro] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [salvo, setSalvo] = useState(false);
+  const [abrirDevolver, setAbrirDevolver] = useState(false);
+  const [motivo, setMotivo] = useState("");
+
+  useEffect(() => {
+    const tecla = (e) => e.key === "Escape" && onFechar();
+    document.addEventListener("keydown", tecla);
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", tecla);
+      document.body.style.overflow = antes;
+    };
+  }, [onFechar]);
+
+  async function chamar(metodo, corpo) {
+    const res = await fetch("/api/tramitacoes", {
+      method: metodo,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticketId: p.ticketId, tipo: p.tipo, ...corpo }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || "Falha ao registrar.");
+    return d;
+  }
+
+  async function registrar() {
+    setBusy("registrar");
+    setErro("");
+    setAviso("");
+    try {
+      const d = await chamar("PUT", { resultado, observacao: texto, abordagem, estrategia });
+      setSalvo(true);
+      if (d.aviso) setAviso(d.aviso);
+      router.refresh();
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function decidir(corpo) {
+    setBusy("decidir");
+    setErro("");
+    try {
+      await chamar("PATCH", corpo);
+      router.refresh();
+      onFechar();
+    } catch (e) {
+      setErro(e.message);
+      setBusy("");
+    }
+  }
+
+  async function marcarFeito() {
+    setBusy("feito");
+    setErro("");
+    try {
+      await chamar("POST", {});
+      router.refresh();
+      onFechar();
+    } catch (e) {
+      setErro(e.message);
+      setBusy("");
+    }
+  }
+
+  const exigeTexto = TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado);
+  const faltam = Math.max(0, MIN_TEXTO - texto.trim().length);
+  // Sem texto não há evidência: a observação no ticket sairia vazia.
+  const naoPode = !resultado || faltam > 0;
+
+  return (
+    <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && onFechar()}>
+      <div className="modal modal-estreito" role="dialog" aria-modal="true" aria-label="Registrar tratativa">
+        <header className="modal-topo">
+          <div>
+            <h2>{clienteDo(ticket?.assunto || "") || `Ticket ${p.ticketId}`}</h2>
+            <div className="modal-sub">
+              <span className={`tram-ponto p-${p.nivel}`} />
+              <span>{p.label}</span>
+              {palestranteDo(ticket?.assunto || "") && <span>· {palestranteDo(ticket.assunto)}</span>}
+              {p.evento && <span>· evento {dataBR(p.evento)}</span>}
+            </div>
+          </div>
+          <button className="modal-x" onClick={onFechar} aria-label="Fechar">×</button>
+        </header>
+
+        <div className="modal-principal reg-corpo">
+          <p className="reg-grav">{p.motivo}</p>
+
+          <label className="est-campo">
+            <span className="ctx-lab">Como você atuou</span>
+            <div className="select-wrap">
+              <select className="emp-abordagem" value={abordagem} onChange={(e) => { setAbordagem(e.target.value); setSalvo(false); }}>
+                <option value="">Escolher abordagem…</option>
+                {ABORDAGENS_TRAMITACAO.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </div>
+          </label>
+
+          <label className="est-campo">
+            <span className="ctx-lab">Estratégia</span>
+            <div className="select-wrap">
+              <select
+                className="emp-abordagem"
+                value={estrategia}
+                disabled={estrategias.length === 0}
+                onChange={(e) => { setEstrategia(e.target.value); setSalvo(false); }}
+              >
+                <option value="">
+                  {estrategias.length ? "Escolher estratégia…" : "Nenhuma cadastrada"}
+                </option>
+                {estrategias.map((s) => (
+                  <option key={s.id} value={s.id} title={s.desc}>
+                    {numeroDa(s.id)}. {s.titulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+
+          <div className="est-campo">
+            <span className="ctx-lab">Como andou</span>
+            <div className="fech-opcoes">
+              {RESULTADOS_TRAMITACAO.map((r) => (
+                <button
+                  key={r.key}
+                  className={"fech-op " + r.cls + (resultado === r.key ? " on" : "")}
+                  onClick={() => { setResultado(r.key); setSalvo(false); setErro(""); }}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="est-campo">
+            <span className="ctx-lab">
+              O que você fez {faltam > 0 && <em className="est-falta">faltam {faltam}</em>}
+            </span>
+            <textarea
+              className="obs reg-texto"
+              value={texto}
+              placeholder={
+                exigeTexto
+                  ? "O que travou? De quem depende?"
+                  : "Descreva a tratativa. Este texto vira observação no ticket de CS."
+              }
+              onChange={(e) => { setTexto(e.target.value); setSalvo(false); }}
+            />
+          </label>
+        </div>
+
+        <footer className="modal-rodape">
+          {erro && <span className="err">{erro}</span>}
+          {aviso && !erro && <span className="err">{aviso}</span>}
+          {salvo && !erro && !aviso && <span className="saved">registrado no ticket</span>}
+
+          {p.status === "aguardando" && ehGestor && (
+            <>
+              <button className="btn-ghost" onClick={() => setAbrirDevolver((v) => !v)} disabled={!!busy}>
+                Devolver
+              </button>
+              <button className="btn-ghost" onClick={() => decidir({ decisao: "confirmado" })} disabled={!!busy}>
+                Confirmar baixa
+              </button>
+            </>
+          )}
+          {p.status !== "aguardando" && (
+            <button className="btn-ghost" onClick={marcarFeito} disabled={!!busy}>
+              {busy === "feito" ? "…" : "Marcar como feito"}
+            </button>
+          )}
+
+          <button className="btn-primary" onClick={registrar} disabled={!!busy || naoPode || salvo}>
+            {busy === "registrar" ? "Registrando…" : salvo ? "Registrado" : "Registrar no ticket"}
+          </button>
+        </footer>
+
+        {abrirDevolver && (
+          <div className="reprova">
+            <input
+              className="reprova-input"
+              placeholder="Por que está voltando?"
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+            />
+            <button className="btn-danger" onClick={() => decidir({ decisao: "devolvido", motivo })} disabled={!!busy}>
+              Devolver
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

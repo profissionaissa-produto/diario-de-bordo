@@ -174,48 +174,61 @@ export default async function Page({ searchParams }) {
         getHistoricoCarteira(String(viewOwner.ownerId), dayKey()),
       ]);
       const historico = montaHistorico(linhas);
-      // Números do mês: o cabeçalho do farmer fala de carteira e resultado,
-      // não de funil. Falha aqui não derruba o dia.
-      resumoMes = await resumoDoMes([String(viewOwner.ownerId)], dayKey()).catch((err) => {
-        console.error("[carteira] resumo do mês falhou:", err?.message);
-        return null;
-      });
-      // O que o CRM já sabe do dia: vira sugestão de resultado no fechamento.
-      // Falha aqui (escopo, cota) só faz o farmer preencher à mão.
-      // A efetividade é automática: o que o CRM registrou hoje vira o resultado
-      // sem ninguém clicar, e é por isso que o placar do líder evolui sozinho.
-      const ativ =
-        (await atividadeDoDia([String(viewOwner.ownerId)], dayKey()).catch((err) => {
+      const owner = String(viewOwner.ownerId);
+      // Os ids já são conhecidos aqui: a releitura adiante preenche campos, não
+      // troca as empresas do dia. Esperar por ela para só então buscar contato
+      // e tentativas era o que punha três idas ao HubSpot em fila.
+      const ids = itens.map((e) => String(e.id));
+
+      // Tudo que não depende de mais nada vai junto. Antes eram seis esperas
+      // em série, três delas pesadas no HubSpot, sem uma precisar da outra.
+      // Cada uma trata o próprio erro: o dia não cai porque o selo falhou.
+      const [resumo, porOwner, selos, contatos, tentativas, detalhe] = await Promise.all([
+        // Números do mês: o cabeçalho do farmer fala de carteira e resultado,
+        // não de funil. Falha aqui não derruba o dia.
+        resumoDoMes([owner], dayKey()).catch((err) => {
+          console.error("[carteira] resumo do mês falhou:", err?.message);
+          return null;
+        }),
+        // O que o CRM já sabe do dia: vira sugestão de resultado no fechamento.
+        // Falha aqui (escopo, cota) só faz o farmer preencher à mão.
+        // A efetividade é automática: o que o CRM registrou hoje vira o
+        // resultado sem ninguém clicar, e é por isso que o placar do líder
+        // evolui sozinho.
+        atividadeDoDia([owner], dayKey()).catch((err) => {
           console.error("[carteira] atividade do dia falhou:", err?.message);
           return {};
-        }))[String(viewOwner.ownerId)] || {};
+        }),
+        // Selo de relacionamento: raro de propósito, e caro de apurar — falha
+        // aqui só tira o selo, não derruba o dia.
+        empresasComSelo(owner, ids).catch((err) => {
+          console.error("[carteira] selo de relacionamento falhou:", err?.message);
+          return new Set();
+        }),
+        // Para quem mandar a mensagem. Falha sem derrubar o dia: some o botão,
+        // não a lista.
+        contatosDasEmpresas(ids).catch((err) => {
+          console.error("[mensagem] falha ao ler os contatos das empresas:", err?.message);
+          return {};
+        }),
+        // A contagem não pode falhar calada: sem ela a cascata liberaria tudo.
+        tentativasPorEmpresa(ids),
+        detalheTentativas(ids),
+      ]);
+
+      resumoMes = resumo;
+      contatosDoDia = contatos;
+      tentativasDoDia = tentativas;
+      historicoContato = detalhe;
+      const ativ = porOwner[owner] || {};
+
       // Preenche só o que está em branco — nunca sobrescreve escolha manual.
-      await aplicarAtividade(String(viewOwner.ownerId), dayKey(), ativ).catch((err) =>
+      await aplicarAtividade(owner, dayKey(), ativ).catch((err) =>
         console.error("[carteira] não consegui aplicar a atividade:", err?.message)
       );
 
-      // Selo de relacionamento: raro de propósito, e caro de apurar — falha
-      // aqui só tira o selo, não derruba o dia.
-      const selos = await empresasComSelo(String(viewOwner.ownerId), itens.map((e) => String(e.id))).catch(
-        (err) => {
-          console.error("[carteira] selo de relacionamento falhou:", err?.message);
-          return new Set();
-        }
-      );
-
       // Relê depois de aplicar, senão a tela mostra o estado anterior.
-      itens = await getListaDia(String(viewOwner.ownerId), dayKey());
-
-      // Para quem mandar a mensagem e quantas tentativas cada canal já teve.
-      // Contato falha sem derrubar o dia: some o botão, não a lista. Já a
-      // contagem não pode falhar calada, senão a cascata liberaria tudo.
-      const ids = itens.map((e) => String(e.id));
-      contatosDoDia = await contatosDasEmpresas(ids).catch((err) => {
-        console.error("[mensagem] falha ao ler os contatos das empresas:", err?.message);
-        return {};
-      });
-      tentativasDoDia = await tentativasPorEmpresa(ids);
-      historicoContato = await detalheTentativas(ids);
+      itens = await getListaDia(owner, dayKey());
 
       carteiraDoDia = itens.map((e) => ({
         ...e,

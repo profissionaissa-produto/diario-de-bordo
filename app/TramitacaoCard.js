@@ -39,10 +39,12 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao, mostrarD
         body: JSON.stringify({ ticketId: p.ticketId, tipo: p.tipo, resultado, observacao: obsEvo }),
       });
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "Falha ao registrar.");
+        const erro = await res.json().catch(() => ({}));
+        throw new Error(erro.error || "Falha ao registrar.");
       }
+      const d = await res.json().catch(() => ({}));
       setEvoSalva(true);
+      if (d.aviso) setEvoErro(d.aviso);
     } catch (e) {
       setEvoErro(e.message);
     } finally {
@@ -121,10 +123,14 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao, mostrarD
             ))}
           </div>
 
-          {resultado && TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado) && (
+          {resultado && (
             <textarea
               className="obs"
-              placeholder="O que travou? De quem depende?"
+              placeholder={
+                TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado)
+                  ? "O que travou? De quem depende?"
+                  : "O que você fez hoje neste ticket? Isso vira observação no ticket de CS."
+              }
               value={obsEvo}
               onChange={(e) => { setObsEvo(e.target.value); setEvoSalva(false); }}
             />
@@ -133,7 +139,7 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao, mostrarD
           <div className="fech-rodape">
             {evoErro && <span className="err">{evoErro}</span>}
             {msg && <span className="err">{msg}</span>}
-            {evoSalva && !evoErro && <span className="saved">registrado</span>}
+            {evoSalva && !evoErro && <span className="saved">registrado no ticket</span>}
             {resultado && (
               <button className="btn-ghost" onClick={registrarEvolucao} disabled={busy || evoSalva}>
                 {evoSalva ? "Registrado" : "Registrar"}

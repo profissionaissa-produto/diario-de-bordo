@@ -2,6 +2,7 @@ import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
 import { marcarTramitacao, decidirTramitacao, salvarEvolucaoTramitacao, dbReady } from "../../../lib/db";
 import { ETAPAS_TICKET, RESULTADOS_TRAMITACAO, TRAMITACAO_EXIGE_OBSERVACAO } from "../../../lib/tramitacoes";
+import { criarNotaNoTicket } from "../../../lib/hubspot";
 import { dayKey } from "../../../lib/week";
 import { ehGestor } from "../../../lib/permissoes";
 
@@ -95,5 +96,24 @@ export async function PUT(req) {
     console.error("[tramitacoes] falha ao registrar a evolução:", e);
     return Response.json({ error: "Falha ao registrar." }, { status: 500 });
   }
-  return Response.json({ ok: true });
+
+  // A tratativa vai para o ticket de CS: é o que evidencia no CRM que houve
+  // ação hoje. Falhar aqui não desfaz o registro no Diário, mas não pode
+  // ficar mudo, senão o farmer acha que evidenciou e não evidenciou.
+  let aviso = "";
+  try {
+    const rotulo = RESULTADOS_TRAMITACAO.find((r) => r.key === resultado)?.label || resultado;
+    await criarNotaNoTicket(ticketId, {
+      corpo:
+        `<p><b>Diário de bordo · ${ETAPAS_TICKET[tipo].label} · ${rotulo}</b></p>` +
+        `<p>${(observacao || "sem observação").replace(/\n/g, "<br>")}</p>` +
+        `<p><i>registrado por ${quem(session)}</i></p>`,
+      ownerId: session.user.ownerId || null,
+    });
+  } catch (e) {
+    console.error("[tramitacoes] falha ao gravar a tratativa no ticket:", e);
+    aviso = "Registrado aqui, mas a observação não chegou ao ticket no HubSpot.";
+  }
+
+  return Response.json({ ok: true, aviso });
 }

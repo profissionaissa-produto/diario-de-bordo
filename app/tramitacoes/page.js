@@ -240,7 +240,7 @@ export default async function Tramitacoes({ searchParams }) {
         </div>
       ) : (
         <div className="kanban">
-        {ETAPAS_ATIVAS.map((id) => {
+        {ETAPAS_ATIVAS.filter((id) => lista.some((p) => p.etapa === id)).map((id) => {
           const coluna = lista.filter((p) => p.etapa === id);
           const pl = placar(coluna);
           return (
@@ -284,6 +284,19 @@ export default async function Tramitacoes({ searchParams }) {
           );
         })}
       </div>
+      )}
+
+      {/* Coluna vazia só empurra o que importa para fora da tela. Fica a
+          contagem, para quem olha saber que o funil é maior do que o quadro. */}
+      {!erro && lista.length > 0 && (
+        (() => {
+          const vazias = ETAPAS_ATIVAS.filter((id) => !lista.some((p) => p.etapa === id)).length;
+          return vazias > 0 ? (
+            <p className="kanban-vazias">
+              {vazias} etapa{vazias === 1 ? "" : "s"} sem nada neste recorte, fora do quadro.
+            </p>
+          ) : null;
+        })()
       )}
 
       <div className="evo-nota">

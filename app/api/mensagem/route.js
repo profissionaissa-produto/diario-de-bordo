@@ -44,12 +44,17 @@ async function contexto(req) {
   if (!ownerId) return { erro: "Farmer não encontrado.", status: 403 };
 
   const dia = body.dia || dayKey();
-  const empresa = await daLista(ownerId, dia, body.companyId);
-  if (!empresa) return { erro: "Essa empresa não está na lista de hoje.", status: 400 };
-
   if (!CANAL_VALIDO(body.canal)) return { erro: "Canal inválido.", status: 400 };
 
-  const tentativas = (await tentativasPorEmpresa([body.companyId]))[String(body.companyId)] || {};
+  // Vão juntas: a lista do dia e a contagem de tentativas não dependem uma da
+  // outra. Em fila, somavam à espera antes de o modelo sequer começar.
+  const [empresa, contagem] = await Promise.all([
+    daLista(ownerId, dia, body.companyId),
+    tentativasPorEmpresa([body.companyId]),
+  ]);
+  if (!empresa) return { erro: "Essa empresa não está na lista de hoje.", status: 400 };
+
+  const tentativas = contagem[String(body.companyId)] || {};
   if (!canaisLiberados(tentativas).includes(body.canal)) {
     return {
       erro: `O ${rotuloCanal(body.canal)} já teve ${LIMITE_POR_CANAL} tentativas sem resposta nesta empresa.`,

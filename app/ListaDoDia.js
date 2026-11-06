@@ -189,7 +189,10 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
 
     {aberta && (
       <Mensagem
-        empresa={e}
+        // O que vale é o que está escolhido na tela agora. Passar e.abordagem
+        // mostrava o valor do servidor, que ainda é o anterior até a página
+        // recarregar, e a janela abria com a abordagem em branco.
+        empresa={{ ...e, abordagem, contexto, estrategia }}
         contatos={contatos}
         tentativas={tentativas}
         historico={historico}

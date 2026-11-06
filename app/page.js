@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Avatar from "./Avatar";
 import { auth, signOut } from "../auth";
 import {
   getOwnerByEmail,
@@ -402,7 +403,7 @@ export default async function Page({ searchParams }) {
           </div>
         </div>
         <div className="who">
-          <div className="pfp">{avatar ? <img src={avatar} alt={userName} /> : initials(userName)}</div>
+          <Avatar foto={session.user.foto || avatar} nome={userName} />
           <div className="who-name">{userName}</div>
           {gestor && <span className="admin-tag">{isAdmin ? "Admin" : "Líder " + seg}</span>}
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>

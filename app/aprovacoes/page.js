@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Avatar from "../Avatar";
 import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { getDealsByIds, getTemperaturaOptions, getOwnerNames } from "../../lib/hubspot";
@@ -96,7 +97,7 @@ export default async function Aprovacoes({ searchParams }) {
           </div>
         </div>
         <div className="who">
-          <div className="pfp">{initials(userName)}</div>
+          <Avatar foto={session.user.foto} nome={userName} />
           <div className="who-name">{userName}</div>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button className="signout" type="submit">Sair</button>

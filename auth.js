@@ -21,6 +21,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.lideraEquipe = equipeLideradaPor(email);
       // Segmento em que a pessoa pode cadastrar estratégia (null se nenhum).
       session.user.curaEstrategia = segCuradoPor(email);
+      // A foto do perfil do Google. Vem de graça com o login e está sempre
+      // atualizada, diferente do mapa fixo por ownerId em config.js, que
+      // cobre 18 das 25 pessoas e envelhece a cada troca de time.
+      session.user.foto = session.user.image || null;
       return session;
     },
     // Usado pelo middleware: exige sessão.

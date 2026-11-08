@@ -4,7 +4,7 @@ import Link from "next/link";
 import { auth, signOut } from "../../auth";
 import { listarEstrategias, listarOcultas, lerTexto, chaveContexto, dbReady } from "../../lib/db";
 import { montaEstrategias, numeroDa } from "../../lib/estrategias";
-import { segsConfiguraveis, podeVerTramitacoes, podeVerEvolucao } from "../../lib/permissoes";
+import { segsConfiguraveis, podeVerTramitacoes, podeVerFinanceiro, podeVerEvolucao } from "../../lib/permissoes";
 import { SEG_TRAMITACOES } from "../../lib/config";
 import NovaEstrategia from "../NovaEstrategia";
 import AcaoEstrategia from "../AcaoEstrategia";
@@ -70,6 +70,7 @@ export default async function Configuracoes({ searchParams }) {
               <Link href="/agenda">Agenda do dia</Link>
               {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
               {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+              {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
             </>
           ) : (
             <>

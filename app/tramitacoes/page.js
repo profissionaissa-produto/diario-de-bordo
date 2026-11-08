@@ -6,7 +6,7 @@ import { getTicketsCS, getOwnerByEmail, getOwnerNames, ganhoDosTickets } from ".
 import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES, EQUIPES_DE, semEquipe } from "../../lib/config";
-import { ehGestor, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
+import { ehGestor, podeVerTramitacoes, podeVerFinanceiro, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
 import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPA_LOGISTICA, ETAPAS_ATIVAS, ETAPAS_TICKET, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
 import TramitacaoCard from "../TramitacaoCard";
 import AdminBar from "../AdminBar";
@@ -175,6 +175,7 @@ export default async function Tramitacoes({ searchParams }) {
           <Link href="/tramitacoes" className="on">
             Tramitações{abertas.length ? ` (${abertas.length})` : ""}
           </Link>
+          {podeVerFinanceiro(session.user, meuOwnerId) && <Link href="/financeiro">Financeiro</Link>}
           {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
           <Link href="/ajuda">Como funciona</Link>
         </div>

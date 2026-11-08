@@ -9,6 +9,7 @@ import {
   clienteDo,
   palestranteDo,
 } from "../lib/tramitacoes";
+import { ABORDAGEM_DO_ONBOARDING } from "../lib/financeiro";
 import { numeroDa } from "../lib/estrategias";
 
 const MIN_TEXTO = 10;
@@ -20,12 +21,27 @@ const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`
 //
 // O que for escrito aqui vira observação no ticket de CS. É o que evidencia no
 // CRM que houve ação no dia.
-export default function RegistroTramitacao({ p, ticket, estrategias = [], evolucao, ehGestor, onFechar }) {
+//
+// A mesma janela serve a Tramitação e ao seguimento financeiro. O que muda é a
+// lista de abordagem, que vem de fora, e a tarefa, que só o financeiro abre.
+export default function RegistroTramitacao({
+  p,
+  ticket,
+  estrategias = [],
+  evolucao,
+  ehGestor,
+  onFechar,
+  abordagens = ABORDAGENS_TRAMITACAO,
+  financeiro = false,
+}) {
   const router = useRouter();
   const [abordagem, setAbordagem] = useState(evolucao?.abordagem || "");
   const [estrategia, setEstrategia] = useState(evolucao?.estrategia || "");
   const [resultado, setResultado] = useState(evolucao?.resultado || "");
   const [texto, setTexto] = useState(evolucao?.observacao || "");
+  // Padrão ligado: a cobrança que não vira compromisso com data é recado, e o
+  // documento do financeiro trata a tarefa como o caminho normal.
+  const [tarefa, setTarefa] = useState(true);
   const [busy, setBusy] = useState("");
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
@@ -60,7 +76,18 @@ export default function RegistroTramitacao({ p, ticket, estrategias = [], evoluc
     setErro("");
     setAviso("");
     try {
-      const d = await chamar("PUT", { resultado, observacao: texto, abordagem, estrategia });
+      const d = await chamar("PUT", {
+        resultado,
+        observacao: texto,
+        abordagem,
+        estrategia,
+        // Só o financeiro manda estes. A rota ignora o que não for do tipo
+        // dela, e assim a Tramitação continua gravando exatamente o que
+        // gravava antes.
+        ...(financeiro
+          ? { tarefa, tentativa: p.tentativa || 0, vence: p.data || "", assunto: ticket?.assunto || "" }
+          : {}),
+      });
       setSalvo(true);
       if (d.aviso) setAviso(d.aviso);
       router.refresh();
@@ -113,6 +140,8 @@ export default function RegistroTramitacao({ p, ticket, estrategias = [], evoluc
               <span>{p.label}</span>
               {palestranteDo(ticket?.assunto || "") && <span>· {palestranteDo(ticket.assunto)}</span>}
               {p.evento && <span>· evento {dataBR(p.evento)}</span>}
+              {financeiro && p.tentativa > 0 && <span>· {p.tentativa}ª tentativa</span>}
+              {financeiro && p.data && <span>· vence {dataBR(p.data)}</span>}
             </div>
           </div>
           <button className="modal-x" onClick={onFechar} aria-label="Fechar">×</button>
@@ -126,7 +155,7 @@ export default function RegistroTramitacao({ p, ticket, estrategias = [], evoluc
             <div className="select-wrap">
               <select className="emp-abordagem" value={abordagem} onChange={(e) => { setAbordagem(e.target.value); setSalvo(false); }}>
                 <option value="">Escolher abordagem…</option>
-                {ABORDAGENS_TRAMITACAO.map((a) => (
+                {abordagens.map((a) => (
                   <option key={a} value={a}>{a}</option>
                 ))}
               </select>
@@ -169,6 +198,35 @@ export default function RegistroTramitacao({ p, ticket, estrategias = [], evoluc
             </div>
           </div>
 
+          {financeiro && (
+            <div className="est-campo">
+              <span className="ctx-lab">Abrir tarefa no ticket</span>
+              <div className="fech-opcoes">
+                <button
+                  className={"fech-op ok" + (tarefa ? " on" : "")}
+                  onClick={() => setTarefa(true)}
+                >
+                  Sim
+                </button>
+                <button
+                  className={"fech-op nao" + (!tarefa ? " on" : "")}
+                  onClick={() => setTarefa(false)}
+                >
+                  Não
+                </button>
+              </div>
+              <p className="reg-dica">
+                {tarefa
+                  ? abordagem === ABORDAGEM_DO_ONBOARDING
+                    ? "A tarefa vai para o onboarding, que é quem fala com o palestrante."
+                    : p.data
+                      ? `A tarefa vence em ${dataBR(p.data)}, a data combinada com o cliente.`
+                      : "Sem data combinada no ticket, a tarefa vence hoje."
+                  : "Fica só como registro no histórico do ticket."}
+              </p>
+            </div>
+          )}
+
           <label className="est-campo">
             <span className="ctx-lab">
               O que você fez {faltam > 0 && <em className="est-falta">faltam {faltam}</em>}
@@ -191,7 +249,10 @@ export default function RegistroTramitacao({ p, ticket, estrategias = [], evoluc
           {aviso && !erro && <span className="err">{aviso}</span>}
           {salvo && !erro && !aviso && <span className="saved">registrado no ticket</span>}
 
-          {p.status === "aguardando" && ehGestor && (
+          {/* A baixa em duas mãos é da Tramitação. No financeiro não existe:
+              o que fecha a etapa é o ticket sair dela no HubSpot, e um botão
+              que grava onde ninguém lê é pior do que botão nenhum. */}
+          {!financeiro && p.status === "aguardando" && ehGestor && (
             <>
               <button className="btn-ghost" onClick={() => setAbrirDevolver((v) => !v)} disabled={!!busy}>
                 Devolver
@@ -201,7 +262,7 @@ export default function RegistroTramitacao({ p, ticket, estrategias = [], evoluc
               </button>
             </>
           )}
-          {p.status !== "aguardando" && (
+          {!financeiro && p.status !== "aguardando" && (
             <button className="btn-ghost" onClick={marcarFeito} disabled={!!busy}>
               {busy === "feito" ? "…" : "Marcar como feito"}
             </button>

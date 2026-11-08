@@ -5,7 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "eslint app lib && node lib/week.check.mjs && node lib/config.check.mjs && node lib/tramitacoes.check.mjs && node lib/carteira.check.mjs && node lib/funil.check.mjs && node lib/canal.check.mjs && node lib/telefone.check.mjs && node lib/gmail.check.mjs && node lib/briefing-contato.check.mjs && node lib/prompt.check.mjs && node lib/gemini.check.mjs && node lib/openai.check.mjs"
+    "check": "eslint app lib && node lib/week.check.mjs && node lib/config.check.mjs && node lib/tramitacoes.check.mjs && node lib/financeiro.check.mjs && node lib/carteira.check.mjs && node lib/funil.check.mjs && node lib/canal.check.mjs && node lib/telefone.check.mjs && node lib/gmail.check.mjs && node lib/briefing-contato.check.mjs && node lib/prompt.check.mjs && node lib/gemini.check.mjs && node lib/openai.check.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

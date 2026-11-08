@@ -43,6 +43,7 @@ export default async function Ajuda() {
         <div className="viewtoggle">
           <Link href="/">Diário de bordo</Link>
           <Link href="/tramitacoes">Tramitações</Link>
+          <Link href="/financeiro">Financeiro</Link>
           <Link href="/ajuda" className="on">Como funciona</Link>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { montaEstrategias, indexaPorId, semOcultas } from "../../lib/estrategias
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS_BY_SEG, NOME_CLOSER, SEG_CLOSER, fotoDe } from "../../lib/config";
 import { seedDia } from "../../lib/seed";
-import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser , podeVerTramitacoes, podeConfigurar } from "../../lib/permissoes";
+import { ehGestor, segmentosDe, briefingsGeriveis, podeGerirCloser , podeVerTramitacoes, podeVerFinanceiro, podeConfigurar } from "../../lib/permissoes";
 import ApprovalCard from "../ApprovalCard";
 import HistLinha from "../HistLinha";
 
@@ -111,6 +111,7 @@ export default async function Aprovacoes({ searchParams }) {
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
           <Link href="/agenda">Agenda geral</Link>
           {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+              {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
           {configura && <Link href="/configuracoes">Configurações</Link>}
         </div>
         <div className="seg-toggle">

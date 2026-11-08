@@ -19,7 +19,7 @@ import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, apl
 import { getDealsByIds, retornoDasTarefas, contatosDasEmpresas } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
-import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../lib/permissoes";
+import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTramitacoes, podeVerFinanceiro, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../lib/permissoes";
 import { listarEstrategias, listarOcultas, tentativasPorEmpresa, detalheTentativas } from "../lib/db";
 import { montaEstrategias, indexaPorId, semOcultas } from "../lib/estrategias";
 import { listaDoDia } from "../lib/dia-farmer";
@@ -313,7 +313,12 @@ export default async function Page({ searchParams }) {
     : 0;
 
   // Tramitações só para o time de CS e quem o gere.
-  const verTramitacoes = podeVerTramitacoes(session.user, viewOwner ? String(meuOwnerId || viewOwner.ownerId) : null);
+  const ownerDaVez = viewOwner ? String(meuOwnerId || viewOwner.ownerId) : meuOwnerId || null;
+  const verTramitacoes = podeVerTramitacoes(session.user, ownerDaVez);
+  // O financeiro não é closer e não tem carteira, então o que o identifica é o
+  // ownerId resolvido pelo login. Passar null aqui esconderia o menu justo de
+  // quem a tela é.
+  const verFinanceiro = podeVerFinanceiro(session.user, ownerDaVez);
 
   // Derivado da lista do dia: não custa chamada nenhuma a mais.
   const kpiFarmer = {
@@ -428,6 +433,7 @@ export default async function Page({ searchParams }) {
                   {/* Sem contador aqui: o número exigiria buscar os tickets do
                       funil só para desenhar o menu. */}
                   {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
+                  {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
                   {configura && <Link href="/configuracoes">Configurações</Link>}
                   <Link href="/ajuda">Como funciona</Link>
                 </>
@@ -459,6 +465,7 @@ export default async function Page({ searchParams }) {
           <div className="viewtoggle">
             <Link href="/" className="on">Diário de bordo</Link>
             {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
+                  {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
             {ehFarmer && <Link href="/ajuda">Como funciona</Link>}
           </div>
           <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>

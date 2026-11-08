@@ -1,0 +1,79 @@
+"use client";
+
+import { useState } from "react";
+import { clienteDo, palestranteDo } from "../lib/tramitacoes";
+import { abordagensDa, emReais } from "../lib/financeiro";
+import RegistroTramitacao from "./RegistroTramitacao";
+
+const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : "");
+
+export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
+  const [aberto, setAberto] = useState(false);
+
+  const assunto = ticket?.assunto || "";
+  const cliente = clienteDo(assunto) || `Ticket ${c.ticketId}`;
+  const palestrante = palestranteDo(assunto);
+  const valor = Number(String(c.cache).replace(",", ".")) || 0;
+
+  return (
+    <article className={`tram-card n-${c.nivel}`}>
+      {/* A linha de cima é a parcela: é por ela que o card está nesta coluna.
+          A cor do ponto continua sendo a da Sinaleira, e por isso ela pode
+          discordar da coluna sem erro: são duas perguntas diferentes. */}
+      <header className="tram-grav">
+        <span className={`tram-ponto p-${c.nivel}`} />
+        <span>{c.texto}</span>
+      </header>
+
+      <h4 className="tram-cliente">{cliente}</h4>
+      <div className="tram-meta">
+        <span>{c.label}</span>
+        {palestrante && <span>· {palestrante}</span>}
+        {c.evento && <span>· evento {dataBR(c.evento)}</span>}
+      </div>
+
+      {/* Todas as parcelas, não só a que mandou. Com duas ou três combinadas,
+          ver só uma data esconde o resto do compromisso. */}
+      {c.parcelas.length > 1 && (
+        <div className="fin-parcelas">
+          {c.parcelas.map((p) => (
+            <span
+              key={p.n}
+              className={"fin-parcela" + (p.n === c.parcela ? " on" : "") + (p.data ? "" : " vazia")}
+            >
+              {p.n}ª {p.data ? dataBR(p.data) : "sem data"}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="tram-meta">
+        {valor > 0 && <span>cachê {emReais(valor)}</span>}
+        {c.pagamentoPalestrante && <span>· palestrante {dataBR(c.pagamentoPalestrante)}</span>}
+      </div>
+
+      {c.tentativa > 1 && <span className="tram-selo aguardando">{c.tentativa - 1} já registradas</span>}
+
+      {c.evolucao?.resultado && (
+        <div className="tram-por">registrado hoje: {c.evolucao.abordagem || c.evolucao.resultado}</div>
+      )}
+
+      <button className="btn-link tram-abrir" onClick={() => setAberto(true)}>
+        {c.evolucao?.resultado ? "Ver ou corrigir o registro" : "Registrar o que fiz"}
+      </button>
+
+      {aberto && (
+        <RegistroTramitacao
+          p={c}
+          ticket={ticket}
+          estrategias={estrategias}
+          evolucao={c.evolucao}
+          ehGestor={ehGestor}
+          abordagens={abordagensDa(c.etapa)}
+          financeiro
+          onFechar={() => setAberto(false)}
+        />
+      )}
+    </article>
+  );
+}

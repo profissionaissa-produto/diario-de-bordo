@@ -76,6 +76,10 @@ export default async function Configuracoes({ searchParams }) {
             <>
               <Link href="/aprovacoes">Aprovações</Link>
               <Link href="/agenda">Agenda geral</Link>
+              {/* As duas telas não são do fluxo comercial, mas quem alcança
+                  precisa chegar nelas de qualquer segmento. */}
+              {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+              {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
             </>
           )}
           <Link href="/configuracoes" className="on">Configurações</Link>

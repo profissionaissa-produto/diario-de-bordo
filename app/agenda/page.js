@@ -180,6 +180,10 @@ export default async function AgendaGeral({ searchParams }) {
             <>
               <Link href="/aprovacoes">Aprovações</Link>
               <Link href="/agenda" className="on">Agenda geral</Link>
+              {/* As duas telas não são do fluxo comercial, mas quem alcança
+                  precisa chegar nelas de qualquer segmento. */}
+              {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
+              {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
               {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
             </>
           )}

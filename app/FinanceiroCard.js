@@ -17,9 +17,8 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
 
   return (
     <article className={`tram-card n-${c.nivel}`}>
-      {/* A linha de cima é a parcela: é por ela que o card está nesta coluna.
-          A cor do ponto continua sendo a da Sinaleira, e por isso ela pode
-          discordar da coluna sem erro: são duas perguntas diferentes. */}
+      {/* A linha de cima é a parcela: é por ela que o card está nesta coluna,
+          e é dela que sai a cor. */}
       <header className="tram-grav">
         <span className={`tram-ponto p-${c.nivel}`} />
         <span>{c.texto}</span>
@@ -51,6 +50,16 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
         {valor > 0 && <span>cachê {emReais(valor)}</span>}
         {c.pagamentoPalestrante && <span>· palestrante {dataBR(c.pagamentoPalestrante)}</span>}
       </div>
+
+      {/* O veredito da etapa, nomeado. Ele mede outra coisa, o marco da etapa
+          contra o evento, então pode discordar da coluna. Escrito assim os
+          dois convivem; na mesma bolinha, um desmentia o outro. */}
+      {c.sinaleira?.motivo && (
+        <div className="fin-sinaleira">
+          <span className={`tram-ponto p-${c.sinaleira.nivel}`} />
+          <span>Sinaleira: {c.sinaleira.motivo}</span>
+        </div>
+      )}
 
       {c.tentativa > 1 && <span className="tram-selo aguardando">{c.tentativa - 1} já registradas</span>}
 

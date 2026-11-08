@@ -213,9 +213,10 @@ export default async function Financeiro({ searchParams }) {
         <b>A régua.</b> A coluna sai da data combinada com o cliente, que é a{" "}
         <b>Data Prevista de Pagamento</b> do ticket, preenchida em 99 de cada 100
         tickets destas quatro etapas. Quando há mais de uma parcela, manda a mais
-        atrasada, e as outras aparecem no card. O ponto colorido continua sendo o
-        da Sinaleira, que mede cada etapa pelo marco dela: ele pode discordar da
-        coluna sem erro, porque responde a outra pergunta.{" "}
+        atrasada, e as outras aparecem no card. A cor do card é a da coluna. A
+        linha <b>Sinaleira</b>, no pé do card, é a outra régua: ela mede cada
+        etapa pelo marco dela, contra o evento, e por isso pode discordar sem
+        que nenhuma das duas esteja errada.{" "}
         <b>O que ainda falta:</b> não existe no HubSpot campo que marque pagamento
         confirmado. Enquanto não existir, parcela já paga continua contando como
         vencida até o ticket sair da etapa, e hoje 73 de cada 100 estão nessa

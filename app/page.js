@@ -444,6 +444,13 @@ export default async function Page({ searchParams }) {
                     {pendentes > 0 && <span className="aba-cont">{pendentes}</span>}
                   </Link>
                   <Link href="/agenda">Agenda geral</Link>
+                  {/* Tramitação e Financeiro não são do fluxo comercial, mas
+                      quem alcança as duas telas precisa chegar nelas de
+                      qualquer segmento. O admin cai aqui quando está olhando
+                      o B2B, e sem estes links ficava sem porta: tinha que
+                      trocar o segmento para Farmer só para abrir o menu. */}
+                  {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
+                  {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
                   {configura && <Link href="/configuracoes">Configurações</Link>}
                 </>
               )}
@@ -465,7 +472,7 @@ export default async function Page({ searchParams }) {
           <div className="viewtoggle">
             <Link href="/" className="on">Diário de bordo</Link>
             {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
-                  {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
+            {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
             {ehFarmer && <Link href="/ajuda">Como funciona</Link>}
           </div>
           <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>

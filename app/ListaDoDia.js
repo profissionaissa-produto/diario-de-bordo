@@ -232,7 +232,7 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
             {doCompromisso.length} empresas{extras.length ? ` + ${extras.length} extras` : ""}
           </span>
           {faltam > 0 ? (
-            <span className="plan-motivo">{faltam} sem abordagem definida</span>
+            <span className="plan-motivo">{faltam} sem estratégia definida</span>
           ) : (
             <span className="fech-ok">todas mapeadas</span>
           )}

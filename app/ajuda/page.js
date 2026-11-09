@@ -101,7 +101,7 @@ export default async function Ajuda() {
 
         <section className="card ajuda-bloco">
           <h2>O ciclo do dia</h2>
-          <p>De manhã, escolha a abordagem de cada empresa. Não existe escolher quais atacar: a lista inteira é o compromisso.</p>
+          <p>De manhã, escolha a estratégia de cada empresa. Não existe escolher quais atacar: a lista inteira é o compromisso.</p>
           <ul className="ajuda-lista">
             {ABORDAGENS.map((a) => <li key={a}>{a}</li>)}
           </ul>

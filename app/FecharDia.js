@@ -76,7 +76,7 @@ function Card({ e, ctx, onFechou }) {
       {e.abordagem ? (
         <div className="emp-meta">abordagem: <b>{e.abordagem}</b></div>
       ) : (
-        <div className="emp-meta emp-hist">sem abordagem definida de manhã</div>
+        <div className="emp-meta emp-hist">sem estratégia definida de manhã</div>
       )}
       {e.contexto && <div className="emp-orientacao">{e.contexto}</div>}
 

@@ -71,25 +71,6 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
           </span>
         )}
         <a className="deal-link" href={e.url} target="_blank" rel="noreferrer">{e.nome}</a>
-        <button
-          type="button"
-          className="btn-msg"
-          onClick={() => setAberta((v) => !v)}
-          disabled={semCanal || falta.length > 0}
-          title={
-            semCanal
-              ? "Os três canais já esgotaram nesta empresa"
-              : falta.length > 0
-                ? `Defina ${falta.join(" e ")} para liberar a mensagem`
-                : undefined
-          }
-        >
-          {semCanal
-            ? "Canais esgotados"
-            : falta.length > 0
-              ? `Defina ${falta.join(" e ")}`
-              : "Gerar mensagem"}
-        </button>
         {e.orientacao && (
           <div className="emp-orientacao">
             {e.orientacao.texto}
@@ -142,6 +123,31 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
           />
         )}
       </td>
+
+      {/* A ação fica na ponta da linha de propósito: a linha se lê da esquerda
+          para a direita, e mandar a mensagem é o último passo, depois de a
+          estratégia e o contexto estarem definidos. */}
+      <td className="col-acao">
+        <button
+          type="button"
+          className="btn-msg"
+          onClick={() => setAberta((v) => !v)}
+          disabled={semCanal || falta.length > 0}
+          title={
+            semCanal
+              ? "Os três canais já esgotaram nesta empresa"
+              : falta.length > 0
+                ? `Defina ${falta.join(" e ")} para liberar a mensagem`
+                : undefined
+          }
+        >
+          {semCanal
+            ? "Canais esgotados"
+            : falta.length > 0
+              ? `Defina ${falta.join(" e ")}`
+              : "Gerar mensagem"}
+        </button>
+      </td>
     </tr>
 
 
@@ -169,11 +175,12 @@ function Tabela({ itens, ctx, estrategias, contatos, tentativas, historicoContat
       <table>
         <thead>
           <tr>
-            <th style={{ width: "30%" }}>Empresa</th>
-            <th style={{ width: "12%" }}>Etapa</th>
-            <th style={{ width: "13%" }}>Última compra</th>
-            <th style={{ width: "25%" }}>Estratégia</th>
-            <th style={{ width: "20%" }}>Contexto</th>
+            <th style={{ width: "24%" }}>Empresa</th>
+            <th style={{ width: "11%" }}>Etapa</th>
+            <th style={{ width: "11%" }}>Última compra</th>
+            <th style={{ width: "22%" }}>Estratégia</th>
+            <th style={{ width: "17%" }}>Contexto</th>
+            <th style={{ width: "15%" }}>Mensagem</th>
           </tr>
         </thead>
         <tbody>

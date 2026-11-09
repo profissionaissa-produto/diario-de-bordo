@@ -23,11 +23,10 @@ import { ehGestor, segmentosDe, podeGerirCloser, briefingsGeriveis, podeVerTrami
 import { listarEstrategias, listarOcultas, tentativasPorEmpresa, detalheTentativas } from "../lib/db";
 import { montaEstrategias, indexaPorId, semOcultas } from "../lib/estrategias";
 import { listaDoDia } from "../lib/dia-farmer";
-import { resumoDoMes } from "../lib/metricas-farmer";
 import { atividadeDoDia } from "../lib/atividade";
 import { listaDoDiaCloser } from "../lib/dia-closer";
 import { empresasComSelo } from "../lib/relacionamento";
-import { montaHistorico, precisaAuxilio, placarDoDia } from "../lib/carteira";
+import { montaHistorico, precisaAuxilio } from "../lib/carteira";
 import { getHistoricoCarteira, aplicarAtividade, getListaDia } from "../lib/db";
 import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
 
@@ -164,7 +163,6 @@ export default async function Page({ searchParams }) {
   // Farmer trabalha empresas da própria carteira, não negócios do funil.
   const ehFarmer = seg === SEG_TRAMITACOES;
   let carteiraDoDia = null;
-  let resumoMes = null;
   let contatosDoDia = {};
   let tentativasDoDia = {};
   let historicoContato = {};
@@ -184,13 +182,10 @@ export default async function Page({ searchParams }) {
       // Tudo que não depende de mais nada vai junto. Antes eram seis esperas
       // em série, três delas pesadas no HubSpot, sem uma precisar da outra.
       // Cada uma trata o próprio erro: o dia não cai porque o selo falhou.
-      const [resumo, porOwner, selos, contatos, tentativas, detalhe] = await Promise.all([
-        // Números do mês: o cabeçalho do farmer fala de carteira e resultado,
-        // não de funil. Falha aqui não derruba o dia.
-        resumoDoMes([owner], dayKey()).catch((err) => {
-          console.error("[carteira] resumo do mês falhou:", err?.message);
-          return null;
-        }),
+      // O resumo do mês saiu junto com os indicadores do topo: era uma ida ao
+      // HubSpot por abertura da tela para desenhar quatro números que não
+      // estão mais lá. Quem mede o mês é a Evolução.
+      const [porOwner, selos, contatos, tentativas, detalhe] = await Promise.all([
         // O que o CRM já sabe do dia: vira sugestão de resultado no fechamento.
         // Falha aqui (escopo, cota) só faz o farmer preencher à mão.
         // A efetividade é automática: o que o CRM registrou hoje vira o
@@ -217,7 +212,6 @@ export default async function Page({ searchParams }) {
         detalheTentativas(ids),
       ]);
 
-      resumoMes = resumo;
       contatosDoDia = contatos;
       tentativasDoDia = tentativas;
       historicoContato = detalhe;
@@ -319,13 +313,6 @@ export default async function Page({ searchParams }) {
   // ownerId resolvido pelo login. Passar null aqui esconderia o menu justo de
   // quem a tela é.
   const verFinanceiro = podeVerFinanceiro(session.user, ownerDaVez);
-
-  // Derivado da lista do dia: não custa chamada nenhuma a mais.
-  const kpiFarmer = {
-    compromisso: (carteiraDoDia || []).filter((e) => !e.extra).length,
-    mapeadas: (carteiraDoDia || []).filter((e) => e.abordagem).length,
-    placar: placarDoDia(carteiraDoDia || []),
-  };
 
   const rows = deals.map((d) => ({
     ...d,
@@ -479,24 +466,10 @@ export default async function Page({ searchParams }) {
         </div>
       )}
 
-      {ehFarmer ? (
-        <>
-        <div className="kpis">
-          <div className="kpi"><div className="lab">Empresas do dia</div><div className="val">{kpiFarmer.compromisso}</div><div className="sub">o compromisso de hoje</div></div>
-          <div className="kpi"><div className="lab">Mapeadas</div><div className="val a">{kpiFarmer.mapeadas}</div><div className="sub">com abordagem definida</div></div>
-          <div className="kpi"><div className="lab">Contato efetivo hoje</div><div className="val">{kpiFarmer.placar.pct}%</div><div className="sub">sobre o compromisso do dia</div></div>
-          <div className="kpi"><div className="lab">Sem registro</div><div className="val o">{kpiFarmer.placar.sem_registro}</div><div className="sub">ainda sem fechamento</div></div>
-        </div>
-        {resumoMes && (
-          <div className="kpis">
-            <div className="kpi"><div className="lab">Oportunidades no mês</div><div className="val a">{resumoMes.oportunidades}</div><div className="sub">negócios criados por você</div></div>
-            <div className="kpi"><div className="lab">Receita gerada</div><div className="val">{brl(resumoMes.receita)}</div><div className="sub">negócios ganhos no mês</div></div>
-            <div className="kpi"><div className="lab">Tickets ativos</div><div className="val">{resumoMes.ticketsAtivos}</div><div className="sub">eventos em execução</div></div>
-            <div className="kpi"><div className="lab">Carteira tocada</div><div className="val o">{resumoMes.pctContato}%</div><div className="sub">{resumoMes.comContato} de {resumoMes.carteira} empresas no mês</div></div>
-          </div>
-        )}
-        </>
-      ) : (
+      {/* O Farmer não tem painel de números em cima da lista. A tela dele é a
+          lista do dia, e os oito indicadores empurravam o trabalho para
+          baixo da dobra. O que é medição vive na Evolução. */}
+      {ehFarmer ? null : (
       <div className="kpis">
         <div className="kpi"><div className="lab">Negócios ativos</div><div className="val">{rows.length}</div><div className="sub">{viewOwner ? `funil ${seg}` : "selecione um closer"}</div></div>
         <div className="kpi"><div className="lab">Atividades próximas</div><div className="val a">{hoje}</div><div className="sub">hoje ou nos próximos 3 dias</div></div>

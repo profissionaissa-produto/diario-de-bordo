@@ -197,7 +197,7 @@ export default function Mensagem({ empresa, contatos = [], tentativas = {}, hist
               escrita, em vez de ter ficado para trás numa coluna da tabela. */}
           <aside className="modal-lado">
             <div className="modal-campo">
-              <span className="ctx-lab">Abordagem de hoje</span>
+              <span className="ctx-lab">Estratégia de hoje</span>
               <b>{empresa.abordagem}</b>
             </div>
             {estrategia && (

@@ -2,29 +2,18 @@
 
 import { useState } from "react";
 import { ABORDAGENS, BALDES } from "../lib/carteira";
-import { numeroDa } from "../lib/estrategias";
 import { canaisLiberados } from "../lib/canal";
 import { briefingDoContato } from "../lib/briefing-contato";
 import Mensagem from "./Mensagem";
-
-// Contexto de quem já apareceu antes: é o que responde "por que ela voltou?".
-function historicoTexto(h) {
-  if (!h?.ultimaData) return "";
-  const dia = h.ultimaData.slice(8, 10) + "/" + h.ultimaData.slice(5, 7);
-  const r = {
-    efetivo: "falaram em " + dia,
-    tentativa: `${h.tentativasSeguidas || 1}ª tentativa · sem contato desde ${dia}`,
-    nao_abordei: "não abordada em " + dia,
-    trocar_segmento: "troca pedida em " + dia,
-  };
-  return r[h.ultimoResultado] || `apareceu em ${dia}, sem fechamento`;
-}
 
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
 
 function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordagem }) {
   const [abordagem, setAbordagem] = useState(e.abordagem || "");
-  const [estrategia, setEstrategia] = useState(e.estrategia || "");
+  // Só leitura desde que a coluna da lista curada saiu: a decisão do dia virou
+  // a própria coluna Estratégia. O que já foi gravado antes continua indo para
+  // o prompt e para o briefing.
+  const estrategia = e.estrategia || "";
   const [contexto, setContexto] = useState(e.contexto || "");
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
@@ -60,20 +49,10 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
     else setAbordagem(anterior);
   }
 
-  async function escolherEstrategia(valor) {
-    const anterior = estrategia;
-    setEstrategia(valor);
-    if (!(await salvar({ estrategia: valor }))) setEstrategia(anterior);
-  }
-
-  const hist = historicoTexto(e.historico);
-
   const semCanal = canaisLiberados(tentativas).length === 0;
-  // A mensagem vem depois da decisão, não antes: sem abordagem o texto não
-  // tem a que servir. Estratégia só é exigida quando há alguma para escolher,
-  // senão o botão nunca liberaria enquanto a lista do Farmer estiver vazia.
-  const faltaEstrategia = estrategias.length > 0 && !estrategia;
-  const falta = [!abordagem && "abordagem", faltaEstrategia && "estratégia"].filter(Boolean);
+  // A mensagem vem depois da decisão, não antes: sem a estratégia do dia o
+  // texto não tem a que servir.
+  const falta = [!abordagem && "a estratégia"].filter(Boolean);
   const briefing = briefingDoContato({
     contatos: historico,
     abordagem,
@@ -125,7 +104,6 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
 
       <td className="col-data">{dataBR(e.ultimaCompra)}</td>
 
-      <td className="col-hist">{hist || <span className="sem">primeira vez na lista</span>}</td>
 
       <td>
         <div className="select-wrap">
@@ -135,33 +113,13 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
             disabled={busy}
             onChange={(ev) => escolher(ev.target.value)}
           >
-            <option value="">Como vai abordar…</option>
+            <option value="">Escolher estratégia…</option>
             {ABORDAGENS.map((a) => (
               <option key={a} value={a}>{a}</option>
             ))}
           </select>
         </div>
         {erro && <span className="err">{erro}</span>}
-      </td>
-
-      <td>
-        {/* Opcional: a abordagem é o compromisso do dia, a estratégia é como
-            ele vai conduzir. Sem lista cadastrada a coluna não cobra nada. */}
-        <div className="select-wrap">
-          <select
-            className="emp-abordagem"
-            value={estrategia}
-            disabled={busy || estrategias.length === 0}
-            onChange={(ev) => escolherEstrategia(ev.target.value)}
-          >
-            <option value="">{estrategias.length ? "Escolher estratégia…" : "Nenhuma cadastrada"}</option>
-            {estrategias.map((s) => (
-              <option key={s.id} value={s.id} title={s.desc}>
-                {numeroDa(s.id)}. {s.titulo}
-              </option>
-            ))}
-          </select>
-        </div>
       </td>
 
       <td>
@@ -211,13 +169,11 @@ function Tabela({ itens, ctx, estrategias, contatos, tentativas, historicoContat
       <table>
         <thead>
           <tr>
-            <th style={{ width: "22%" }}>Empresa</th>
-            <th style={{ width: "9%" }}>Fase</th>
-            <th style={{ width: "10%" }}>Última compra</th>
-            <th style={{ width: "14%" }}>Por que voltou</th>
-            <th style={{ width: "17%" }}>Abordagem</th>
-            <th style={{ width: "16%" }}>Estratégia</th>
-            <th style={{ width: "12%" }}>Contexto</th>
+            <th style={{ width: "30%" }}>Empresa</th>
+            <th style={{ width: "12%" }}>Etapa</th>
+            <th style={{ width: "13%" }}>Última compra</th>
+            <th style={{ width: "25%" }}>Estratégia</th>
+            <th style={{ width: "20%" }}>Contexto</th>
           </tr>
         </thead>
         <tbody>
@@ -285,7 +241,7 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
           <a
             className={"btn-primary" + (faltam > 0 ? " desativado" : "")}
             href={faltam > 0 ? undefined : ctx.urlFechamento}
-            title={faltam > 0 ? "Defina a abordagem de todas antes de fechar o dia" : undefined}
+            title={faltam > 0 ? "Defina a estratégia de todas antes de fechar o dia" : undefined}
           >
             Ir para o fechamento
           </a>

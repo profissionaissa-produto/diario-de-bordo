@@ -10,6 +10,7 @@ import {
   palestranteDo,
 } from "../lib/tramitacoes";
 import { ABORDAGEM_DO_ONBOARDING, estrategiaDaTentativa } from "../lib/financeiro";
+import { ticketUrl } from "../lib/config";
 import MensagemFinanceiro from "./MensagemFinanceiro";
 import { numeroDa } from "../lib/estrategias";
 
@@ -166,6 +167,13 @@ export default function RegistroTramitacao({
               {p.evento && <span>· evento {dataBR(p.evento)}</span>}
               {financeiro && p.tentativa > 0 && <span>· {p.tentativa}ª tentativa</span>}
               {financeiro && p.data && <span>· vence {dataBR(p.data)}</span>}
+              {/* O mesmo link que a janela do farmer tem para a empresa. Sem
+                  ele não há como abrir o caso: o board mostra o ticket, mas
+                  conferir qualquer coisa fora do que está na tela exigia
+                  procurar o ticket no HubSpot pelo nome. */}
+              <a href={ticketUrl(p.ticketId)} target="_blank" rel="noreferrer">
+                ver no HubSpot
+              </a>
             </div>
           </div>
           <button className="modal-x" onClick={onFechar} aria-label="Fechar">×</button>
@@ -212,13 +220,18 @@ export default function RegistroTramitacao({
             {financeiro && escolhida?.desc && <p className="reg-dica">{escolhida.desc}</p>}
           </label>
 
+          {/* Toda escolha desta janela usa o mesmo controle, o seg-toggle, que
+              é o da janela do farmer. Antes resultado, tarefa, canal e lado da
+              conversa tinham quatro aparências diferentes para a mesma coisa:
+              escolher uma opção entre poucas. */}
           <div className="est-campo">
             <span className="ctx-lab">No fim do dia, como andou</span>
-            <div className="fech-opcoes">
+            <div className="seg-toggle">
               {RESULTADOS_TRAMITACAO.map((r) => (
                 <button
                   key={r.key}
-                  className={"fech-op " + r.cls + (resultado === r.key ? " on" : "")}
+                  type="button"
+                  className={resultado === r.key ? "on" : ""}
                   onClick={() => { setResultado(r.key); setSalvo(false); setErro(""); }}
                 >
                   {r.label}
@@ -230,17 +243,11 @@ export default function RegistroTramitacao({
           {financeiro && (
             <div className="est-campo">
               <span className="ctx-lab">Abrir tarefa no ticket</span>
-              <div className="fech-opcoes">
-                <button
-                  className={"fech-op ok" + (tarefa ? " on" : "")}
-                  onClick={() => setTarefa(true)}
-                >
+              <div className="seg-toggle">
+                <button type="button" className={tarefa ? "on" : ""} onClick={() => setTarefa(true)}>
                   Sim
                 </button>
-                <button
-                  className={"fech-op nao" + (!tarefa ? " on" : "")}
-                  onClick={() => setTarefa(false)}
-                >
+                <button type="button" className={!tarefa ? "on" : ""} onClick={() => setTarefa(false)}>
                   Não
                 </button>
               </div>

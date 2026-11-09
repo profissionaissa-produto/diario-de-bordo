@@ -205,12 +205,9 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
           <div className="msg-linha">
             <span className="ctx-lab">Para</span>
             {doLado.length === 0 ? (
-              <span className="err">
-                Nenhum contato do lado {String(DESTINOS[destino] || "").toLowerCase()} neste ticket.
-                {destino === "palestrante"
-                  ? " Cadastre no Dash ou associe um contato ao ticket."
-                  : " É preciso associar um contato ao ticket no HubSpot."}
-              </span>
+              // Curto, para caber na linha como o nome caberia. A frase inteira
+              // virava uma faixa vermelha atravessando a janela.
+              <span className="err">sem contato do lado {String(DESTINOS[destino] || "").toLowerCase()}</span>
             ) : doLado.length === 1 ? (
               <span className="msg-contato">
                 {contato?.fonte === "dash" && <span className="emp-tag">Dash</span>}
@@ -246,6 +243,13 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
           {/* Do lado do palestrante quem manda é o Dash. Quando ele não achou,
               o motivo aparece: é a diferença entre "não está cadastrado" e "a
               chave foi recusada", e some no log se não for dito aqui. */}
+          {doLado.length === 0 && (
+            <p className="msg-nota">
+              {destino === "palestrante"
+                ? "Cadastre o palestrante no Dash, ou associe um contato dele ao ticket no HubSpot."
+                : "É preciso associar um contato do cliente ao ticket no HubSpot."}
+            </p>
+          )}
           {destino === "palestrante" && dash?.motivo && <p className="msg-nota">{dash.motivo}</p>}
           {contato?.porAssessoria && (
             <p className="msg-nota">

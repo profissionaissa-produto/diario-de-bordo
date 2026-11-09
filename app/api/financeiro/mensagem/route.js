@@ -22,6 +22,7 @@ import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../
 import { paraWhatsApp } from "../../../../lib/telefone";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../../lib/canal";
 import { classificaContatos, nomeDoPalestrante } from "../../../../lib/contato-ticket";
+import { palestranteDoDash, dashPronto } from "../../../../lib/dash";
 import {
   ehEtapaFinanceira,
   abordagensDa,
@@ -38,6 +39,47 @@ import { podeVerFinanceiro } from "../../../../lib/permissoes";
 
 const quem = (session) => session.user.name || session.user.email;
 const primeiroNome = (s) => String(s || "").trim().split(/\s+/)[0] || "";
+
+// Quem dá para falar neste ticket.
+//
+// Do lado do palestrante quem manda é o Dash, não o HubSpot. O contato do
+// palestrante no ticket é incerto: medido em 09/11/2026, parte dos tickets da
+// etapa de NF não tem o palestrante associado, e quando tem pode ser o
+// escritório, com grafia diferente da propriedade. No Dash está o cadastro que
+// ele mesmo fez, com telefone, e-mail e por qual canal quer ser procurado.
+//
+// Os contatos do HubSpot continuam vindo atrás, marcados como tal: o Dash pode
+// não achar, e aí a pessoa escolhe sabendo de onde o dado veio.
+async function montaContatos(ticket) {
+  const doHub = classificaContatos(
+    (await contatosDosTickets([ticket.id]).catch((e) => {
+      console.error("[financeiro] falha ao ler os contatos do ticket:", e?.message);
+      return {};
+    }))[String(ticket.id)] || [],
+    ticket.palestrantePrincipal
+  ).map((c) => ({ ...c, fonte: "hubspot" }));
+
+  if (!dashPronto()) {
+    return {
+      contatos: doHub,
+      dash: { configurado: false, motivo: "PSA_API_KEY não está no ambiente, então o Dash não foi consultado." },
+    };
+  }
+
+  try {
+    const { contato, motivo } = await palestranteDoDash(ticket.palestrantePrincipal);
+    // O do Dash entra na frente dos do HubSpot do mesmo lado: é a fonte.
+    return {
+      contatos: contato ? [contato, ...doHub] : doHub,
+      dash: { configurado: true, motivo },
+    };
+  } catch (e) {
+    // Dash fora do ar não pode derrubar a tela inteira: a cobrança do cliente
+    // não depende dele. O motivo aparece na tela em vez de sumir no log.
+    console.error("[financeiro] falha ao consultar o Dash:", e?.message);
+    return { contatos: doHub, dash: { configurado: true, motivo: e.message || "Falha ao consultar o Dash." } };
+  }
+}
 
 // Tudo que a geração e o envio precisam, conferido uma vez só. Quem chama
 // recebe o ticket, o contato escolhido e a situação da parcela já prontos.
@@ -63,14 +105,10 @@ async function contexto(req) {
   }
 
   // Vão juntas: nada aqui depende do resultado do outro.
-  const [ticket, porTicket, contagem] = await Promise.all([
+  const [ticket, contagem] = await Promise.all([
     getTicketCS(body.ticketId).catch((e) => {
       console.error("[financeiro] falha ao ler o ticket:", e?.message);
       return null;
-    }),
-    contatosDosTickets([body.ticketId]).catch((e) => {
-      console.error("[financeiro] falha ao ler os contatos do ticket:", e?.message);
-      return {};
     }),
     tentativasPorTicket([body.ticketId]),
   ]);
@@ -98,9 +136,15 @@ async function contexto(req) {
     return { erro: "Escolha se a mensagem é para o cliente ou para o palestrante.", status: 400 };
   }
 
-  const contatos = classificaContatos(porTicket[String(body.ticketId)] || [], ticket.palestrantePrincipal);
+  // A lista é montada do lado do servidor também aqui, e não recebida da tela:
+  // confiar no corpo para saber o endereço do destinatário seria deixar o
+  // cliente dizer para onde a cobrança vai.
+  const { contatos } = await montaContatos(ticket);
   const contato = contatos.find((c) => String(c.id) === String(body.contatoId)) || null;
   if (!contato) return { erro: "Escolha para quem a mensagem vai.", status: 400 };
+  if (contato.tipo !== destino) {
+    return { erro: `${contato.nome} não é o lado ${DESTINOS[destino].toLowerCase()} desta conversa.`, status: 400 };
+  }
 
   const tentativas = contagem[String(body.ticketId)] || {};
   if (!canaisLiberados(tentativas).includes(body.canal)) {
@@ -143,6 +187,10 @@ async function dadosDoPrompt(c) {
     etapa: labelDaEtapa(c.ticket.etapa),
     destino: c.destino,
     contato: c.contato,
+    // Quando o palestrante pediu que o contato passe pela assessoria, quem lê
+    // a mensagem não é ele. Sem isto o texto sairia falando com a assessoria
+    // como se ela fosse o palestrante.
+    porAssessoria: !!c.contato.porAssessoria,
     canal: c.body.canal,
     tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
     abordagem: c.abordagem,
@@ -183,17 +231,17 @@ export async function GET(req) {
   }
 
   try {
-    const [ticket, porTicket, contagem] = await Promise.all([
-      getTicketCS(ticketId),
-      contatosDosTickets([ticketId]),
-      tentativasPorTicket([ticketId]),
-    ]);
+    const [ticket, contagem] = await Promise.all([getTicketCS(ticketId), tentativasPorTicket([ticketId])]);
     if (!ticket) return Response.json({ error: "Ticket não encontrado." }, { status: 404 });
+    // Depois do ticket, não junto: a consulta ao Dash é pelo nome que está na
+    // propriedade do ticket, então ela só existe depois de ler o ticket.
+    const { contatos, dash } = await montaContatos(ticket);
     return Response.json({
       ok: true,
-      contatos: classificaContatos(porTicket[String(ticketId)] || [], ticket.palestrantePrincipal),
+      contatos,
+      dash,
       tentativas: contagem[String(ticketId)] || {},
-      palestrante: ticket.palestrantePrincipal || "",
+      palestrante: nomeDoPalestrante(ticket.palestrantePrincipal),
     });
   } catch (e) {
     console.error("[financeiro] falha ao ler os contatos:", e);

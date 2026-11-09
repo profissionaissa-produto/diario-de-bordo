@@ -27,6 +27,7 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
 
   const [carregando, setCarregando] = useState(true);
   const [contatos, setContatos] = useState([]);
+  const [dash, setDash] = useState(null);
   const [tentativas, setTentativas] = useState({});
   const [erro, setErro] = useState("");
 
@@ -56,6 +57,7 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
         if (!vivo) return;
         if (!res.ok) throw new Error(d.error || "Falha ao ler os contatos.");
         setContatos(d.contatos || []);
+        setDash(d.dash || null);
         setTentativas(d.tentativas || {});
         setCanal(canalSugerido(d.tentativas || {}) || "");
       } catch (e) {
@@ -78,17 +80,24 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   }, [abordagem]);
 
   // Escolhido o lado, o contato padrão é o primeiro daquele lado que dá para
-  // contatar. A lista já vem classificada e ordenada do servidor.
+  // contatar. A lista já vem classificada e ordenada do servidor, com o do
+  // Dash na frente quando ele foi encontrado.
   const doLado = contatos.filter((x) => x.tipo === destino);
   useEffect(() => {
     const primeiro = doLado.find((x) => x.email || x.telefone) || doLado[0];
     setContatoId(primeiro ? String(primeiro.id) : "");
     setTexto("");
+    // O palestrante marca no Dash por onde quer ser procurado. Respeitar isso
+    // é o combinado que ele fez com a PSA, então o canal já abre nele. Se
+    // aquele canal já esgotou as 3 tentativas, mantém o sugerido pela cascata.
+    const pref = primeiro?.contatarPor;
+    if (pref && canaisLiberados(tentativas).includes(pref)) setCanal(pref);
   }, [destino, contatos.length]);
 
   const contato = contatos.find((x) => String(x.id) === contatoId) || null;
   const liberados = canaisLiberados(tentativas);
   const tentativa = canal ? tentativasNo(tentativas, canal) + 1 : 0;
+  const prefEsgotada = contato?.contatarPor && !liberados.includes(contato.contatarPor);
 
   async function chamar(metodo, corpo) {
     const res = await fetch("/api/financeiro/mensagem", {
@@ -195,17 +204,39 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
               {doLado.length === 0 && <option value="">Nenhum contato deste lado no ticket</option>}
               {doLado.map((x) => (
                 <option key={x.id} value={x.id}>
+                  {x.fonte === "dash" ? "Dash · " : ""}
                   {x.nome}
-                  {x.cargo ? `, ${x.cargo}` : ""}
+                  {x.cargo && x.cargo !== "palestrante" ? `, ${x.cargo}` : ""}
                   {x.email ? ` · ${x.email}` : " · sem e-mail"}
                 </option>
               ))}
             </select>
           </div>
+
+          {/* Do lado do palestrante quem manda é o Dash. Quando ele não achou,
+              o motivo aparece: é a diferença entre "não está cadastrado" e
+              "a chave foi recusada", e some no log se não for dito aqui. */}
+          {destino === "palestrante" && dash?.motivo && (
+            <p className="reg-dica">{dash.motivo}</p>
+          )}
+          {contato?.porAssessoria && (
+            <p className="reg-dica">
+              Ele atende pela assessoria: no Dash o contato principal é ela, então a mensagem vai para lá.
+            </p>
+          )}
+          {contato?.contatarPor && (
+            <p className="reg-dica">
+              Prefere ser procurado por {rotuloCanal(contato.contatarPor)}, conforme o cadastro dele no Dash.
+              {prefEsgotada ? ` Esse canal já teve ${LIMITE_POR_CANAL} tentativas sem resposta.` : ""}
+            </p>
+          )}
+
           {doLado.length === 0 && (
             <p className="reg-dica">
-              Este ticket não tem contato do lado {String(DESTINOS[destino] || "").toLowerCase()} no
-              HubSpot. É preciso associar um antes de mandar mensagem.
+              Nenhum contato do lado {String(DESTINOS[destino] || "").toLowerCase()} para este ticket.
+              {destino === "palestrante"
+                ? " Cadastre no Dash ou associe um contato ao ticket."
+                : " É preciso associar um contato ao ticket no HubSpot."}
             </p>
           )}
           {contato?.telefone && (

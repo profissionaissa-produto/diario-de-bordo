@@ -21,7 +21,7 @@ import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
 import { paraWhatsApp } from "../../../../lib/telefone";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../../lib/canal";
-import { classificaContatos } from "../../../../lib/contato-ticket";
+import { classificaContatos, nomeDoPalestrante } from "../../../../lib/contato-ticket";
 import {
   ehEtapaFinanceira,
   abordagensDa,
@@ -135,7 +135,10 @@ async function dadosDoPrompt(c) {
   return {
     contextoBase,
     cliente: clienteDo(c.ticket.assunto) || c.ticket.assunto,
-    palestrante: c.ticket.palestrantePrincipal || palestranteDo(c.ticket.assunto),
+    // Normalizado, senão o texto sai com o nome hifenizado que a propriedade
+    // guarda: "Arthur Igreja (Arthur-Igreja)" virava "palestrante Arthur-Igreja"
+    // na mensagem que ia para o cliente.
+    palestrante: nomeDoPalestrante(c.ticket.palestrantePrincipal) || palestranteDo(c.ticket.assunto),
     evento: c.ticket.evento,
     etapa: labelDaEtapa(c.ticket.etapa),
     destino: c.destino,

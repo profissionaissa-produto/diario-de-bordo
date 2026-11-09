@@ -963,13 +963,20 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 /* O que a tarefa vai fazer, dito antes de o botão ser apertado. */
 .reg-dica { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 
-/* A mensagem de cobrança dentro da janela de marcação. Fica num bloco com
-   borda porque é outro assunto: em cima a pessoa diz o que vai fazer, aqui ela
-   escreve o que vai mandar. */
-.msg-bloco { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line);
-  border-radius: 12px; background: var(--surface-2); }
+/* A janela do financeiro é a do farmer: marcação de um lado, mensagem do
+   outro. A coluna da esquerda é mais larga do que a da carteira porque aqui
+   ela tem campos para preencher, não só contexto para ler. */
+.modal-corpo-reg { grid-template-columns: 360px 1fr; }
+.modal-corpo-reg .modal-lado { border-right: 1px solid var(--line); }
+.modal-corpo-reg .reg-texto { min-height: 110px; }
+
 .msg-rodape { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
 .msg-rodape .err, .msg-rodape .saved { margin-right: auto; }
+
+@media (max-width: 900px) {
+  .modal-corpo-reg { grid-template-columns: 1fr; }
+  .modal-corpo-reg .modal-lado { border-right: 0; border-bottom: 1px solid var(--line); }
+}
 
 /* Ponto de cor: mesma linguagem da Sinaleira, cor viva no ponto e escura no
    texto, que é o que passa no contraste. */

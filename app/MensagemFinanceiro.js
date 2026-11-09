@@ -11,12 +11,14 @@ import { destinoDa, DESTINOS } from "../lib/financeiro";
 // HubSpot, que é onde fica o discador. Não existe outro discador e não vai
 // existir, então o produto aqui é o roteiro.
 const ACAO = {
-  whatsapp: { rotulo: "Abrir no WhatsApp", fazendo: "Registrando…" },
-  email: { rotulo: "Enviar e-mail", fazendo: "Enviando…" },
-  ligacao: { rotulo: "Registrar e abrir no HubSpot", fazendo: "Registrando…" },
+  whatsapp: { rotulo: "Abrir no WhatsApp", fazendo: "Registrando…", feito: "Tentativa registrada e gravada no HubSpot." },
+  email: { rotulo: "Enviar e-mail", fazendo: "Enviando…", feito: "E-mail enviado pela sua caixa, com cópia para a timeline." },
+  ligacao: { rotulo: "Registrar e abrir no HubSpot", fazendo: "Registrando…", feito: "Tentativa registrada. A chamada em si é o HubSpot que registra." },
 };
 
-// A mensagem de cobrança, dentro da janela de marcação do financeiro.
+// A mensagem de cobrança. Mesma forma da janela do farmer: o de/para, o
+// assunto e a cópia são campos, e o texto tem uma caixa grande para ser lido
+// antes de sair. Amontoado num bloco estreito ninguém revisa o que manda.
 //
 // Ela só aparece depois que a ação do dia está escolhida, porque é a ação que
 // decide para quem o texto vai: cobrança é com quem paga, NF é com quem emite,
@@ -28,14 +30,13 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   const [carregando, setCarregando] = useState(true);
   const [contatos, setContatos] = useState([]);
   const [dash, setDash] = useState(null);
+  const [remetente, setRemetente] = useState(null);
   const [tentativas, setTentativas] = useState({});
   const [erro, setErro] = useState("");
 
   // O lado só é estado quando a ação cabe nos dois. Nos outros casos ele é
   // derivado da ação, e tem que ser: guardado em useState ele sobrevivia à
-  // troca de ação e ficava um render inteiro com o valor velho. Com a ação
-  // ainda em branco isso era "nenhum", e a tela quebrava procurando o rótulo
-  // de um lado que não existe.
+  // troca de ação e ficava um render inteiro com o valor velho.
   const [escolhido, setEscolhido] = useState("");
   const destino = precisaEscolher ? escolhido : destinoDaAcao;
   const [contatoId, setContatoId] = useState("");
@@ -47,7 +48,7 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   const [feito, setFeito] = useState("");
 
   // Carrega quando a janela abre, e não junto com o board: são centenas de
-  // leituras no HubSpot para desenhar uma tela usada um ticket por vez.
+  // leituras no HubSpot e no Dash para desenhar uma tela usada um ticket por vez.
   useEffect(() => {
     let vivo = true;
     (async () => {
@@ -58,6 +59,7 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
         if (!res.ok) throw new Error(d.error || "Falha ao ler os contatos.");
         setContatos(d.contatos || []);
         setDash(d.dash || null);
+        setRemetente(d.remetente || null);
         setTentativas(d.tentativas || {});
         setCanal(canalSugerido(d.tentativas || {}) || "");
       } catch (e) {
@@ -79,9 +81,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     setFeito("");
   }, [abordagem]);
 
-  // Escolhido o lado, o contato padrão é o primeiro daquele lado que dá para
-  // contatar. A lista já vem classificada e ordenada do servidor, com o do
-  // Dash na frente quando ele foi encontrado.
   const doLado = contatos.filter((x) => x.tipo === destino);
   useEffect(() => {
     const primeiro = doLado.find((x) => x.email || x.telefone) || doLado[0];
@@ -125,8 +124,15 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     setFeito("");
     try {
       const d = await chamar("POST", {});
-      setTexto(d.texto);
-      if (canal === "email") setAssunto(separaAssunto(d.texto).assunto);
+      // No e-mail o assunto é campo próprio, não a primeira linha do corpo:
+      // mandado junto, ele saía escrito dentro da mensagem.
+      if (canal === "email") {
+        const { assunto: a, corpo } = separaAssunto(d.texto);
+        setAssunto(a);
+        setTexto(corpo);
+      } else {
+        setTexto(d.texto);
+      }
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -138,9 +144,8 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     setBusy("enviar");
     setErro("");
     try {
-      const corpo = canal === "email" ? separaAssunto(texto).corpo : texto;
-      const d = await chamar("PUT", { texto: canal === "email" ? corpo : texto, assunto, cc });
-      setFeito(d.aviso || `Tentativa ${d.tentativa} registrada.`);
+      const d = await chamar("PUT", { texto, assunto, cc });
+      setFeito(d.aviso || ACAO[canal]?.feito || `Tentativa ${d.tentativa} registrada.`);
       setTentativas((t) => ({ ...t, [canal]: (t[canal] || 0) + 1 }));
       if (d.url) window.open(d.url, "_blank", "noopener");
     } catch (e) {
@@ -153,31 +158,37 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   // Ação interna não tem mensagem: emitir nota, conferir NF e aguardar retorno
   // são trabalho nosso, e oferecer "gerar" neles sugeriria mandar texto para
   // quem não tem o que receber.
-  if (!abordagem || destinoDaAcao === "nenhum") return null;
+  if (!abordagem) {
+    return (
+      <p className="msg-sem">
+        Escolha o que vai fazer hoje, ao lado. É a ação que decide para quem a mensagem vai.
+      </p>
+    );
+  }
+  if (destinoDaAcao === "nenhum") {
+    return (
+      <p className="msg-sem">
+        <b>{abordagem}</b> é trabalho interno: não há mensagem para enviar. Registre o que foi feito ao lado.
+      </p>
+    );
+  }
 
   const semTelefone = canal !== "email" && contato && !contato.telefone;
   const semEmail = canal === "email" && contato && !contato.email;
   const naoPodeGerar = !destino || !contato || !canal || !!busy || semTelefone || semEmail;
+  const naoPodeEnviar =
+    !texto.trim() || !!busy || (canal === "email" && (!assunto.trim() || !contato?.email));
 
   return (
-    <div className="msg-bloco">
-      <div className="est-campo">
-        <span className="ctx-lab">Mensagem</span>
-        {carregando && <p className="reg-dica">Lendo os contatos do ticket…</p>}
-      </div>
-
+    <>
       {/* Só aparece quando a ação cabe dos dois lados. Nas outras o destino já
           está decidido e perguntar seria pergunta com uma resposta só. */}
       {precisaEscolher && (
-        <div className="est-campo">
-          <span className="ctx-lab">Com quem é essa conversa</span>
-          <div className="fech-opcoes">
+        <div className="msg-linha">
+          <span className="ctx-lab">Com quem</span>
+          <div className="seg-toggle">
             {Object.entries(DESTINOS).map(([k, label]) => (
-              <button
-                key={k}
-                className={"fech-op" + (destino === k ? " on" : "")}
-                onClick={() => setEscolhido(k)}
-              >
+              <button key={k} type="button" className={destino === k ? "on" : ""} onClick={() => setEscolhido(k)}>
                 {label}
               </button>
             ))}
@@ -185,144 +196,176 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
         </div>
       )}
 
-      {destino && !carregando && (
-        <label className="est-campo">
-          <span className="ctx-lab">
-            Para quem · {DESTINOS[destino]}
-            {doLado.length > 1 && <em className="est-falta">{doLado.length} contatos</em>}
-          </span>
-          <div className="select-wrap">
-            <select
-              className="emp-abordagem"
-              value={contatoId}
-              disabled={doLado.length === 0}
-              onChange={(e) => {
-                setContatoId(e.target.value);
-                setTexto("");
-              }}
-            >
-              {doLado.length === 0 && <option value="">Nenhum contato deste lado no ticket</option>}
-              {doLado.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.fonte === "dash" ? "Dash · " : ""}
-                  {x.nome}
-                  {x.cargo && x.cargo !== "palestrante" ? `, ${x.cargo}` : ""}
-                  {x.email ? ` · ${x.email}` : " · sem e-mail"}
-                </option>
-              ))}
-            </select>
+      {carregando ? (
+        <p className="msg-sem">Lendo os contatos do ticket e do Dash…</p>
+      ) : !destino ? (
+        <p className="msg-sem">Escolha acima com quem é essa conversa.</p>
+      ) : (
+        <>
+          <div className="msg-linha">
+            <span className="ctx-lab">Para</span>
+            {doLado.length === 0 ? (
+              <span className="err">
+                Nenhum contato do lado {String(DESTINOS[destino] || "").toLowerCase()} neste ticket.
+                {destino === "palestrante"
+                  ? " Cadastre no Dash ou associe um contato ao ticket."
+                  : " É preciso associar um contato ao ticket no HubSpot."}
+              </span>
+            ) : doLado.length === 1 ? (
+              <span className="msg-contato">
+                {contato?.fonte === "dash" && <span className="emp-tag">Dash</span>}
+                {contato?.nome}
+                <span className="est-sem">
+                  {canal === "email"
+                    ? contato?.email || "sem e-mail"
+                    : telefoneLegivel(contato?.telefone) || "sem telefone"}
+                </span>
+              </span>
+            ) : (
+              <div className="select-wrap">
+                <select
+                  className="emp-abordagem"
+                  value={contatoId}
+                  onChange={(e) => {
+                    setContatoId(e.target.value);
+                    setTexto("");
+                  }}
+                >
+                  {doLado.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.fonte === "dash" ? "Dash · " : ""}
+                      {x.nome}
+                      {x.email ? ` · ${x.email}` : " · sem e-mail"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Do lado do palestrante quem manda é o Dash. Quando ele não achou,
-              o motivo aparece: é a diferença entre "não está cadastrado" e
-              "a chave foi recusada", e some no log se não for dito aqui. */}
-          {destino === "palestrante" && dash?.motivo && (
-            <p className="reg-dica">{dash.motivo}</p>
-          )}
+              o motivo aparece: é a diferença entre "não está cadastrado" e "a
+              chave foi recusada", e some no log se não for dito aqui. */}
+          {destino === "palestrante" && dash?.motivo && <p className="msg-nota">{dash.motivo}</p>}
           {contato?.porAssessoria && (
-            <p className="reg-dica">
+            <p className="msg-nota">
               Ele atende pela assessoria: no Dash o contato principal é ela, então a mensagem vai para lá.
             </p>
           )}
           {contato?.contatarPor && (
-            <p className="reg-dica">
-              Prefere ser procurado por {rotuloCanal(contato.contatarPor)}, conforme o cadastro dele no Dash.
+            <p className="msg-nota">
+              Prefere ser procurado por <b>{rotuloCanal(contato.contatarPor)}</b>, conforme o cadastro dele no Dash.
               {prefEsgotada ? ` Esse canal já teve ${LIMITE_POR_CANAL} tentativas sem resposta.` : ""}
             </p>
           )}
 
-          {doLado.length === 0 && (
-            <p className="reg-dica">
-              Nenhum contato do lado {String(DESTINOS[destino] || "").toLowerCase()} para este ticket.
-              {destino === "palestrante"
-                ? " Cadastre no Dash ou associe um contato ao ticket."
-                : " É preciso associar um contato ao ticket no HubSpot."}
-            </p>
-          )}
-          {contato?.telefone && (
-            <p className="reg-dica">
-              {telefoneLegivel(contato.telefone)}
-              {!paraWhatsApp(contato.telefone) ? ", sem DDD completo para abrir no WhatsApp" : ""}
-            </p>
-          )}
-        </label>
-      )}
-
-      {destino && doLado.length > 0 && (
-        <div className="est-campo">
-          <span className="ctx-lab">
-            Canal
-            {canal && <em className="est-falta">tentativa {tentativa} de {LIMITE_POR_CANAL}</em>}
-          </span>
-          <div className="fech-opcoes">
-            {CANAIS.map((x) => {
-              const esgotado = !liberados.includes(x.key);
-              return (
-                <button
-                  key={x.key}
-                  className={"fech-op" + (canal === x.key ? " on" : "")}
-                  disabled={esgotado}
-                  title={esgotado ? `${LIMITE_POR_CANAL} tentativas sem resposta neste canal` : ""}
-                  onClick={() => {
-                    setCanal(x.key);
-                    setTexto("");
-                  }}
-                >
-                  {rotuloCanal(x.key)}
-                </button>
-              );
-            })}
+          <div className="msg-linha">
+            <span className="ctx-lab">Canal</span>
+            <div className="seg-toggle">
+              {CANAIS.map((x) => {
+                const fechado = !liberados.includes(x.key);
+                return (
+                  <button
+                    key={x.key}
+                    type="button"
+                    className={canal === x.key ? "on" : ""}
+                    disabled={fechado}
+                    title={fechado ? `${LIMITE_POR_CANAL} tentativas sem resposta neste canal` : undefined}
+                    onClick={() => {
+                      setCanal(x.key);
+                      setTexto("");
+                      setErro("");
+                      setFeito("");
+                    }}
+                  >
+                    {x.label}
+                    <span className="msg-cont">
+                      {tentativasNo(tentativas, x.key)}/{LIMITE_POR_CANAL}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {canal && (
+              <span className="msg-nota">
+                tentativa {tentativa} de {LIMITE_POR_CANAL} neste canal
+              </span>
+            )}
           </div>
+
           {liberados.length === 0 && (
-            <p className="reg-dica">
+            <p className="msg-sem">
               Os três canais já tiveram {LIMITE_POR_CANAL} tentativas sem resposta neste ticket.
             </p>
           )}
-        </div>
-      )}
+          {semTelefone && <p className="msg-nota">{contato.nome} não tem telefone no HubSpot nem no Dash.</p>}
+          {semEmail && <p className="msg-nota">{contato.nome} não tem e-mail no HubSpot nem no Dash.</p>}
 
-      {semTelefone && <p className="reg-dica">{contato.nome} não tem telefone no HubSpot.</p>}
-      {semEmail && <p className="reg-dica">{contato.nome} não tem e-mail no HubSpot.</p>}
+          {canal === "email" && (
+            // Assunto e cópia são campos, não texto corrido: o assunto dentro
+            // do corpo saía como primeira linha do e-mail.
+            <div className="msg-env">
+              <div>
+                <span className="ctx-lab">De</span>
+                <span className="msg-fixo">{remetente?.email || "sua conta"}</span>
+              </div>
+              <div>
+                <span className="ctx-lab">Para</span>
+                <span className="msg-fixo">{contato?.email || <span className="err">sem e-mail</span>}</span>
+              </div>
+              <div>
+                <label className="ctx-lab" htmlFor="fin-cc">Cópia</label>
+                <input
+                  id="fin-cc"
+                  className="est-input"
+                  value={cc}
+                  placeholder="opcional, separe por vírgula"
+                  onChange={(e) => setCc(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="ctx-lab" htmlFor="fin-assunto">Assunto</label>
+                <input
+                  id="fin-assunto"
+                  className="est-input"
+                  value={assunto}
+                  placeholder={busy === "gerar" ? "Escrevendo…" : "Assunto do e-mail"}
+                  onChange={(e) => setAssunto(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
 
-      {texto && canal === "email" && (
-        <>
-          <label className="est-campo">
-            <span className="ctx-lab">Assunto</span>
-            <input className="reprova-input" value={assunto} onChange={(e) => setAssunto(e.target.value)} />
-          </label>
-          <label className="est-campo">
-            <span className="ctx-lab">Em cópia</span>
-            <input
-              className="reprova-input"
-              placeholder="separe por vírgula"
-              value={cc}
-              onChange={(e) => setCc(e.target.value)}
-            />
-          </label>
+          <textarea
+            className="obs modal-texto"
+            value={texto}
+            placeholder={
+              busy === "gerar"
+                ? "Escrevendo a mensagem…"
+                : canal === "ligacao"
+                  ? "Gere o roteiro e ajuste antes de ligar."
+                  : "Gere a mensagem e leia antes de mandar."
+            }
+            onChange={(e) => {
+              setTexto(e.target.value);
+              setFeito("");
+            }}
+          />
+
+          <div className="msg-rodape">
+            {erro && <span className="err">{erro}</span>}
+            {feito && !erro && <span className="saved">{feito}</span>}
+            <button className="btn-ghost" onClick={gerar} disabled={naoPodeGerar}>
+              {busy === "gerar" ? "Escrevendo…" : texto ? "Gerar outra" : "Gerar mensagem"}
+            </button>
+            {ACAO[canal] && (
+              <button className="btn-primary" onClick={enviar} disabled={naoPodeEnviar}>
+                {busy === "enviar" ? ACAO[canal].fazendo : ACAO[canal].rotulo}
+              </button>
+            )}
+          </div>
         </>
       )}
-
-      {texto && (
-        <label className="est-campo">
-          <span className="ctx-lab">
-            {canal === "ligacao" ? "Roteiro da ligação" : "Texto, revise antes de mandar"}
-          </span>
-          <textarea className="obs reg-texto" value={texto} onChange={(e) => setTexto(e.target.value)} />
-        </label>
-      )}
-
-      <div className="msg-rodape">
-        {erro && <span className="err">{erro}</span>}
-        {feito && !erro && <span className="saved">{feito}</span>}
-        <button className="btn-ghost" onClick={gerar} disabled={naoPodeGerar}>
-          {busy === "gerar" ? "Gerando…" : texto ? "Gerar outra" : "Gerar mensagem"}
-        </button>
-        {texto && ACAO[canal] && (
-          <button className="btn-primary" onClick={enviar} disabled={!!busy}>
-            {busy === "enviar" ? ACAO[canal].fazendo : ACAO[canal].rotulo}
-          </button>
-        )}
-      </div>
-    </div>
+    </>
   );
 }

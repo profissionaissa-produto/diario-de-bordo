@@ -242,6 +242,9 @@ export async function GET(req) {
       dash,
       tentativas: contagem[String(ticketId)] || {},
       palestrante: nomeDoPalestrante(ticket.palestrantePrincipal),
+      // Quem assina. O e-mail sai da caixa de quem está operando a tela, então
+      // o "De" mostra o endereço de verdade, não um genérico.
+      remetente: { nome: quem(session), email: session.user.email },
     });
   } catch (e) {
     console.error("[financeiro] falha ao ler os contatos:", e);

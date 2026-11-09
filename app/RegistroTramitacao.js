@@ -147,7 +147,15 @@ export default function RegistroTramitacao({
 
   return (
     <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && onFechar()}>
-      <div className="modal modal-estreito" role="dialog" aria-modal="true" aria-label="Registrar o dia">
+      {/* Larga no financeiro, como a janela do farmer: a marcação fica de um
+          lado e a mensagem do outro, com espaço para ler o que vai sair. Na
+          Tramitação, onde não há mensagem, segue estreita. */}
+      <div
+        className={"modal" + (financeiro ? "" : " modal-estreito")}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Registrar o dia"
+      >
         <header className="modal-topo">
           <div>
             <h2>{clienteDo(ticket?.assunto || "") || `Ticket ${p.ticketId}`}</h2>
@@ -163,7 +171,8 @@ export default function RegistroTramitacao({
           <button className="modal-x" onClick={onFechar} aria-label="Fechar">×</button>
         </header>
 
-        <div className="modal-principal reg-corpo">
+        <div className={financeiro ? "modal-corpo modal-corpo-reg" : ""}>
+        <div className={financeiro ? "modal-lado reg-corpo" : "modal-principal reg-corpo"}>
           <p className="reg-grav">{p.motivo}</p>
 
           <label className="est-campo">
@@ -247,17 +256,6 @@ export default function RegistroTramitacao({
             </div>
           )}
 
-          {/* A mensagem vem depois da ação escolhida, porque é a ação que diz
-              para quem ela vai: cobrança é com quem paga, NF com quem emite. */}
-          {financeiro && (
-            <MensagemFinanceiro
-              c={p}
-              abordagem={abordagem}
-              estrategia={estrategia}
-              observacao={texto}
-            />
-          )}
-
           <label className="est-campo">
             <span className="ctx-lab">
               Como vou fazer {faltam > 0 && <em className="est-falta">faltam {faltam}</em>}
@@ -273,6 +271,15 @@ export default function RegistroTramitacao({
               onChange={(e) => { setTexto(e.target.value); setSalvo(false); }}
             />
           </label>
+        </div>
+        {/* A mensagem é a ação que sai daqui para fora, então fica na coluna
+            maior: o de/para, o assunto e o texto precisam de espaço para
+            serem lidos antes de alguém mandar. */}
+        {financeiro && (
+          <section className="modal-principal">
+            <MensagemFinanceiro c={p} abordagem={abordagem} estrategia={estrategia} observacao={texto} />
+          </section>
+        )}
         </div>
 
         <footer className="modal-rodape">

@@ -63,12 +63,13 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
 
       {c.tentativa > 1 && <span className="tram-selo aguardando">{c.tentativa - 1} já registradas</span>}
 
-      {c.evolucao?.resultado && (
-        <div className="tram-por">marcado hoje: {c.evolucao.abordagem || c.evolucao.resultado}</div>
-      )}
+      {/* No financeiro não há resultado: o que diz que o dia foi marcado é a
+          ação escolhida. Olhar o resultado aqui deixava o card dizendo que
+          nada tinha sido marcado mesmo depois de registrar. */}
+      {c.evolucao?.abordagem && <div className="tram-por">marcado hoje: {c.evolucao.abordagem}</div>}
 
       <button className="btn-link tram-abrir" onClick={() => setAberto(true)}>
-        {c.evolucao?.resultado ? "Ver ou corrigir a marcação" : "Marcar o que vou fazer"}
+        {c.evolucao?.abordagem ? "Ver ou corrigir a marcação" : "Marcar o que vou fazer"}
       </button>
 
       {aberto && (

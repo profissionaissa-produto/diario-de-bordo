@@ -143,8 +143,9 @@ export default function RegistroTramitacao({
   const escolhida = estrategias.find((s) => s.id === estrategia) || null;
   const exigeTexto = TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado);
   const faltam = Math.max(0, MIN_TEXTO - texto.trim().length);
-  // Sem texto não há evidência: a observação no ticket sairia vazia.
-  const naoPode = !resultado || faltam > 0;
+  // Sem texto não há evidência: a observação no ticket sairia vazia. O
+  // resultado só é cobrado na Tramitação, que é onde ele existe.
+  const naoPode = (!financeiro && !resultado) || faltam > 0;
 
   return (
     <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && onFechar()}>
@@ -220,25 +221,30 @@ export default function RegistroTramitacao({
             {financeiro && escolhida?.desc && <p className="reg-dica">{escolhida.desc}</p>}
           </label>
 
-          {/* Toda escolha desta janela usa o mesmo controle, o seg-toggle, que
-              é o da janela do farmer. Antes resultado, tarefa, canal e lado da
-              conversa tinham quatro aparências diferentes para a mesma coisa:
-              escolher uma opção entre poucas. */}
-          <div className="est-campo">
-            <span className="ctx-lab">No fim do dia, como andou</span>
-            <div className="seg-toggle">
-              {RESULTADOS_TRAMITACAO.map((r) => (
-                <button
-                  key={r.key}
-                  type="button"
-                  className={resultado === r.key ? "on" : ""}
-                  onClick={() => { setResultado(r.key); setSalvo(false); setErro(""); }}
-                >
-                  {r.label}
-                </button>
-              ))}
+          {/* Resolvi, avancei e travado são da Tramitação, onde a pendência é
+              baixada em duas mãos e o líder lê isso. No financeiro não existe
+              baixa: quem fecha é o ticket sair da etapa no HubSpot, e o que
+              aconteceu já fica na mensagem enviada e na tarefa aberta.
+
+              Toda escolha desta janela usa o mesmo controle, o seg-toggle, que
+              é o da janela do farmer. */}
+          {!financeiro && (
+            <div className="est-campo">
+              <span className="ctx-lab">No fim do dia, como andou</span>
+              <div className="seg-toggle">
+                {RESULTADOS_TRAMITACAO.map((r) => (
+                  <button
+                    key={r.key}
+                    type="button"
+                    className={resultado === r.key ? "on" : ""}
+                    onClick={() => { setResultado(r.key); setSalvo(false); setErro(""); }}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {financeiro && (
             <div className="est-campo">

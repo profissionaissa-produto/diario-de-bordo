@@ -105,7 +105,10 @@ export async function PUT(req) {
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
-  const { ticketId, resultado } = body;
+  const { ticketId } = body;
+  // Vazio no financeiro, onde o campo não existe. A coluna é NOT NULL, então
+  // tem que ser texto vazio e não undefined.
+  const resultado = String(body.resultado || "");
   const observacao = String(body.observacao || "").trim();
   const abordagem = String(body.abordagem || "").trim();
   const estrategiaId = String(body.estrategia || "").trim();
@@ -114,7 +117,14 @@ export async function PUT(req) {
   if (!ticketId || !t) {
     return Response.json({ error: "Tramitação inválida." }, { status: 400 });
   }
-  if (!RESULTADOS_TRAMITACAO.some((r) => r.key === resultado)) {
+  // Resolvi, avancei e travado são da Tramitação, onde a pendência é baixada
+  // em duas mãos. No financeiro não existe baixa, então o campo não é pedido
+  // na tela e não é cobrado aqui.
+  if (t.fin) {
+    if (resultado && !RESULTADOS_TRAMITACAO.some((r) => r.key === resultado)) {
+      return Response.json({ error: "Resultado inválido." }, { status: 400 });
+    }
+  } else if (!RESULTADOS_TRAMITACAO.some((r) => r.key === resultado)) {
     return Response.json({ error: "Resultado inválido." }, { status: 400 });
   }
   if (abordagem && !t.abordagens.includes(abordagem)) {
@@ -174,14 +184,14 @@ export async function PUT(req) {
   // ação hoje. Falhar aqui não desfaz o registro no Diário, mas não pode
   // ficar mudo, senão quem registrou acha que evidenciou e não evidenciou.
   const avisos = [];
-  const rotulo = RESULTADOS_TRAMITACAO.find((r) => r.key === resultado)?.label || resultado;
+  const rotulo = RESULTADOS_TRAMITACAO.find((r) => r.key === resultado)?.label || "";
   const titulo = t.fin ? `Financeiro · ${t.label}` : `Diário de bordo · ${t.label}`;
   const tentativa = Number(body.tentativa) || 0;
 
   try {
     await criarNotaNoTicket(ticketId, {
       corpo:
-        `<p><b>${titulo} · ${rotulo}</b></p>` +
+        `<p><b>${titulo}${rotulo ? ` · ${rotulo}` : ""}</b></p>` +
         (t.fin && tentativa ? `<p><b>Tentativa:</b> ${tentativa}</p>` : "") +
         (abordagem ? `<p><b>Abordagem:</b> ${abordagem}</p>` : "") +
         (estrategia ? `<p><b>Estratégia:</b> ${estrategia}</p>` : "") +

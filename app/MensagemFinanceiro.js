@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL, rotuloCanal } from "../lib/canal";
 import { telefoneLegivel, paraWhatsApp } from "../lib/telefone";
 import { separaAssunto } from "../lib/gmail-texto";
@@ -16,13 +16,15 @@ const ACAO = {
   ligacao: { rotulo: "Registrar e abrir no HubSpot", fazendo: "Registrando…", feito: "Tentativa registrada. A chamada em si é o HubSpot que registra." },
 };
 
-// A mensagem de cobrança. Mesma forma da janela do farmer: o de/para, o
-// assunto e a cópia são campos, e o texto tem uma caixa grande para ser lido
-// antes de sair. Amontoado num bloco estreito ninguém revisa o que manda.
+// A mensagem de cobrança, igual à janela do farmer.
 //
-// Ela só aparece depois que a ação do dia está escolhida, porque é a ação que
-// decide para quem o texto vai: cobrança é com quem paga, NF é com quem emite,
-// e renegociar prazo pode ser com qualquer um dos dois, e aí pergunta.
+// Igual inclui o que mais importa: ela chega escrita. Escolhida a ação do dia,
+// o texto é pedido sozinho, como lá. Pedir um clique em "Gerar" depois de a
+// pessoa já ter dito o que vai fazer é pedir a mesma coisa duas vezes.
+//
+// A ação é que decide para quem o texto vai: cobrança é com quem paga, NF é
+// com quem emite, e renegociar prazo pode ser com qualquer um dos dois, e aí
+// pergunta.
 export default function MensagemFinanceiro({ c, abordagem, estrategia, observacao }) {
   const destinoDaAcao = destinoDa(abordagem);
   const precisaEscolher = destinoDaAcao === "ambos";
@@ -41,11 +43,28 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   const destino = precisaEscolher ? escolhido : destinoDaAcao;
   const [contatoId, setContatoId] = useState("");
   const [canal, setCanal] = useState("");
-  const [texto, setTexto] = useState("");
-  const [assunto, setAssunto] = useState("");
+
+  // Um texto por combinação de ação, lado, contato e canal. Trocar de canal e
+  // voltar não pode apagar o que já estava escrito nem cobrar uma geração
+  // nova, que é como a janela do farmer se comporta.
+  const [textos, setTextos] = useState({});
+  const [assuntos, setAssuntos] = useState({});
   const [cc, setCc] = useState("");
   const [busy, setBusy] = useState("");
   const [feito, setFeito] = useState("");
+  const [enviados, setEnviados] = useState({});
+
+  // Combinações já pedidas nesta abertura. É ref e não estado porque mudar
+  // isto não repinta nada, e sem ele um erro viraria laço de chamadas ao
+  // modelo.
+  const jaPediu = useRef(new Set());
+
+  const chave = `${abordagem}|${destino}|${contatoId}|${canal}`;
+  const texto = textos[chave] || "";
+  const setTexto = (v) => setTextos((t) => ({ ...t, [chave]: v }));
+  const assunto = assuntos[chave] || "";
+  const setAssunto = (v) => setAssuntos((a) => ({ ...a, [chave]: v }));
+  const enviada = !!enviados[chave];
 
   // Carrega quando a janela abre, e não junto com o board: são centenas de
   // leituras no HubSpot e no Dash para desenhar uma tela usada um ticket por vez.
@@ -73,11 +92,9 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     };
   }, [c.ticketId]);
 
-  // Trocou a ação, o texto já gerado é descartado: ele foi escrito para outra
-  // pessoa, com outro objetivo.
   useEffect(() => {
     setEscolhido("");
-    setTexto("");
+    setErro("");
     setFeito("");
   }, [abordagem]);
 
@@ -85,7 +102,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   useEffect(() => {
     const primeiro = doLado.find((x) => x.email || x.telefone) || doLado[0];
     setContatoId(primeiro ? String(primeiro.id) : "");
-    setTexto("");
     // O palestrante marca no Dash por onde quer ser procurado. Respeitar isso
     // é o combinado que ele fez com a PSA, então o canal já abre nele. Se
     // aquele canal já esgotou as 3 tentativas, mantém o sugerido pela cascata.
@@ -97,6 +113,18 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   const liberados = canaisLiberados(tentativas);
   const tentativa = canal ? tentativasNo(tentativas, canal) + 1 : 0;
   const prefEsgotada = contato?.contatarPor && !liberados.includes(contato.contatarPor);
+  const semTelefone = canal !== "email" && contato && !contato.telefone;
+  const semEmail = canal === "email" && contato && !contato.email;
+  const podeGerar = !!abordagem && !!destino && !!contato && !!canal && !semTelefone && !semEmail;
+
+  // A mensagem chega escrita, como na janela do farmer. Só o que identifica a
+  // combinação entra na lista: incluir o texto faria a geração recomeçar
+  // sozinha a cada tecla digitada na caixa.
+  useEffect(() => {
+    if (!podeGerar || textos[chave] || busy || jaPediu.current.has(chave)) return;
+    jaPediu.current.add(chave);
+    gerar();
+  }, [chave, podeGerar]);
 
   async function chamar(metodo, corpo) {
     const res = await fetch("/api/financeiro/mensagem", {
@@ -140,12 +168,18 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     }
   }
 
+  function tentarDeNovo() {
+    jaPediu.current.delete(chave);
+    gerar();
+  }
+
   async function enviar() {
     setBusy("enviar");
     setErro("");
     try {
       const d = await chamar("PUT", { texto, assunto, cc });
       setFeito(d.aviso || ACAO[canal]?.feito || `Tentativa ${d.tentativa} registrada.`);
+      setEnviados((x) => ({ ...x, [chave]: true }));
       setTentativas((t) => ({ ...t, [canal]: (t[canal] || 0) + 1 }));
       if (d.url) window.open(d.url, "_blank", "noopener");
     } catch (e) {
@@ -155,16 +189,12 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     }
   }
 
-  // Ação interna não tem mensagem: emitir nota, conferir NF e aguardar retorno
-  // são trabalho nosso, e oferecer "gerar" neles sugeriria mandar texto para
-  // quem não tem o que receber.
   if (!abordagem) {
-    return (
-      <p className="msg-sem">
-        Escolha o que vai fazer hoje, ao lado. É a ação que decide para quem a mensagem vai.
-      </p>
-    );
+    return <p className="msg-sem">Escolha o que vai fazer hoje, ao lado. É a ação que decide para quem a mensagem vai.</p>;
   }
+  // Ação interna não tem mensagem: emitir nota, conferir NF e aguardar retorno
+  // são trabalho nosso, e oferecer geração neles sugeriria mandar texto para
+  // quem não tem o que receber.
   if (destinoDaAcao === "nenhum") {
     return (
       <p className="msg-sem">
@@ -172,12 +202,10 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
       </p>
     );
   }
+  if (carregando) return <p className="msg-sem">Lendo os contatos do ticket e do Dash…</p>;
 
-  const semTelefone = canal !== "email" && contato && !contato.telefone;
-  const semEmail = canal === "email" && contato && !contato.email;
-  const naoPodeGerar = !destino || !contato || !canal || !!busy || semTelefone || semEmail;
-  const naoPodeEnviar =
-    !texto.trim() || !!busy || (canal === "email" && (!assunto.trim() || !contato?.email));
+  const faltaEnviar =
+    !texto.trim() || !!busy || enviada || (canal === "email" && (!assunto.trim() || !contato?.email));
 
   return (
     <>
@@ -196,73 +224,15 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
         </div>
       )}
 
-      {carregando ? (
-        <p className="msg-sem">Lendo os contatos do ticket e do Dash…</p>
-      ) : !destino ? (
+      {!destino ? (
         <p className="msg-sem">Escolha acima com quem é essa conversa.</p>
+      ) : liberados.length === 0 ? (
+        <p className="msg-sem">
+          Os três canais já tiveram {LIMITE_POR_CANAL} tentativas sem resposta neste ticket. Registre o
+          resultado ao lado e leve o caso para o gestor.
+        </p>
       ) : (
         <>
-          <div className="msg-linha">
-            <span className="ctx-lab">Para</span>
-            {doLado.length === 0 ? (
-              // Curto, para caber na linha como o nome caberia. A frase inteira
-              // virava uma faixa vermelha atravessando a janela.
-              <span className="err">sem contato do lado {String(DESTINOS[destino] || "").toLowerCase()}</span>
-            ) : doLado.length === 1 ? (
-              <span className="msg-contato">
-                {contato?.fonte === "dash" && <span className="emp-tag">Dash</span>}
-                {contato?.nome}
-                <span className="est-sem">
-                  {canal === "email"
-                    ? contato?.email || "sem e-mail"
-                    : telefoneLegivel(contato?.telefone) || "sem telefone"}
-                </span>
-              </span>
-            ) : (
-              <div className="select-wrap">
-                <select
-                  className="emp-abordagem"
-                  value={contatoId}
-                  onChange={(e) => {
-                    setContatoId(e.target.value);
-                    setTexto("");
-                  }}
-                >
-                  {doLado.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.fonte === "dash" ? "Dash · " : ""}
-                      {x.nome}
-                      {x.email ? ` · ${x.email}` : " · sem e-mail"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Do lado do palestrante quem manda é o Dash. Quando ele não achou,
-              o motivo aparece: é a diferença entre "não está cadastrado" e "a
-              chave foi recusada", e some no log se não for dito aqui. */}
-          {doLado.length === 0 && (
-            <p className="msg-nota">
-              {destino === "palestrante"
-                ? "Cadastre o palestrante no Dash, ou associe um contato dele ao ticket no HubSpot."
-                : "É preciso associar um contato do cliente ao ticket no HubSpot."}
-            </p>
-          )}
-          {destino === "palestrante" && dash?.motivo && <p className="msg-nota">{dash.motivo}</p>}
-          {contato?.porAssessoria && (
-            <p className="msg-nota">
-              Ele atende pela assessoria: no Dash o contato principal é ela, então a mensagem vai para lá.
-            </p>
-          )}
-          {contato?.contatarPor && (
-            <p className="msg-nota">
-              Prefere ser procurado por <b>{rotuloCanal(contato.contatarPor)}</b>, conforme o cadastro dele no Dash.
-              {prefEsgotada ? ` Esse canal já teve ${LIMITE_POR_CANAL} tentativas sem resposta.` : ""}
-            </p>
-          )}
-
           <div className="msg-linha">
             <span className="ctx-lab">Canal</span>
             <div className="seg-toggle">
@@ -277,7 +247,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
                     title={fechado ? `${LIMITE_POR_CANAL} tentativas sem resposta neste canal` : undefined}
                     onClick={() => {
                       setCanal(x.key);
-                      setTexto("");
                       setErro("");
                       setFeito("");
                     }}
@@ -290,20 +259,66 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
                 );
               })}
             </div>
-            {canal && (
-              <span className="msg-nota">
-                tentativa {tentativa} de {LIMITE_POR_CANAL} neste canal
+            <span className="msg-nota">
+              tentativa {tentativa} de {LIMITE_POR_CANAL} neste canal
+            </span>
+          </div>
+
+          <div className="msg-linha">
+            <span className="ctx-lab">Para</span>
+            {doLado.length === 0 ? (
+              <span className="err">
+                sem contato do lado {String(DESTINOS[destino] || "").toLowerCase()} neste ticket
               </span>
+            ) : doLado.length === 1 ? (
+              <span className="msg-contato">
+                {contato?.fonte === "dash" && <span className="emp-tag">Dash</span>}
+                {contato?.nome}
+                <span className="est-sem">
+                  {canal === "email"
+                    ? contato?.email || "sem e-mail"
+                    : telefoneLegivel(contato?.telefone) || "sem telefone"}
+                </span>
+              </span>
+            ) : (
+              <div className="select-wrap">
+                <select className="emp-abordagem" value={contatoId} onChange={(e) => setContatoId(e.target.value)}>
+                  {doLado.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.fonte === "dash" ? "Dash · " : ""}
+                      {x.nome}
+                      {x.email ? ` · ${x.email}` : " · sem e-mail"}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
 
-          {liberados.length === 0 && (
-            <p className="msg-sem">
-              Os três canais já tiveram {LIMITE_POR_CANAL} tentativas sem resposta neste ticket.
+          {/* Uma linha só para o que o Dash tem a dizer. Em três linhas
+              separadas isso empurrava a mensagem para fora da tela. */}
+          {destino === "palestrante" && (dash?.motivo || contato?.porAssessoria || contato?.contatarPor) && (
+            <p className="msg-nota">
+              {[
+                contato?.porAssessoria ? "Atende pela assessoria, e é para lá que a mensagem vai." : "",
+                contato?.contatarPor
+                  ? `Prefere ${rotuloCanal(contato.contatarPor)}${prefEsgotada ? ", mas esse canal já esgotou" : ""}.`
+                  : "",
+                doLado.length === 0 ? dash?.motivo : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
             </p>
           )}
-          {semTelefone && <p className="msg-nota">{contato.nome} não tem telefone no HubSpot nem no Dash.</p>}
-          {semEmail && <p className="msg-nota">{contato.nome} não tem e-mail no HubSpot nem no Dash.</p>}
+          {doLado.length === 0 && (
+            <p className="msg-nota">
+              {destino === "palestrante"
+                ? "Cadastre o palestrante no Dash, ou associe um contato dele ao ticket no HubSpot."
+                : "É preciso associar um contato do cliente ao ticket no HubSpot."}
+            </p>
+          )}
+          {semTelefone && <p className="msg-nota">{contato.nome} está sem telefone no HubSpot e no Dash.</p>}
+          {semEmail && <p className="msg-nota">{contato.nome} está sem e-mail no HubSpot e no Dash.</p>}
 
           {canal === "email" && (
             // Assunto e cópia são campos, não texto corrido: o assunto dentro
@@ -346,12 +361,13 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
             placeholder={
               busy === "gerar"
                 ? "Escrevendo a mensagem…"
-                : canal === "ligacao"
-                  ? "Gere o roteiro e ajuste antes de ligar."
-                  : "Gere a mensagem e leia antes de mandar."
+                : podeGerar
+                  ? "Leia e ajuste antes de mandar."
+                  : "Escolha o contato e o canal para a mensagem ser escrita."
             }
             onChange={(e) => {
               setTexto(e.target.value);
+              setEnviados((x) => ({ ...x, [chave]: false }));
               setFeito("");
             }}
           />
@@ -359,11 +375,15 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
           <div className="msg-rodape">
             {erro && <span className="err">{erro}</span>}
             {feito && !erro && <span className="saved">{feito}</span>}
-            <button className="btn-ghost" onClick={gerar} disabled={naoPodeGerar}>
-              {busy === "gerar" ? "Escrevendo…" : texto ? "Gerar outra" : "Gerar mensagem"}
-            </button>
+            {/* Só aparece quando a geração falhou. Fora disso não há botão de
+                gerar: a mensagem chega pronta e a pessoa ajusta o que quiser. */}
+            {erro && (
+              <button className="btn-ghost" onClick={tentarDeNovo} disabled={!!busy}>
+                {busy === "gerar" ? "Escrevendo…" : "Tentar de novo"}
+              </button>
+            )}
             {ACAO[canal] && (
-              <button className="btn-primary" onClick={enviar} disabled={naoPodeEnviar}>
+              <button className="btn-primary" onClick={enviar} disabled={faltaEnviar}>
                 {busy === "enviar" ? ACAO[canal].fazendo : ACAO[canal].rotulo}
               </button>
             )}

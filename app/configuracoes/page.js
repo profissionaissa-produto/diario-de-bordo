@@ -149,7 +149,7 @@ export default async function Configuracoes({ searchParams }) {
       <p className="fech-opcional">
         A estratégia entra na hora para o time escolher no briefing. Para ela também ser
         gravada no campo <b>Estratégia</b> do negócio no HubSpot, a mesma opção precisa
-        existir lá — enquanto não existir, o briefing grava a temperatura e deixa a
+        existir lá. Enquanto não existir, o briefing grava a temperatura e deixa a
         estratégia de fora, registrando o aviso no log.
       </p>
     </div>

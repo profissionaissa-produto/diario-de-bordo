@@ -30,7 +30,13 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   const [tentativas, setTentativas] = useState({});
   const [erro, setErro] = useState("");
 
-  const [destino, setDestino] = useState(precisaEscolher ? "" : destinoDaAcao);
+  // O lado só é estado quando a ação cabe nos dois. Nos outros casos ele é
+  // derivado da ação, e tem que ser: guardado em useState ele sobrevivia à
+  // troca de ação e ficava um render inteiro com o valor velho. Com a ação
+  // ainda em branco isso era "nenhum", e a tela quebrava procurando o rótulo
+  // de um lado que não existe.
+  const [escolhido, setEscolhido] = useState("");
+  const destino = precisaEscolher ? escolhido : destinoDaAcao;
   const [contatoId, setContatoId] = useState("");
   const [canal, setCanal] = useState("");
   const [texto, setTexto] = useState("");
@@ -63,10 +69,10 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     };
   }, [c.ticketId]);
 
-  // Trocou a ação, trocou o lado. O destino volta a seguir o mapa, e o texto
-  // já gerado é descartado: ele foi escrito para outra pessoa.
+  // Trocou a ação, o texto já gerado é descartado: ele foi escrito para outra
+  // pessoa, com outro objetivo.
   useEffect(() => {
-    setDestino(destinoDa(abordagem) === "ambos" ? "" : destinoDa(abordagem));
+    setEscolhido("");
     setTexto("");
     setFeito("");
   }, [abordagem]);
@@ -161,7 +167,7 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
               <button
                 key={k}
                 className={"fech-op" + (destino === k ? " on" : "")}
-                onClick={() => setDestino(k)}
+                onClick={() => setEscolhido(k)}
               >
                 {label}
               </button>
@@ -198,8 +204,8 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
           </div>
           {doLado.length === 0 && (
             <p className="reg-dica">
-              Este ticket não tem contato do lado {DESTINOS[destino].toLowerCase()} no HubSpot. É preciso
-              associar um antes de mandar mensagem.
+              Este ticket não tem contato do lado {String(DESTINOS[destino] || "").toLowerCase()} no
+              HubSpot. É preciso associar um antes de mandar mensagem.
             </p>
           )}
           {contato?.telefone && (
@@ -280,7 +286,7 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
         <button className="btn-ghost" onClick={gerar} disabled={naoPodeGerar}>
           {busy === "gerar" ? "Gerando…" : texto ? "Gerar outra" : "Gerar mensagem"}
         </button>
-        {texto && (
+        {texto && ACAO[canal] && (
           <button className="btn-primary" onClick={enviar} disabled={!!busy}>
             {busy === "enviar" ? ACAO[canal].fazendo : ACAO[canal].rotulo}
           </button>

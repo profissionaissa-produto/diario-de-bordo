@@ -3,6 +3,7 @@ import { getDayBriefings, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER } from "../../../lib/config";
 import { diagnosticoTarefas, historicoDeProps } from "../../../lib/hubspot";
+import { envioConfigurado, bccDeLog, testaCredencial } from "../../../lib/gmail";
 
 // Diagnóstico: o que está gravado para o dia, exatamente como o banco devolve.
 // ponytail: rota de apoio; remover quando o fluxo estiver estável.
@@ -41,8 +42,31 @@ export async function GET(req) {
       GOOGLE_SA_KEY: !!process.env.GOOGLE_SA_KEY,
       HUBSPOT_BCC: !!process.env.HUBSPOT_BCC,
       HUBSPOT_TOKEN: !!process.env.HUBSPOT_TOKEN,
+      PSA_API_KEY: !!process.env.PSA_API_KEY,
       DATABASE_URL: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL),
     });
+  }
+
+  // ?gmail prova a credencial de envio de ponta a ponta, menos o envio: pede o
+  // token personificando quem está logado. É aqui que aparece
+  // "unauthorized_client" se a delegação do Workspace não estiver liberada
+  // para o escopo. Nenhum e-mail sai, então dá para validar sem escrever para
+  // um cliente de verdade.
+  if (searchParams.has("gmail")) {
+    if (!envioConfigurado()) {
+      return Response.json({ ok: false, erro: "GOOGLE_SA_EMAIL ou GOOGLE_SA_KEY ausentes no ambiente." });
+    }
+    try {
+      await testaCredencial(session.user.email);
+      return Response.json({
+        ok: true,
+        personificando: session.user.email,
+        bccDeLogConfigurado: !!bccDeLog(),
+      });
+    } catch (e) {
+      // O motivo vai inteiro: "falhou" mandaria procurar no lugar errado.
+      return Response.json({ ok: false, erro: e.message });
+    }
   }
 
   const dia = searchParams.get("dia") || dayKey();

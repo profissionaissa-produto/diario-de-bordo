@@ -10,6 +10,7 @@ import {
   palestranteDo,
 } from "../lib/tramitacoes";
 import { ABORDAGEM_DO_ONBOARDING, estrategiaDaTentativa } from "../lib/financeiro";
+import MensagemFinanceiro from "./MensagemFinanceiro";
 import { numeroDa } from "../lib/estrategias";
 
 const MIN_TEXTO = 10;
@@ -244,6 +245,17 @@ export default function RegistroTramitacao({
                   : "Fica só como registro no histórico do ticket."}
               </p>
             </div>
+          )}
+
+          {/* A mensagem vem depois da ação escolhida, porque é a ação que diz
+              para quem ela vai: cobrança é com quem paga, NF com quem emite. */}
+          {financeiro && (
+            <MensagemFinanceiro
+              c={p}
+              abordagem={abordagem}
+              estrategia={estrategia}
+              observacao={texto}
+            />
           )}
 
           <label className="est-campo">

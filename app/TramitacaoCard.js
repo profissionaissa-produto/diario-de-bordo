@@ -43,11 +43,11 @@ export default function TramitacaoCard({ p, ticket, ehGestor, evolucao, estrateg
         <div className="tram-por">marcada por {p.marcadoPor}</div>
       )}
       {evolucao?.resultado && (
-        <div className="tram-por">registrado hoje: {evolucao.abordagem || evolucao.resultado}</div>
+        <div className="tram-por">marcado hoje: {evolucao.abordagem || evolucao.resultado}</div>
       )}
 
       <button className="btn-link tram-abrir" onClick={() => setAberto(true)}>
-        {evolucao?.resultado ? "Ver ou corrigir o registro" : "Registrar o que fiz"}
+        {evolucao?.resultado ? "Ver ou corrigir a marcação" : "Marcar o que vou fazer"}
       </button>
 
       {aberto && (

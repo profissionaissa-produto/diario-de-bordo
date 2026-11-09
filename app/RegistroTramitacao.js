@@ -15,12 +15,19 @@ import { numeroDa } from "../lib/estrategias";
 const MIN_TEXTO = 10;
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "");
 
-// Janela do registro da tratativa. É modal e não painel dentro do card porque
-// o card vive numa coluna de 310px: abordagem, estratégia e um texto de
-// verdade não cabem ali sem virar sopa.
+// Janela do registro do dia. É modal e não painel dentro do card porque o card
+// vive numa coluna de 310px: abordagem, estratégia e um texto de verdade não
+// cabem ali sem virar sopa.
 //
-// O que for escrito aqui vira observação no ticket de CS. É o que evidencia no
-// CRM que houve ação no dia.
+// O texto é escrito no futuro porque o Diário é a primeira coisa do dia: aqui
+// a pessoa marca o que vai fazer. Quem diz se aconteceu é "como andou", que é
+// leitura de fim de dia.
+//
+// ponytail: os dois momentos ainda salvam juntos, "como andou" continua
+// obrigatório para gravar. Separar o plano da manhã do fechamento da tarde é
+// decisão de processo e não está feito.
+//
+// O que for escrito aqui vira observação no ticket de CS.
 //
 // A mesma janela serve a Tramitação e ao seguimento financeiro. O que muda é a
 // lista de abordagem, que vem de fora, e a tarefa, que só o financeiro abre.
@@ -139,7 +146,7 @@ export default function RegistroTramitacao({
 
   return (
     <div className="modal-fundo" onMouseDown={(e) => e.target === e.currentTarget && onFechar()}>
-      <div className="modal modal-estreito" role="dialog" aria-modal="true" aria-label="Registrar tratativa">
+      <div className="modal modal-estreito" role="dialog" aria-modal="true" aria-label="Registrar o dia">
         <header className="modal-topo">
           <div>
             <h2>{clienteDo(ticket?.assunto || "") || `Ticket ${p.ticketId}`}</h2>
@@ -159,10 +166,10 @@ export default function RegistroTramitacao({
           <p className="reg-grav">{p.motivo}</p>
 
           <label className="est-campo">
-            <span className="ctx-lab">Como você atuou</span>
+            <span className="ctx-lab">O que vou fazer hoje</span>
             <div className="select-wrap">
               <select className="emp-abordagem" value={abordagem} onChange={(e) => { setAbordagem(e.target.value); setSalvo(false); }}>
-                <option value="">Escolher abordagem…</option>
+                <option value="">Escolher o que vou fazer…</option>
                 {abordagens.map((a) => (
                   <option key={a} value={a}>{a}</option>
                 ))}
@@ -196,7 +203,7 @@ export default function RegistroTramitacao({
           </label>
 
           <div className="est-campo">
-            <span className="ctx-lab">Como andou</span>
+            <span className="ctx-lab">No fim do dia, como andou</span>
             <div className="fech-opcoes">
               {RESULTADOS_TRAMITACAO.map((r) => (
                 <button
@@ -241,7 +248,7 @@ export default function RegistroTramitacao({
 
           <label className="est-campo">
             <span className="ctx-lab">
-              O que você fez {faltam > 0 && <em className="est-falta">faltam {faltam}</em>}
+              Como vou fazer {faltam > 0 && <em className="est-falta">faltam {faltam}</em>}
             </span>
             <textarea
               className="obs reg-texto"
@@ -249,7 +256,7 @@ export default function RegistroTramitacao({
               placeholder={
                 exigeTexto
                   ? "O que travou? De quem depende?"
-                  : "Descreva a tratativa. Este texto vira observação no ticket de CS."
+                  : "Diga como vai fazer. Este texto vira observação no ticket de CS."
               }
               onChange={(e) => { setTexto(e.target.value); setSalvo(false); }}
             />

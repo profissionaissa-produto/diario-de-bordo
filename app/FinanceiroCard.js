@@ -64,11 +64,11 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
       {c.tentativa > 1 && <span className="tram-selo aguardando">{c.tentativa - 1} já registradas</span>}
 
       {c.evolucao?.resultado && (
-        <div className="tram-por">registrado hoje: {c.evolucao.abordagem || c.evolucao.resultado}</div>
+        <div className="tram-por">marcado hoje: {c.evolucao.abordagem || c.evolucao.resultado}</div>
       )}
 
       <button className="btn-link tram-abrir" onClick={() => setAberto(true)}>
-        {c.evolucao?.resultado ? "Ver ou corrigir o registro" : "Registrar o que fiz"}
+        {c.evolucao?.resultado ? "Ver ou corrigir a marcação" : "Marcar o que vou fazer"}
       </button>
 
       {aberto && (

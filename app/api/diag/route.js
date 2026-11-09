@@ -3,7 +3,7 @@ import { getDayBriefings, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER } from "../../../lib/config";
 import { diagnosticoTarefas, historicoDeProps } from "../../../lib/hubspot";
-import { envioConfigurado, bccDeLog, testaCredencial } from "../../../lib/gmail";
+import { envioConfigurado, bccDeLog, testaCredencial, formaDaChave, diagnosticoDaChave } from "../../../lib/gmail";
 
 // Diagnóstico: o que está gravado para o dia, exatamente como o banco devolve.
 // ponytail: rota de apoio; remover quando o fluxo estiver estável.
@@ -64,8 +64,16 @@ export async function GET(req) {
         bccDeLogConfigurado: !!bccDeLog(),
       });
     } catch (e) {
-      // O motivo vai inteiro: "falhou" mandaria procurar no lugar errado.
-      return Response.json({ ok: false, erro: e.message });
+      // O motivo vai inteiro: "falhou" mandaria procurar no lugar errado. E
+      // junto vai a forma da chave, porque o erro do Node para PEM deformado é
+      // só "DECODER routines::unsupported" e não diz o que está errado.
+      const forma = formaDaChave(process.env.GOOGLE_SA_KEY);
+      return Response.json({
+        ok: false,
+        erro: e.message,
+        provavelCausa: diagnosticoDaChave(forma) || "A forma da chave está boa. Veja a delegação no Workspace.",
+        chave: forma,
+      });
     }
   }
 

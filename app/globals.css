@@ -613,6 +613,13 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .fech-op.on.ok { background: #e8f6ed; border-color: #9ed5b4; color: #17803d; }
 .fech-op.on.meio { background: var(--laranja-soft); border-color: #f6cdb4; color: var(--laranja); }
 .fech-op.on.nao { background: var(--ink-soft); border-color: #d3d7de; color: var(--ink); }
+/* Escolha sem cor de resultado: canal e lado da conversa não são bom nem ruim.
+   Sem esta regra o botão escolhido ficava igual aos outros, porque só havia
+   estilo para .on junto de ok, meio ou nao. As três acima têm especificidade
+   maior e continuam mandando onde se aplicam. */
+.fech-op.on { background: var(--laranja-soft); border-color: var(--laranja); color: var(--laranja-forte); }
+.fech-op:disabled { opacity: .45; cursor: not-allowed; }
+.fech-op:disabled:hover { border-color: var(--line); color: var(--muted); }
 .fech-obs { display: flex; flex-direction: column; gap: 8px; }
 .fech-rodape { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .fech-falta { color: var(--laranja); font-size: 12px; font-weight: 600; margin-right: auto; }

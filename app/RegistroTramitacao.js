@@ -9,7 +9,7 @@ import {
   clienteDo,
   palestranteDo,
 } from "../lib/tramitacoes";
-import { ABORDAGEM_DO_ONBOARDING } from "../lib/financeiro";
+import { ABORDAGEM_DO_ONBOARDING, estrategiaDaTentativa } from "../lib/financeiro";
 import { numeroDa } from "../lib/estrategias";
 
 const MIN_TEXTO = 10;
@@ -36,7 +36,14 @@ export default function RegistroTramitacao({
 }) {
   const router = useRouter();
   const [abordagem, setAbordagem] = useState(evolucao?.abordagem || "");
-  const [estrategia, setEstrategia] = useState(evolucao?.estrategia || "");
+  // No financeiro a estratégia é definida pela tentativa, não escolhida a
+  // esmo: a 1ª cobrança é o lembrete, a 2ª o aviso de atraso, a 3ª em diante
+  // o escalonamento. Vem escolhida e pode ser trocada. O que já foi
+  // registrado hoje manda, senão corrigir um registro trocaria a escolha de
+  // quem o fez.
+  const [estrategia, setEstrategia] = useState(
+    evolucao?.estrategia || (financeiro ? estrategiaDaTentativa(p.tentativa, estrategias) : "")
+  );
   const [resultado, setResultado] = useState(evolucao?.resultado || "");
   const [texto, setTexto] = useState(evolucao?.observacao || "");
   // Padrão ligado: a cobrança que não vira compromisso com data é recado, e o
@@ -124,6 +131,7 @@ export default function RegistroTramitacao({
     }
   }
 
+  const escolhida = estrategias.find((s) => s.id === estrategia) || null;
   const exigeTexto = TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado);
   const faltam = Math.max(0, MIN_TEXTO - texto.trim().length);
   // Sem texto não há evidência: a observação no ticket sairia vazia.
@@ -181,6 +189,10 @@ export default function RegistroTramitacao({
                 ))}
               </select>
             </div>
+            {/* No financeiro a estratégia é instrução, não rótulo: ela diz o
+                tom, o que citar e por qual canal. Escondida no title do option
+                ninguém lê. */}
+            {financeiro && escolhida?.desc && <p className="reg-dica">{escolhida.desc}</p>}
           </label>
 
           <div className="est-campo">

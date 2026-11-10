@@ -110,8 +110,6 @@ export default async function Aprovacoes({ searchParams }) {
           <Link href="/" className="">Diário de bordo</Link>
           <Link href="/aprovacoes" className="on">Aprovações{pendentes.length ? ` (${pendentes.length})` : ""}</Link>
           <Link href="/agenda">Agenda geral</Link>
-          {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
-          {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
           {configura && <Link href="/configuracoes">Configurações</Link>}
         </div>
         <div className="seg-toggle">

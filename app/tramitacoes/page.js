@@ -185,10 +185,6 @@ export default async function Tramitacoes({ searchParams }) {
           <Link href="/">Diário de bordo</Link>
           {gestor && <Link href="/agenda">Agenda do dia</Link>}
           {gestor && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
-          <Link href="/tramitacoes" className="on">
-            Tramitações{abertas.length ? ` (${abertas.length})` : ""}
-          </Link>
-          {podeVerFinanceiro(session.user, meuOwnerId) && <Link href="/financeiro">Financeiro</Link>}
           {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
           <Link href="/ajuda">Como funciona</Link>
         </div>

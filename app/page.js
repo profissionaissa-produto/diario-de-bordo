@@ -29,6 +29,8 @@ import { empresasComSelo } from "../lib/relacionamento";
 import { montaHistorico, precisaAuxilio } from "../lib/carteira";
 import { getHistoricoCarteira, aplicarAtividade, getListaDia } from "../lib/db";
 import { SEG_TRAMITACOES, SEG_FINANCEIRO, empresaUrl } from "../lib/config";
+import { tramitacoesDoDia } from "../lib/dia-tramitacoes";
+import TramitacaoLinha from "./TramitacaoLinha";
 
 export const dynamic = "force-dynamic";
 
@@ -158,6 +160,11 @@ export default async function Page({ searchParams }) {
   }
 
   const isFechar = searchParams?.view === "fechar";
+  // O que o farmer vê na tela dele. O trabalho dele tem duas frentes e elas
+  // viviam em páginas diferentes: a carteira, que é o levantamento de demanda,
+  // e as tramitações dos eventos já vendidos.
+  const VISTAS = ["todas", "demanda", "tramitacoes"];
+  const vista = VISTAS.includes(searchParams?.lista) ? searchParams.lista : "todas";
   const isFoco = searchParams?.view === "foco";
 
   // Farmer trabalha empresas da própria carteira, não negócios do funil.
@@ -297,6 +304,17 @@ export default async function Page({ searchParams }) {
     if (equipeAtiva) q.set("equipe", equipeAtiva);
     q.set("seg", seg);
     if (view) q.set("view", view);
+    if (vista !== "todas") q.set("lista", vista);
+    return "/?" + q.toString();
+  };
+
+  // Link que troca só a visão, mantendo o resto do recorte.
+  const qsLista = (v) => {
+    const q = new URLSearchParams();
+    if (searchParams?.closer) q.set("closer", searchParams.closer);
+    if (equipeAtiva) q.set("equipe", equipeAtiva);
+    q.set("seg", seg);
+    if (v !== "todas") q.set("lista", v);
     return "/?" + q.toString();
   };
   // Pendentes que este gestor pode decidir.
@@ -317,6 +335,13 @@ export default async function Page({ searchParams }) {
   // outro lado do mesmo processo. Quem não alcança a tela não vê a opção, e
   // por isso a lista é montada aqui e não fixa no cadastro.
   const segsDaBarra = verFinanceiro ? [...meusSegs, SEG_FINANCEIRO] : meusSegs;
+
+  // Só quando a visão pede, e só do farmer aberto: a leitura varre o funil de
+  // CS inteiro e não vale a pena para quem está olhando outra coisa.
+  const tram =
+    ehFarmer && viewOwner && !isFechar && vista !== "demanda"
+      ? await tramitacoesDoDia(dia, new Set([String(viewOwner.ownerId)]))
+      : null;
 
   const rows = deals.map((d) => ({
     ...d,
@@ -423,8 +448,6 @@ export default async function Page({ searchParams }) {
                   {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
                   {/* Sem contador aqui: o número exigiria buscar os tickets do
                       funil só para desenhar o menu. */}
-                  {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
-                  {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
                   {configura && <Link href="/configuracoes">Configurações</Link>}
                   <Link href="/ajuda">Como funciona</Link>
                 </>
@@ -440,8 +463,6 @@ export default async function Page({ searchParams }) {
                       qualquer segmento. O admin cai aqui quando está olhando
                       o B2B, e sem estes links ficava sem porta: tinha que
                       trocar o segmento para Farmer só para abrir o menu. */}
-                  {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
-                  {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
                   {configura && <Link href="/configuracoes">Configurações</Link>}
                 </>
               )}
@@ -463,8 +484,6 @@ export default async function Page({ searchParams }) {
         <div className="viewbar">
           <div className="viewtoggle">
             <Link href="/" className="on">Diário de bordo</Link>
-            {verTramitacoes && <Link href="/tramitacoes">Tramitações</Link>}
-            {verFinanceiro && <Link href="/financeiro">Financeiro</Link>}
             {ehFarmer && <Link href="/ajuda">Como funciona</Link>}
           </div>
           <div className="ctx"><span className="ctx-dot" />Segmento: {seg}</div>
@@ -504,6 +523,25 @@ export default async function Page({ searchParams }) {
         </div>
       )}
 
+      {/* As duas frentes do farmer numa tela só: a carteira, que é o
+          levantamento de demanda, e as tramitações dos eventos vendidos. Elas
+          viviam em páginas diferentes e o dia dele é um só. */}
+      {carteiraDoDia && !isFechar && (
+        <div className="viewbar">
+          <div className="seg-toggle">
+            <Link href={qsLista("todas")} className={vista === "todas" ? "on" : ""}>
+              Todas
+            </Link>
+            <Link href={qsLista("tramitacoes")} className={vista === "tramitacoes" ? "on" : ""}>
+              Tramitações{tram ? ` (${tram.pendencias.length})` : ""}
+            </Link>
+            <Link href={qsLista("demanda")} className={vista === "demanda" ? "on" : ""}>
+              Levantamento de demanda{` (${carteiraDoDia.length})`}
+            </Link>
+          </div>
+        </div>
+      )}
+
       {carteiraDoDia && isFechar ? (
         <FecharDia
           itens={carteiraDoDia}
@@ -514,6 +552,8 @@ export default async function Page({ searchParams }) {
           }}
         />
       ) : carteiraDoDia ? (
+        <>
+        {vista !== "tramitacoes" && (
         <ListaDoDia
           itens={carteiraDoDia}
           estrategias={estrat.porSeg[SEG_TRAMITACOES] || []}
@@ -531,6 +571,44 @@ export default async function Page({ searchParams }) {
             podeZerar: gestor,
           }}
         />
+        )}
+
+        {/* Mesma lista da página de Tramitações, mesma ordem de gravidade. */}
+        {vista !== "demanda" && tram && (
+          tram.pendencias.length === 0 ? (
+            <div className="card">
+              <div className="cal-empty">Nenhuma tramitação com evento em aberto para este farmer.</div>
+            </div>
+          ) : (
+            <div className="card tscroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ width: "27%" }}>Empresa</th>
+                    <th style={{ width: "15%" }}>Etapa</th>
+                    <th style={{ width: "9%" }}>Evento</th>
+                    <th style={{ width: "27%" }}>Situação</th>
+                    <th style={{ width: "19%" }}>Tratativa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tram.pendencias.map((p) => (
+                    <TramitacaoLinha
+                      key={p.ticketId + p.tipo}
+                      p={p}
+                      ticket={tram.tickets.find((t) => t.id === p.ticketId)}
+                      ehGestor={gestor}
+                      evolucao={tram.evolucoes[p.ticketId + "|" + p.tipo] || null}
+                      estrategias={estrat.porSeg[SEG_TRAMITACOES] || []}
+                      mostrarDono={false}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+        </>
       ) : isFechar ? (
         <Fechamento
           rows={rows}

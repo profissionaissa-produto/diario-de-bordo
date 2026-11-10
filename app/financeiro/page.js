@@ -116,27 +116,11 @@ export default async function Financeiro({ searchParams }) {
         </div>
       </div>
 
-      {/* A mesma barra de segmento do Diário, para o caminho de volta existir:
-          o Financeiro é um segmento como os outros, só que com tela própria. */}
-      <AdminBar
-        owners={[]}
-        selected=""
-        seg={SEG_FINANCEIRO}
-        segs={[...segmentosDe(session.user), SEG_FINANCEIRO]}
-        rotas={{ [SEG_FINANCEIRO]: "/financeiro" }}
-        equipes={[]}
-        semEquipe={0}
-      />
-
       <div className="viewbar">
         <div className="viewtoggle">
           <Link href="/">Diário de bordo</Link>
           {ehGestor(session.user) && <Link href="/agenda">Agenda do dia</Link>}
           {ehGestor(session.user) && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
-          {podeVerTramitacoes(session.user, meuOwnerId) && <Link href="/tramitacoes">Tramitações</Link>}
-          <Link href="/financeiro" className="on">
-            Financeiro{lista.length ? ` (${lista.length})` : ""}
-          </Link>
           {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
           <Link href="/ajuda">Como funciona</Link>
         </div>
@@ -155,6 +139,18 @@ export default async function Financeiro({ searchParams }) {
           ))}
         </div>
       </div>
+
+      {/* A mesma barra de segmento do Diário, para o caminho de volta existir:
+          o Financeiro é um segmento como os outros, só que com tela própria. */}
+      <AdminBar
+        owners={[]}
+        selected=""
+        seg={SEG_FINANCEIRO}
+        segs={[...segmentosDe(session.user), SEG_FINANCEIRO]}
+        rotas={{ [SEG_FINANCEIRO]: "/financeiro" }}
+        equipes={[]}
+        semEquipe={0}
+      />
 
       {erro && (
         <div className="card">

@@ -109,8 +109,6 @@ export default async function Evolucao({ searchParams }) {
           <Link href="/">Diário de bordo</Link>
           <Link href="/agenda">Agenda do dia</Link>
           <Link href="/evolucao" className="on">Evolução</Link>
-          {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
-          {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
           {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
           <Link href="/ajuda">Como funciona</Link>
         </div>

@@ -171,8 +171,6 @@ export default async function AgendaGeral({ searchParams }) {
             <>
               <Link href="/agenda" className="on">Agenda do dia</Link>
               {podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
-              {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
-              {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
               {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
               <Link href="/ajuda">Como funciona</Link>
             </>
@@ -182,8 +180,6 @@ export default async function AgendaGeral({ searchParams }) {
               <Link href="/agenda" className="on">Agenda geral</Link>
               {/* As duas telas não são do fluxo comercial, mas quem alcança
                   precisa chegar nelas de qualquer segmento. */}
-              {podeVerTramitacoes(session.user, null) && <Link href="/tramitacoes">Tramitações</Link>}
-              {podeVerFinanceiro(session.user, null) && <Link href="/financeiro">Financeiro</Link>}
               {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}
             </>
           )}

@@ -226,9 +226,9 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
             <div className="modal-campo">
               <span className="ctx-lab">Última reunião</span>
               <p className="est-desc">
-                {negocio.resumoReuniao
+                {negocio.conversa === "resumo"
                   ? "Resumo do Copiloto do Closer, usado na mensagem."
-                  : negocio.transcricao && negocio.transcricao.length > 200
+                  : negocio.conversa === "transcricao"
                     ? "Sem resumo do Copiloto. A mensagem usa o fim da transcrição, que é onde fica o combinado."
                     : "Sem registro no CRM. A mensagem não vai citar o que foi conversado."}
               </p>

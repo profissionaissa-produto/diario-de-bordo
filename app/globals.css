@@ -940,6 +940,9 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .msg-env > div { min-height: 30px; }
 .msg-env .est-input { font-size: 13px; padding: 6px 10px; flex: 1; min-width: 0; }
 .msg-fixo { font-size: 13px; color: var(--ink); }
+/* A distância que a mensagem tem que vencer, lado a lado. */
+.msg-evolucao { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.msg-seta { color: var(--muted); }
 
 /* Quadro da tramitação: uma coluna por etapa, na ordem do funil, como a
    Sinaleira. A gravidade é a mesma régua que ordena a lista. */

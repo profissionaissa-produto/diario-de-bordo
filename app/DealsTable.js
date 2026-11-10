@@ -5,6 +5,7 @@ import { TEMP_STYLE } from "../lib/config";
 import { SEMENTES, numeroDa } from "../lib/estrategias";
 import { GRUPOS } from "../lib/funil";
 import BotaoWhats from "./BotaoWhats";
+import MensagemCloser from "./MensagemCloser";
 
 const STATUS_LABEL = {
   rascunho: "Não enviado",
@@ -37,6 +38,8 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
   const [status, setStatus] = useState(briefing?.status || "rascunho");
   const [briefMsg, setBriefMsg] = useState(null);
   const [briefBusy, setBriefBusy] = useState(false);
+  // Qual negócio está com a janela de mensagem aberta.
+  const [msgDe, setMsgDe] = useState(null);
 
   const aprovado = status === "aprovado";
   const isAdmin = !!ctx?.isAdmin;
@@ -292,6 +295,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
               <th style={{ width: "18%" }}>Estratégia</th>
               <th style={{ width: "17%" }}>Evolução pretendida</th>
               <th className="col-obs">Observação</th>
+              <th style={{ width: "13%" }}>Mensagem</th>
             </tr>
           </thead>
           <tbody>
@@ -425,12 +429,32 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
                       </p>
                     )}
                   </td>
+
+                  {/* Último passo da linha, e só libera depois que estratégia e
+                      evolução estão definidas: são elas que a mensagem executa. */}
+                  <td className="col-acao">
+                    <button
+                      type="button"
+                      className="btn-msg"
+                      onClick={() => setMsgDe(r.id)}
+                      disabled={!dentro || falta(r.id)}
+                      title={
+                        !dentro
+                          ? "Marque o negócio para atuar hoje"
+                          : falta(r.id)
+                            ? "Defina estratégia e evolução para liberar a mensagem"
+                            : undefined
+                      }
+                    >
+                      {!dentro ? "Fora de hoje" : falta(r.id) ? "Defina estratégia e evolução" : "Gerar mensagem"}
+                    </button>
+                  </td>
                 </tr>
               );
             })}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={podeEditar ? 7 : 6} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
+                <td colSpan={podeEditar ? 8 : 7} style={{ textAlign: "center", color: "var(--muted)", padding: "40px" }}>
                   {rows.length === 0
                     ? emptyLabel || "Nenhum negócio ativo no funil."
                     : `Nenhum negócio encontrado para “${busca}”.`}
@@ -460,6 +484,18 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
           </button>
         </div>
       </div>
+
+      {/* Fora da tabela: a janela é modal e dentro de <td> herdava o recorte
+          da célula. O que vale é o estado da tela agora, não o do servidor. */}
+      {msgDe && rows.some((r) => r.id === msgDe) && (
+        <MensagemCloser
+          negocio={rows.find((r) => r.id === msgDe)}
+          item={items[msgDe]}
+          estrategia={estrategias.find((e) => e.id === items[msgDe]?.estrategia) || null}
+          label={label}
+          onFechar={() => setMsgDe(null)}
+        />
+      )}
     </div>
   );
 }

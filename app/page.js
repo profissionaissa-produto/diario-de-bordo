@@ -509,7 +509,18 @@ export default async function Page({ searchParams }) {
           <div className="viewtoggle">
             {ehFarmer ? (
               <>
-                <Link href={qs("")} className={isFechar ? "" : "on"}>Plano do dia</Link>
+                <Link href={qsLista("todas")} className={!isFechar && vista === "todas" ? "on" : ""}>
+                  Todas
+                </Link>
+                <Link
+                  href={qsLista("tramitacoes")}
+                  className={!isFechar && vista === "tramitacoes" ? "on" : ""}
+                >
+                  Tramitações{tram ? ` (${tram.pendencias.length})` : ""}
+                </Link>
+                <Link href={qsLista("demanda")} className={!isFechar && vista === "demanda" ? "on" : ""}>
+                  Levantamento de demanda{carteiraDoDia ? ` (${carteiraDoDia.length})` : ""}
+                </Link>
                 <Link href={qs("fechar")} className={isFechar ? "on" : ""}>Fechamento</Link>
               </>
             ) : (
@@ -519,25 +530,6 @@ export default async function Page({ searchParams }) {
                 <Link href={qs("fechar")} className={isFechar ? "on" : ""}>Fechamento</Link>
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* As duas frentes do farmer numa tela só: a carteira, que é o
-          levantamento de demanda, e as tramitações dos eventos vendidos. Elas
-          viviam em páginas diferentes e o dia dele é um só. */}
-      {carteiraDoDia && !isFechar && (
-        <div className="viewbar">
-          <div className="seg-toggle">
-            <Link href={qsLista("todas")} className={vista === "todas" ? "on" : ""}>
-              Todas
-            </Link>
-            <Link href={qsLista("tramitacoes")} className={vista === "tramitacoes" ? "on" : ""}>
-              Tramitações{tram ? ` (${tram.pendencias.length})` : ""}
-            </Link>
-            <Link href={qsLista("demanda")} className={vista === "demanda" ? "on" : ""}>
-              Levantamento de demanda{` (${carteiraDoDia.length})`}
-            </Link>
           </div>
         </div>
       )}

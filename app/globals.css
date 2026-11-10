@@ -701,6 +701,9 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .emp-balde.b-nutricao { background: var(--azul-soft); color: var(--azul); }
 .emp-balde.b-reativacao { background: #f4efe9; color: #a9702f; }
 .emp-balde.b-extra { background: #e8f6ed; color: #17803d; }
+/* Etapa da tramitação: neutra de propósito. Quem carrega a cor na linha é a
+   situação, e duas coisas coloridas lado a lado disputam o olho. */
+.emp-balde.b-etapa { background: var(--ink-soft); color: var(--ink); }
 .emp-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
   padding: 3px 8px; border-radius: 6px; background: var(--surface); color: var(--muted); }
 .emp-tag.auxilio { background: var(--laranja-soft); color: var(--laranja); }
@@ -1011,6 +1014,11 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .tram-grav { display: flex; align-items: center; gap: 7px; font-size: 11.5px;
   font-weight: 600; color: var(--muted); line-height: 1.3; }
 .n-vermelho .tram-grav { color: var(--erro); }
+/* Na lista a cor está no próprio elemento, não num card em volta, então a
+   regra de descendente acima não pega. */
+.tram-grav.n-vermelho { color: var(--erro); }
+.tram-grav.n-amarelo { color: var(--laranja-forte); }
+.col-acao .tram-por { margin-top: 6px; text-align: center; }
 .tram-cliente { margin: 0; font-size: 13.5px; font-weight: 700; line-height: 1.3; }
 .tram-card .tram-meta { display: flex; flex-wrap: wrap; gap: 5px; font-size: 12px; color: var(--muted); }
 .tram-abrir { justify-self: start; }

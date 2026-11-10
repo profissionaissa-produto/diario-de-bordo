@@ -7,8 +7,8 @@ import { getTramitacoes, getEvolucaoTramitacoes, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { NOME_CLOSER, closersDe, SEG_TRAMITACOES, EQUIPES_DE, semEquipe } from "../../lib/config";
 import { ehGestor, podeVerTramitacoes, podeVerFinanceiro, equipeLiderada, podeVerEvolucao, podeConfigurar } from "../../lib/permissoes";
-import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPA_LOGISTICA, ETAPAS_ATIVAS, ETAPAS_TICKET, pendenciasDosTickets, placar, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
-import TramitacaoCard from "../TramitacaoCard";
+import { PIPELINE_CS, ETAPAS_TRAMITACAO, ETAPA_LOGISTICA, pendenciasDosTickets, PRE_VERMELHO, PRE_AMARELO, POS_VERMELHO, POS_AMARELO } from "../../lib/tramitacoes";
+import TramitacaoLinha from "../TramitacaoLinha";
 import AdminBar from "../AdminBar";
 import { listarEstrategias, listarOcultas } from "../../lib/db";
 import { montaEstrategias, semOcultas } from "../../lib/estrategias";
@@ -43,6 +43,17 @@ export default async function Tramitacoes({ searchParams }) {
   let erro = null;
   try {
     tickets = await getTicketsCS(PIPELINE_CS, ETAPAS_TRAMITACAO);
+    // Só o que ainda dá para preparar. Decisão do CS em 10/11/2026: evento que
+    // já aconteceu sai da tramitação do farmer, mesmo com o ticket aberto.
+    //
+    // O filtro entra aqui, antes de tudo, para a contagem e a lista saírem do
+    // mesmo conjunto. Filtrar só na hora de desenhar foi o que fez o board
+    // dizer 47 e listar 25.
+    //
+    // Ticket sem data de evento fica: some do filtro quem tem data no passado,
+    // não quem está com o campo em branco, que é problema a resolver e não
+    // caso encerrado.
+    tickets = tickets.filter((t) => !t.evento || String(t.evento).slice(0, 10) >= hoje);
     // A aquisição da logística vence 5 dias após o ganho do negócio, não perto
     // do evento. Sem esta data o relógio fica cinza dizendo que não há de onde
     // contar, então ela é buscada, mas só para os tickets dessa etapa.
@@ -81,7 +92,6 @@ export default async function Tramitacoes({ searchParams }) {
   // Já vem ordenado da regra: evento passado e ainda aberto primeiro, depois
   // evento próximo com etapa de preparação pendente.
   const todas = pendenciasDosTickets(tickets, hoje, registros);
-  const placarBoard = placar(todas);
 
   const donoDo = (p) => String(tickets.find((t) => t.id === p.ticketId)?.ownerId || "");
 
@@ -140,6 +150,9 @@ export default async function Tramitacoes({ searchParams }) {
   const ticketsById = Object.fromEntries(
     tickets.map((t) => [t.id, { ...t, donoNome: NOME_CLOSER[t.ownerId] || nomesHub[t.ownerId] || "" }])
   );
+
+  // Com um farmer escolhido a coluna de dono não diz nada: é sempre ele.
+  const mostrarDono = !farmerSel;
 
   // Segue o mesmo recorte do resto da tela, senão o número briga com a lista.
   const atrasadas = doFarmer.filter((p) => p.atrasada && p.status !== "aguardando").length;
@@ -265,65 +278,38 @@ export default async function Tramitacoes({ searchParams }) {
           </div>
         </div>
       ) : (
-        <div className="kanban">
-        {ETAPAS_ATIVAS.filter((id) => lista.some((p) => p.etapa === id)).map((id) => {
-          const coluna = lista.filter((p) => p.etapa === id);
-          const pl = placar(coluna);
-          return (
-            <section className="kcol" key={id}>
-              <header className="kcol-topo">
-                <div className="kcol-nome">
-                  <h3>{ETAPAS_TICKET[id].label}</h3>
-                  <span className="kcol-n">{coluna.length}</span>
-                </div>
-                {/* Quantos de cada cor, para a gravidade da coluna aparecer
-                    antes de alguém rolar os cards. */}
-                <div className="kcol-pontos">
-                  {["vermelho", "amarelo", "verde", "cinza"]
-                    .filter((c) => pl[c] > 0)
-                    .map((c) => (
-                      <span key={c} className={"kcol-pt p-" + c}>
-                        <span className={"tram-ponto p-" + c} />
-                        {pl[c]}
-                      </span>
-                    ))}
-                </div>
-              </header>
-
-              <div className="kcol-cards">
-                {coluna.length === 0 ? (
-                  <p className="kcol-vazia">nada aqui</p>
-                ) : (
-                  coluna.map((p) => (
-                    <TramitacaoCard
-                      key={p.ticketId + p.tipo}
-                      p={p}
-                      ticket={ticketsById[p.ticketId]}
-                      ehGestor={gestor}
-                      evolucao={evolucoes[p.ticketId + "|" + p.tipo] || null}
-                      estrategias={estrategiasFarmer}
-                      mostrarDono={!farmerSel}
-                    />
-                  ))
-                )}
-              </div>
-            </section>
-          );
-        })}
-      </div>
-      )}
-
-      {/* Coluna vazia só empurra o que importa para fora da tela. Fica a
-          contagem, para quem olha saber que o funil é maior do que o quadro. */}
-      {!erro && lista.length > 0 && (
-        (() => {
-          const vazias = ETAPAS_ATIVAS.filter((id) => !lista.some((p) => p.etapa === id)).length;
-          return vazias > 0 ? (
-            <p className="kanban-vazias">
-              {vazias} etapa{vazias === 1 ? "" : "s"} sem nada neste recorte, fora do quadro.
-            </p>
-          ) : null;
-        })()
+        /* Lista, não quadro. No quadro por etapa a pessoa rolava na horizontal
+           para achar o que era dela, e a ordem de gravidade, que é o que
+           importa, ficava escondida dentro de cada coluna. Aqui ela é a
+           própria ordem das linhas: o mais grave em cima, de todas as etapas
+           juntas. */
+        <div className="card tscroll">
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: mostrarDono ? "26%" : "30%" }}>Empresa</th>
+                <th style={{ width: "16%" }}>Etapa</th>
+                <th style={{ width: "10%" }}>Evento</th>
+                <th style={{ width: mostrarDono ? "24%" : "28%" }}>Situação</th>
+                {mostrarDono && <th style={{ width: "10%" }}>Farmer</th>}
+                <th style={{ width: "16%" }}>Tratativa</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map((p) => (
+                <TramitacaoLinha
+                  key={p.ticketId + p.tipo}
+                  p={p}
+                  ticket={ticketsById[p.ticketId]}
+                  ehGestor={gestor}
+                  evolucao={evolucoes[p.ticketId + "|" + p.tipo] || null}
+                  estrategias={estrategiasFarmer}
+                  mostrarDono={mostrarDono}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <div className="evo-nota">

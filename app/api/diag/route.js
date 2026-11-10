@@ -2,7 +2,7 @@ import { auth } from "../../../auth";
 import { getDayBriefings, dbReady } from "../../../lib/db";
 import { dayKey } from "../../../lib/week";
 import { NOME_CLOSER, SEG_CLOSER } from "../../../lib/config";
-import { diagnosticoTarefas, historicoDeProps } from "../../../lib/hubspot";
+import { diagnosticoTarefas, historicoDeProps, sondaReunioes } from "../../../lib/hubspot";
 import { envioConfigurado, bccDeLog, testaCredencial, formaDaChave, diagnosticoDaChave } from "../../../lib/gmail";
 
 // Diagnóstico: o que está gravado para o dia, exatamente como o banco devolve.
@@ -45,6 +45,21 @@ export async function GET(req) {
       PSA_API_KEY: !!process.env.PSA_API_KEY,
       DATABASE_URL: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL),
     });
+  }
+
+  // ?reunioes=<pipeline> conta reunião e chamada nos negócios abertos, e diz
+  // se há transcrição. O conector de IA bloqueia esses objetos, então medir
+  // pelo token da aplicação é o único caminho. Não grava nada.
+  if (searchParams.has("reunioes")) {
+    const seg = searchParams.get("reunioes") || "B2B";
+    const pipeline = seg === "B2C" ? "725182862" : "default";
+    const fechadas = seg === "B2C" ? ["1105295876", "1059939760"] : ["1076664460", "1076664462", "1076664461"];
+    try {
+      return Response.json({ segmento: seg, ...(await sondaReunioes(pipeline, fechadas)) });
+    } catch (e) {
+      console.error("[diag] sonda de reuniões falhou:", e);
+      return Response.json({ ok: false, erro: e.message });
+    }
   }
 
   // ?gmail prova a credencial de envio de ponta a ponta, menos o envio: pede o

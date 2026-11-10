@@ -50,7 +50,14 @@ export default function TramitacaoLinha({ p, ticket, ehGestor, evolucao, estrate
           </span>
         </td>
 
-        {mostrarDono && <td className="emp-meta">{ticket?.donoNome || "—"}</td>}
+        {/* O nome vai num span, não no td: emp-meta é display flex, e flex num
+            td tira a célula do fluxo da tabela. A coluna inteira saía
+            desalinhada das outras. */}
+        {mostrarDono && (
+          <td>
+            <span className="emp-meta">{ticket?.donoNome || "—"}</span>
+          </td>
+        )}
 
         <td className="col-acao">
           <button type="button" className="btn-msg" onClick={() => setAberta(true)}>

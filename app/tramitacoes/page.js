@@ -287,12 +287,12 @@ export default async function Tramitacoes({ searchParams }) {
           <table>
             <thead>
               <tr>
-                <th style={{ width: mostrarDono ? "26%" : "30%" }}>Empresa</th>
-                <th style={{ width: "16%" }}>Etapa</th>
-                <th style={{ width: "10%" }}>Evento</th>
-                <th style={{ width: mostrarDono ? "24%" : "28%" }}>Situação</th>
-                {mostrarDono && <th style={{ width: "10%" }}>Farmer</th>}
-                <th style={{ width: "16%" }}>Tratativa</th>
+                <th style={{ width: mostrarDono ? "23%" : "27%" }}>Empresa</th>
+                <th style={{ width: "15%" }}>Etapa</th>
+                <th style={{ width: "9%" }}>Evento</th>
+                <th style={{ width: mostrarDono ? "22%" : "27%" }}>Situação</th>
+                {mostrarDono && <th style={{ width: "12%" }}>Farmer</th>}
+                <th style={{ width: "19%" }}>Tratativa</th>
               </tr>
             </thead>
             <tbody>

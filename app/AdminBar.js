@@ -117,8 +117,8 @@ export default function AdminBar({
       )}
 
       {escolhido && (
-        <button className="ctx-limpar" onClick={() => nav({ [paramPessoa]: "" })}>
-          limpar seleção
+        <button className="btn-ghost ctx-limpar" onClick={() => nav({ [paramPessoa]: "" })}>
+          Limpar seleção
         </button>
       )}
     </div>

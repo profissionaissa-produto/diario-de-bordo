@@ -1,3 +1,4 @@
+import { medidor } from "../lib/medir";
 import { redirect } from "next/navigation";
 import Avatar from "./Avatar";
 import { auth, signOut } from "../auth";
@@ -81,7 +82,8 @@ function ErroHubspot({ erro }) {
 }
 
 export default async function Page({ searchParams }) {
-  const session = await auth();
+  const m = medidor("diario");
+  const session = await m.passo("auth", () => auth());
   if (!session?.user?.email) redirect("/login");
   const email = session.user.email.toLowerCase();
   const userName = session.user.name || email;
@@ -110,7 +112,7 @@ export default async function Page({ searchParams }) {
   let erroHubspot = null;
   let tempOptions = [];
   try {
-    tempOptions = await getTemperaturaOptions();
+    tempOptions = await m.passo("tempOptions", () => getTemperaturaOptions());
   } catch (e) {
     erroHubspot = e;
   }
@@ -127,7 +129,7 @@ export default async function Page({ searchParams }) {
       const sel = owners.find((o) => String(o.ownerId) === String(selId));
       viewOwner = { ownerId: sel.ownerId, name: sel.name };
       try {
-        deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
+        deals = await m.passo("deals", () => getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg)));
       } catch (e) {
         erroHubspot = e;
       }
@@ -153,7 +155,7 @@ export default async function Page({ searchParams }) {
     // O segmento do closer vem do time dele, não da URL.
     seg = segOf(viewOwner.ownerId) || seg;
     try {
-      deals = await getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg));
+      deals = await m.passo("deals", () => getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg)));
     } catch (e) {
       erroHubspot = e;
     }
@@ -175,10 +177,10 @@ export default async function Page({ searchParams }) {
   let historicoContato = {};
   if (ehFarmer && viewOwner) {
     try {
-      let [{ itens }, linhas] = await Promise.all([
+      let [{ itens }, linhas] = await m.passo("lista+historico", () => Promise.all([
         listaDoDia(String(viewOwner.ownerId), dayKey(), { registraAcesso: !gestor }),
         getHistoricoCarteira(String(viewOwner.ownerId), dayKey()),
-      ]);
+      ]));
       const historico = montaHistorico(linhas);
       const owner = String(viewOwner.ownerId);
       // Os ids já são conhecidos aqui: a releitura adiante preenche campos, não
@@ -192,7 +194,7 @@ export default async function Page({ searchParams }) {
       // O resumo do mês saiu junto com os indicadores do topo: era uma ida ao
       // HubSpot por abertura da tela para desenhar quatro números que não
       // estão mais lá. Quem mede o mês é a Evolução.
-      const [porOwner, selos, contatos, tentativas, detalhe] = await Promise.all([
+      const [porOwner, selos, contatos, tentativas, detalhe] = await m.passo("paralelo-carteira", () => Promise.all([
         // O que o CRM já sabe do dia: vira sugestão de resultado no fechamento.
         // Falha aqui (escopo, cota) só faz o farmer preencher à mão.
         // A efetividade é automática: o que o CRM registrou hoje vira o
@@ -217,7 +219,7 @@ export default async function Page({ searchParams }) {
         // A contagem não pode falhar calada: sem ela a cascata liberaria tudo.
         tentativasPorEmpresa(ids),
         detalheTentativas(ids),
-      ]);
+      ]));
 
       contatosDoDia = contatos;
       tentativasDoDia = tentativas;
@@ -225,12 +227,12 @@ export default async function Page({ searchParams }) {
       const ativ = porOwner[owner] || {};
 
       // Preenche só o que está em branco — nunca sobrescreve escolha manual.
-      await aplicarAtividade(owner, dayKey(), ativ).catch((err) =>
+      await m.passo("aplicarAtividade", () => aplicarAtividade(owner, dayKey(), ativ)).catch((err) =>
         console.error("[carteira] não consegui aplicar a atividade:", err?.message)
       );
 
       // Relê depois de aplicar, senão a tela mostra o estado anterior.
-      itens = await getListaDia(owner, dayKey());
+      itens = await m.passo("relerLista", () => getListaDia(owner, dayKey()));
 
       carteiraDoDia = itens.map((e) => ({
         ...e,
@@ -249,7 +251,7 @@ export default async function Page({ searchParams }) {
   if (erroHubspot && deals.length === 0 && !carteiraDoDia) return <ErroHubspot erro={erroHubspot} />;
 
   const dia = dayKey();
-  const briefing = viewOwner ? await getBriefing(viewOwner.ownerId, dia) : null;
+  const briefing = viewOwner ? await m.passo("briefing", () => getBriefing(viewOwner.ownerId, dia)) : null;
   // O que o CRM já registrou hoje, negócio a negócio — o closer atua em negócio,
   // não em empresa. Vira sugestão no fechamento, nunca resultado gravado: aqui a
   // observação é obrigatória e só quem falou com o cliente sabe escrevê-la.
@@ -295,7 +297,7 @@ export default async function Page({ searchParams }) {
 
   // Briefing do último dia útil, para o closer retomar de onde parou.
   const diaAnterior = diaUtilAnterior(dia);
-  const anterior = viewOwner ? await getBriefing(viewOwner.ownerId, diaAnterior) : null;
+  const anterior = viewOwner ? await m.passo("briefingAnterior", () => getBriefing(viewOwner.ownerId, diaAnterior)) : null;
 
   // Preserva closer/segmento ao alternar a visão.
   const qs = (view) => {
@@ -319,7 +321,7 @@ export default async function Page({ searchParams }) {
   };
   // Pendentes que este gestor pode decidir.
   const pendentes = gestor
-    ? briefingsGeriveis(session.user, await getDayBriefings(dia)).filter(
+    ? briefingsGeriveis(session.user, await m.passo("pendentes", () => getDayBriefings(dia))).filter(
         (b) => b.status === "enviado"
       ).length
     : 0;
@@ -340,7 +342,7 @@ export default async function Page({ searchParams }) {
   // CS inteiro e não vale a pena para quem está olhando outra coisa.
   const tram =
     ehFarmer && viewOwner && !isFechar && vista !== "demanda"
-      ? await tramitacoesDoDia(dia, new Set([String(viewOwner.ownerId)]))
+      ? await m.passo("tramitacoes", () => tramitacoesDoDia(dia, new Set([String(viewOwner.ownerId)])))
       : null;
 
   const rows = deals.map((d) => ({
@@ -361,7 +363,7 @@ export default async function Page({ searchParams }) {
   let listaPorCriterios = false;
   if (seg === "B2B" && viewOwner && rows.length > 0) {
     try {
-      const { itens } = await listaDoDiaCloser(String(viewOwner.ownerId), rows, dia);
+      const { itens } = await m.passo("listaCloser", () => listaDoDiaCloser(String(viewOwner.ownerId), rows, dia));
       doDia = itens;
       listaPorCriterios = true;
     } catch (e) {
@@ -378,7 +380,7 @@ export default async function Page({ searchParams }) {
   if (anterior && Object.keys(anterior.items).length > 0) {
     const porId = Object.fromEntries(rows.map((r) => [String(r.id), r]));
     const ausentes = Object.keys(anterior.items).filter((id) => !porId[id]);
-    const extras = ausentes.length ? await getDealsByIds(ausentes).catch(() => ({})) : {};
+    const extras = ausentes.length ? await m.passo("dealsOntem", () => getDealsByIds(ausentes)).catch(() => ({})) : {};
     ontem = {
       diaLabel: dayLabel(diaAnterior),
       status: anterior.status,
@@ -403,8 +405,11 @@ export default async function Page({ searchParams }) {
   // As dez originais vêm do código; o que a curadoria cadastrou vem do banco.
   // idx sai da lista inteira: uma estratégia removida ainda precisa ter nome no
   // briefing antigo que a gravou. porSeg é só o que ainda dá para escolher.
-  const porSeg = montaEstrategias(await listarEstrategias());
-  const estrat = { porSeg: semOcultas(porSeg, await listarOcultas()), idx: indexaPorId(porSeg) };
+  const [listadas, ocultas] = await m.passo("estrategias", () => Promise.all([listarEstrategias(), listarOcultas()]));
+  const porSeg = montaEstrategias(listadas);
+  const estrat = { porSeg: semOcultas(porSeg, ocultas), idx: indexaPorId(porSeg) };
+
+  m.fim(`seg=${seg} farmer=${ehFarmer} vista=${vista} negocios=${deals.length}`);
 
   return (
     <div className="wrap">

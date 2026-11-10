@@ -809,9 +809,9 @@ a.btn-primary.desativado { opacity: .45; pointer-events: none; }
 .ctx-cont { background: var(--ink-soft); color: var(--muted); border-radius: 999px;
   padding: 1px 7px; font-size: 10px; font-weight: 700; }
 .ctxbar .closer-select { width: 100%; min-width: 0; }
-.ctx-limpar { align-self: center; border: 0; background: transparent; color: var(--muted);
-  font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; }
-.ctx-limpar:hover { color: var(--ink); }
+/* Mesmo padrão dos outros CTAs: maiúscula e com contorno. Solto e sublinhado
+   ele parecia um link perdido no meio dos filtros. */
+.ctx-limpar { align-self: flex-end; }
 
 /* ------------------------------------------- lista do dia em tabela (CS) */
 .linha-pronta { background: #f4fbf6; }

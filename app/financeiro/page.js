@@ -13,7 +13,7 @@ import {
 import { montaEstrategias, semOcultas } from "../../lib/estrategias";
 import { dayKey, dayLabel } from "../../lib/week";
 import { SEG_FINANCEIRO } from "../../lib/config";
-import { podeVerFinanceiro, podeVerTramitacoes, podeVerEvolucao, podeConfigurar, ehGestor } from "../../lib/permissoes";
+import { podeVerFinanceiro, podeVerTramitacoes, podeVerEvolucao, podeConfigurar, ehGestor, segmentosDe } from "../../lib/permissoes";
 import { PIPELINE_CS, ETAPAS_TICKET, gravidade } from "../../lib/tramitacoes";
 import {
   ETAPAS_FINANCEIRO,
@@ -25,6 +25,7 @@ import {
   SITUACOES,
 } from "../../lib/financeiro";
 import FinanceiroCard from "../FinanceiroCard";
+import AdminBar from "../AdminBar";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,18 @@ export default async function Financeiro({ searchParams }) {
           </form>
         </div>
       </div>
+
+      {/* A mesma barra de segmento do Diário, para o caminho de volta existir:
+          o Financeiro é um segmento como os outros, só que com tela própria. */}
+      <AdminBar
+        owners={[]}
+        selected=""
+        seg={SEG_FINANCEIRO}
+        segs={[...segmentosDe(session.user), SEG_FINANCEIRO]}
+        rotas={{ [SEG_FINANCEIRO]: "/financeiro" }}
+        equipes={[]}
+        semEquipe={0}
+      />
 
       <div className="viewbar">
         <div className="viewtoggle">

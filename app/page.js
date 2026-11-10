@@ -28,7 +28,7 @@ import { listaDoDiaCloser } from "../lib/dia-closer";
 import { empresasComSelo } from "../lib/relacionamento";
 import { montaHistorico, precisaAuxilio } from "../lib/carteira";
 import { getHistoricoCarteira, aplicarAtividade, getListaDia } from "../lib/db";
-import { SEG_TRAMITACOES, empresaUrl } from "../lib/config";
+import { SEG_TRAMITACOES, SEG_FINANCEIRO, empresaUrl } from "../lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -313,6 +313,10 @@ export default async function Page({ searchParams }) {
   // ownerId resolvido pelo login. Passar null aqui esconderia o menu justo de
   // quem a tela é.
   const verFinanceiro = podeVerFinanceiro(session.user, ownerDaVez);
+  // O Financeiro entra como segmento, não como aba solta: ele é o time do
+  // outro lado do mesmo processo. Quem não alcança a tela não vê a opção, e
+  // por isso a lista é montada aqui e não fixa no cadastro.
+  const segsDaBarra = verFinanceiro ? [...meusSegs, SEG_FINANCEIRO] : meusSegs;
 
   const rows = deals.map((d) => ({
     ...d,
@@ -447,7 +451,8 @@ export default async function Page({ searchParams }) {
             owners={owners}
             selected={viewOwner ? String(viewOwner.ownerId) : ""}
             seg={seg}
-            segs={meusSegs}
+            segs={segsDaBarra}
+            rotas={{ [SEG_FINANCEIRO]: "/financeiro" }}
             rotuloPessoa={ehFarmer ? "farmer" : "closer"}
             equipes={equipeTravada ? [] : EQUIPES_DE(seg)}
             equipe={equipeAtiva}

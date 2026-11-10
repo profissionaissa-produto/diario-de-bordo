@@ -18,11 +18,21 @@ export default function AdminBar({
   // a navegação para "/" e o filtro se perdia ao trocar de equipe.
   base = "/",
   paramPessoa = "closer",
+  // Segmento que tem tela própria em vez de ser um recorte desta. O
+  // Financeiro é assim: ele não olha o funil de ninguém, olha os tickets que
+  // já foram vendidos.
+  rotas = {},
 }) {
   const router = useRouter();
   const sp = useSearchParams();
 
   function nav(next) {
+    // Segmento com tela própria leva para ela, limpo: equipe e pessoa do
+    // segmento anterior não querem dizer nada lá.
+    if (next.seg && rotas[next.seg]) {
+      router.push(rotas[next.seg]);
+      return;
+    }
     const p = new URLSearchParams(sp.toString());
     for (const [k, v] of Object.entries(next)) {
       if (v) p.set(k, v);
@@ -75,6 +85,8 @@ export default function AdminBar({
         </div>
       )}
 
+      {/* Tela que não filtra por pessoa não mostra o seletor vazio. */}
+      {owners.length > 0 && (
       <div className="ctx-campo cresce">
         <span className="ctx-lab">
           {rotuloPessoa === "farmer" ? "Farmer" : "Closer"}
@@ -95,6 +107,7 @@ export default function AdminBar({
           </select>
         </div>
       </div>
+      )}
 
       {/* Sem isto, quem ficou sem equipe sumiria do filtro sem explicação. */}
       {!equipe && semEquipe > 0 && (

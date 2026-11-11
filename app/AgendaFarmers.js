@@ -304,35 +304,76 @@ export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
   );
 }
 
+const RESULTADO = {
+  efetivo: "falou",
+  tentativa: "tentou",
+  nao_abordei: "não abordou",
+  trocar_segmento: "pediu troca",
+};
+
+// O cartão do farmer, no mesmo molde do cartão do closer da agenda geral:
+// cabeça com quem é e quanto, e uma linha por empresa dizendo o que vai ser
+// feito nela hoje.
+//
+// Antes mostrava só o nome das empresas em etiquetas, e os dois números em
+// destaque eram "% efetivo" e "sem registro", que falam do fechamento. De
+// manhã, que é quando a agenda é olhada, os dois davam zero em todo mundo e
+// a tela não respondia a pergunta que o gestor faz: o que cada um marcou
+// que vai fazer hoje.
 function Cartoes({ farmers, dia }) {
   return (
       <div className="dia-grid">
-        {farmers.map((f) => (
+        {farmers.map((f) => {
+          // No Farmer, o que a pessoa marca que vai fazer fica na abordagem,
+          // que é a coluna Estratégia da tela dela.
+          const comEstrategia = f.itens.filter((e) => e.abordagem).length;
+          const fechou = f.placar.total - f.placar.sem_registro;
+          return (
           <div className={"dia-card farmer st-" + (STATUS_CLS[f.situacao.chave] || "rascunho")} key={f.ownerId}>
-            <div className="dia-cab">
+            <div className="dia-head">
               <span className="aprov-pfp">
                 {f.foto ? <img src={f.foto} alt={f.nome} /> : f.nome.slice(0, 2).toUpperCase()}
               </span>
-              <span className="dia-nome">{f.nome}</span>
+              <div className="dia-quem">
+                <span className="dia-nome">{f.nome}</span>
+                <span className="dia-meta">
+                  {f.itens.length
+                    ? `${f.placar.total} empresas · ${comEstrategia} com estratégia`
+                    : "não abriu o diário hoje"}
+                </span>
+              </div>
               <span className="plan-badge">{f.situacao.label}</span>
             </div>
 
-            <div className="dia-nums">
-              <span><b>{f.placar.total}</b> empresas</span>
-              <span><b>{f.placar.pct}%</b> efetivo</span>
-              {f.placar.sem_registro > 0 && (
-                <span className="foco-alerta"><b>{f.placar.sem_registro}</b> sem registro</span>
-              )}
-            </div>
+            {/* O placar do dia só aparece depois que alguém começou a fechar:
+                antes disso ele é zero em todo mundo e não informa nada. */}
+            {fechou > 0 && (
+              <div className="dia-nums">
+                <span><b>{f.placar.pct}%</b> efetivo</span>
+                <span>{fechou} de {f.placar.total} fechadas</span>
+              </div>
+            )}
 
             {f.itens.length > 0 ? (
-              <div className="dia-empresas">
-                {f.itens.slice(0, 6).map((e) => (
-                  <span className={"dia-emp r-" + (e.resultado || "vazio")} key={e.id} title={BALDES[e.balde]?.label}>
-                    {e.nome}
-                  </span>
+              <div className="dia-itens">
+                {f.itens.map((e) => (
+                  <a
+                    className={"dia-item r-" + (e.resultado || "vazio")}
+                    key={e.id}
+                    href={e.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={BALDES[e.balde]?.label}
+                  >
+                    <span className="dia-item-nome">{e.nome}</span>
+                    <span className="dia-item-evo">
+                      <span className={"mini" + (e.abordagem ? " forte" : "")}>
+                        {e.abordagem || "sem estratégia"}
+                      </span>
+                      {e.resultado && <span className="dia-item-val">{RESULTADO[e.resultado] || e.resultado}</span>}
+                    </span>
+                  </a>
                 ))}
-                {f.itens.length > 6 && <span className="dia-emp mais">+{f.itens.length - 6}</span>}
               </div>
             ) : (
               <div className="dia-vazio">Ainda não abriu o diário hoje</div>
@@ -340,7 +381,8 @@ function Cartoes({ farmers, dia }) {
 
             <Comentario ownerId={f.ownerId} dia={dia} inicial={f.brief} />
           </div>
-        ))}
+          );
+        })}
       </div>
   );
 }

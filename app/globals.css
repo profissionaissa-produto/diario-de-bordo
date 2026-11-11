@@ -352,7 +352,15 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
   box-shadow: var(--shadow); overflow: hidden; border-left: 4px solid var(--azul); }
 /* O cartão do farmer monta o conteúdo direto, sem o cabeçalho com borda que o
    cartão do closer usa — por isso o respiro vem dele mesmo. */
-.dia-card.farmer { display: flex; flex-direction: column; gap: 9px; padding: 14px 16px; }
+/* Mesmo cartão do closer na agenda geral: cabeça com borda, lista de itens
+   colada nela, e o recuo mora em cada parte, não no cartão. */
+.dia-card.farmer { display: flex; flex-direction: column; }
+.dia-card.farmer .dia-nums { padding: 11px 16px 0; }
+.dia-card.farmer .dia-vazio { padding: 14px 16px; }
+.dia-card.farmer .dia-comentario { padding: 9px 16px 13px; margin-top: 0; }
+/* A lista do dia tem 20 empresas: sem teto o cartão vira uma coluna sem fim
+   e a grade de farmers deixa de ser comparável. */
+.dia-card.farmer .dia-itens { max-height: 310px; overflow-y: auto; }
 .dia-cab { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .dia-card.st-enviado { border-left-color: var(--azul); }
 .dia-card.st-aprovado { border-left-color: #17803d; }
@@ -743,6 +751,14 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .dia-emp.r-nao_abordei { background: var(--ink-soft); color: var(--ink); }
 .dia-emp.r-trocar_segmento { background: #fdf0ee; color: #b3261e; }
 .dia-emp.mais { font-weight: 700; }
+/* Resultado já registrado tinge a linha, como a temperatura tinge a do closer. */
+.dia-item.r-efetivo { border-left-color: #17803d; }
+.dia-item.r-tentativa { border-left-color: var(--laranja); }
+.dia-item.r-nao_abordei { border-left-color: var(--muted); }
+.dia-item.r-trocar_segmento { border-left-color: #b3261e; }
+/* Sem estratégia escolhida: é o que o gestor procura na grade. */
+.dia-item .mini:not(.forte) { background: transparent; color: var(--muted); font-style: italic;
+  padding-left: 0; }
 .dia-vazio { color: var(--muted); font-size: 12.5px; font-style: italic; }
 .dia-nums { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
 .dia-nums b { color: var(--ink); }

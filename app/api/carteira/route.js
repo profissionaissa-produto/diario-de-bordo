@@ -107,8 +107,16 @@ export async function PATCH(req) {
   }
 
   try {
-    const achou = await salvarResultadoCarteira(ownerId, body.dia || dayKey(), companyId, resultado, observacao, editor);
-    if (!achou) return Response.json({ error: "Essa empresa não está na lista de hoje." }, { status: 400 });
+    const r = await salvarResultadoCarteira(ownerId, body.dia || dayKey(), companyId, resultado, observacao, editor);
+    if (r === "fora-da-lista") {
+      return Response.json({ error: "Essa empresa não está na lista de hoje." }, { status: 400 });
+    }
+    if (r === "sem-estrategia") {
+      return Response.json(
+        { error: "Escolha a estratégia desta empresa antes de registrar o resultado." },
+        { status: 400 }
+      );
+    }
     // O pedido é o que segura a empresa fora do rodízio até o líder decidir.
     // O contato aconteceu: a cascata de canais zera e os três voltam a valer.
     // O teto de 3 é de tentativas sem sucesso, não de mensagens enviadas.

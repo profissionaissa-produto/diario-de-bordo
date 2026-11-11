@@ -369,7 +369,10 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .dia-head { display: flex; align-items: center; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .dia-card.vazio .dia-head { border-bottom: 0; }
 .dia-quem { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.dia-nome { font-size: 14px; font-weight: 700; color: var(--ink); }
+/* Nome longo não quebra em duas linhas: o cartão cresce, a grade desalinha e
+   a cabeça fica mais alta que a dos vizinhos. Corta com reticências. */
+.dia-nome { font-size: 14px; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .dia-meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .dia-itens { display: flex; flex-direction: column; }
 .dia-item { display: flex; flex-direction: column; gap: 5px; padding: 11px 16px; text-decoration: none;

@@ -335,7 +335,7 @@ function Cartoes({ farmers, dia }) {
                 {f.foto ? <img src={f.foto} alt={f.nome} /> : f.nome.slice(0, 2).toUpperCase()}
               </span>
               <div className="dia-quem">
-                <span className="dia-nome">{f.nome}</span>
+                <span className="dia-nome" title={f.nome}>{f.nome}</span>
                 <span className="dia-meta">
                   {f.itens.length
                     ? `${f.placar.total} empresas · ${comEstrategia} com estratégia`

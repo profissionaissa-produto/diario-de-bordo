@@ -178,8 +178,8 @@ export default async function Page({ searchParams }) {
   if (ehFarmer && viewOwner) {
     try {
       let [{ itens }, linhas] = await m.passo("lista+historico", () => Promise.all([
-        listaDoDia(String(viewOwner.ownerId), dayKey(), { registraAcesso: !gestor }),
-        getHistoricoCarteira(String(viewOwner.ownerId), dayKey()),
+        m.passo("listaDia", () => listaDoDia(String(viewOwner.ownerId), dayKey(), { registraAcesso: !gestor })),
+        m.passo("historico", () => getHistoricoCarteira(String(viewOwner.ownerId), dayKey())),
       ]));
       const historico = montaHistorico(linhas);
       const owner = String(viewOwner.ownerId);
@@ -200,25 +200,25 @@ export default async function Page({ searchParams }) {
         // A efetividade é automática: o que o CRM registrou hoje vira o
         // resultado sem ninguém clicar, e é por isso que o placar do líder
         // evolui sozinho.
-        atividadeDoDia([owner], dayKey()).catch((err) => {
+        m.passo("ativCRM", () => atividadeDoDia([owner], dayKey())).catch((err) => {
           console.error("[carteira] atividade do dia falhou:", err?.message);
           return {};
         }),
         // Selo de relacionamento: raro de propósito, e caro de apurar — falha
         // aqui só tira o selo, não derruba o dia.
-        empresasComSelo(owner, ids).catch((err) => {
+        m.passo("selo", () => empresasComSelo(owner, ids)).catch((err) => {
           console.error("[carteira] selo de relacionamento falhou:", err?.message);
           return new Set();
         }),
         // Para quem mandar a mensagem. Falha sem derrubar o dia: some o botão,
         // não a lista.
-        contatosDasEmpresas(ids).catch((err) => {
+        m.passo("contatos", () => contatosDasEmpresas(ids)).catch((err) => {
           console.error("[mensagem] falha ao ler os contatos das empresas:", err?.message);
           return {};
         }),
         // A contagem não pode falhar calada: sem ela a cascata liberaria tudo.
-        tentativasPorEmpresa(ids),
-        detalheTentativas(ids),
+        m.passo("tentativas", () => tentativasPorEmpresa(ids)),
+        m.passo("detalhe", () => detalheTentativas(ids)),
       ]));
 
       contatosDoDia = contatos;
@@ -227,12 +227,21 @@ export default async function Page({ searchParams }) {
       const ativ = porOwner[owner] || {};
 
       // Preenche só o que está em branco — nunca sobrescreve escolha manual.
-      await m.passo("aplicarAtividade", () => aplicarAtividade(owner, dayKey(), ativ)).catch((err) =>
-        console.error("[carteira] não consegui aplicar a atividade:", err?.message)
-      );
+      // Devolve quantas linhas mudaram de fato.
+      const aplicadas = await m
+        .passo("aplicarAtividade", () => aplicarAtividade(owner, dayKey(), ativ))
+        .catch((err) => {
+          console.error("[carteira] não consegui aplicar a atividade:", err?.message);
+          return 0;
+        });
 
-      // Relê depois de aplicar, senão a tela mostra o estado anterior.
-      itens = await m.passo("relerLista", () => getListaDia(owner, dayKey()));
+      // Relê só quando mudou alguma coisa. A releitura é outra ida ao banco,
+      // uns 115ms, e na maioria das aberturas do dia a atividade do CRM já
+      // tinha sido aplicada numa abertura anterior: nada muda e não há o que
+      // reler. Sem mudança, o que já está em `itens` é o estado atual.
+      if (aplicadas > 0) {
+        itens = await m.passo("relerLista", () => getListaDia(owner, dayKey()));
+      }
 
       carteiraDoDia = itens.map((e) => ({
         ...e,

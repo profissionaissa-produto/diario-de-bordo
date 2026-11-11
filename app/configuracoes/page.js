@@ -153,7 +153,7 @@ export default async function Configuracoes({ searchParams }) {
       <p className="fech-opcional">
         A estratégia entra na hora para o time escolher no briefing, e o texto editado
         aqui vale para todo mundo. No HubSpot ela é gravada no campo
-        <b> Estratégia da abordagem</b> do negócio, que é texto livre: o que estiver
+        <b> Estratégia de abordagem</b> do negócio, que é texto livre: o que estiver
         escrito aqui é o que vai para lá, sem precisar cadastrar opção nenhuma.
         Enquanto esse campo não existir na conta, o briefing grava a temperatura e deixa
         a estratégia de fora, registrando o aviso no log.

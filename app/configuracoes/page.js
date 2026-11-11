@@ -133,7 +133,15 @@ export default async function Configuracoes({ searchParams }) {
                     )}
                   </td>
                   <td>
-                    {dbReady() && <AcaoEstrategia seg={seg} id={e.id} oculta={!!ocultas[e.id]} />}
+                    {dbReady() && (
+                      <AcaoEstrategia
+                        seg={seg}
+                        id={e.id}
+                        oculta={!!ocultas[e.id]}
+                        titulo={e.titulo}
+                        desc={e.desc}
+                      />
+                    )}
                   </td>
                 </tr>
               ))}
@@ -143,10 +151,12 @@ export default async function Configuracoes({ searchParams }) {
       </div>
 
       <p className="fech-opcional">
-        A estratégia entra na hora para o time escolher no briefing. Para ela também ser
-        gravada no campo <b>Estratégia</b> do negócio no HubSpot, a mesma opção precisa
-        existir lá. Enquanto não existir, o briefing grava a temperatura e deixa a
-        estratégia de fora, registrando o aviso no log.
+        A estratégia entra na hora para o time escolher no briefing, e o texto editado
+        aqui vale para todo mundo. No HubSpot ela é gravada no campo
+        <b> Estratégia da abordagem</b> do negócio, que é texto livre: o que estiver
+        escrito aqui é o que vai para lá, sem precisar cadastrar opção nenhuma.
+        Enquanto esse campo não existir na conta, o briefing grava a temperatura e deixa
+        a estratégia de fora, registrando o aviso no log.
       </p>
     </div>
   );

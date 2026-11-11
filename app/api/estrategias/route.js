@@ -1,6 +1,7 @@
 import { auth } from "../../../auth";
 import {
   criarEstrategia,
+  editarEstrategia,
   listarEstrategias,
   listarOcultas,
   ocultarEstrategia,
@@ -89,6 +90,41 @@ export async function DELETE(req) {
   } catch (e) {
     console.error("[estrategias] falha ao remover:", e);
     return Response.json({ error: e.message || "Falha ao remover." }, { status: 500 });
+  }
+}
+
+// Edita o texto de uma estratégia, original ou cadastrada. O id não muda:
+// é ele que está gravado nos briefings e no histórico, e trocá-lo apagaria o
+// nome da estratégia de todo dia já fechado.
+export async function PUT(req) {
+  const { seg, id, titulo, desc } = await req.json().catch(() => ({}));
+  const g = await guarda(seg);
+  if (g.erro) return Response.json({ error: g.erro }, { status: g.status });
+
+  const t = String(titulo || "").trim();
+  const d = String(desc || "").trim();
+  if (t.length < MIN_TITULO) {
+    return Response.json({ error: `O título precisa de pelo menos ${MIN_TITULO} letras.` }, { status: 400 });
+  }
+  if (d.length < MIN_DESC) {
+    return Response.json(
+      { error: `O "quando usar" precisa de pelo menos ${MIN_DESC} letras: é ele que diz ao time em que situação aplicar.` },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Só o que está na lista do segmento. Sem isto daria para editar a
+    // estratégia de outro segmento mandando o id na mão.
+    const porSeg = montaEstrategias(await listarEstrategias());
+    if (!(porSeg[seg] || []).some((e) => e.id === id)) {
+      return Response.json({ error: "Essa estratégia não é desse segmento." }, { status: 404 });
+    }
+    const e = await editarEstrategia({ id, seg, titulo: t, desc: d, por: quem(g.session) });
+    return Response.json({ ok: true, estrategia: e });
+  } catch (e) {
+    console.error("[estrategias] falha ao editar:", e);
+    return Response.json({ error: e.message || "Falha ao editar." }, { status: 500 });
   }
 }
 

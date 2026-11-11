@@ -4,6 +4,7 @@ import { valorDaEstrategia, montaEstrategias, indexaPorId } from "../../../lib/e
 import { saveBriefing, reviewBriefing, getBriefing, dbReady, dealsComTarefa, registraTarefa, listarEstrategias } from "../../../lib/db";
 import { dayKey, prazoDoDia } from "../../../lib/week";
 import { ehGestor, podeGerirCloser } from "../../../lib/permissoes";
+import { PROP_ESTRATEGIA } from "../../../lib/config";
 
 // Closer só mexe no próprio briefing; admin mexe no de qualquer closer.
 // O closer sempre cai na consulta ao HubSpot: se ela falhar (cota diária),
@@ -162,7 +163,7 @@ export async function PATCH(req) {
 
   // A estratégia só vai junto se a propriedade já existir na conta, e o valor
   // é resolvido contra as opções reais dela — ver valorDaEstrategia.
-  const propEstrategia = await propriedadeDeal("estrategia");
+  const propEstrategia = await propriedadeDeal(PROP_ESTRATEGIA);
   // Índice completo: sem as cadastradas, uma estratégia nova não resolveria.
   const estratIdx = indexaPorId(montaEstrategias(await listarEstrategias()));
 

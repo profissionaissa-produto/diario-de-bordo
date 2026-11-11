@@ -813,6 +813,11 @@ a.btn-primary.desativado { opacity: .45; pointer-events: none; }
    ele parecia um link perdido no meio dos filtros. */
 .ctx-limpar { align-self: flex-end; }
 
+/* Edição da estratégia na própria linha da tabela. */
+.est-acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.est-area { min-height: 110px; width: 100%; font-size: 13.5px; line-height: 1.55; }
+.modal-principal .est-input { width: 100%; }
+
 /* ------------------------------------------- lista do dia em tabela (CS) */
 .linha-pronta { background: #f4fbf6; }
 .linha-pronta td:first-child { box-shadow: inset 4px 0 0 #17803d; }

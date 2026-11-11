@@ -251,7 +251,30 @@ export default async function Page({ searchParams }) {
   if (erroHubspot && deals.length === 0 && !carteiraDoDia) return <ErroHubspot erro={erroHubspot} />;
 
   const dia = dayKey();
-  const briefing = viewOwner ? await m.passo("briefing", () => getBriefing(viewOwner.ownerId, dia)) : null;
+  const diaAnterior = diaUtilAnterior(dia);
+
+  // Cinco leituras que não dependem uma da outra e estavam em fila.
+  //
+  // A função roda em iad1 e o banco está em São Paulo, então cada ida custa
+  // uns 115ms só de rede, medidos. Em fila eram cinco idas, quase 600ms de
+  // espera pura; juntas, custam uma.
+  //
+  // As tramitações entram aqui porque a condição delas já está decidida
+  // neste ponto: segmento, dono e visão não mudam mais daqui para baixo.
+  const [briefing, anterior, pendentesBrutos, listadas, ocultas, tram] = await m.passo(
+    "juntas",
+    () =>
+      Promise.all([
+        viewOwner ? getBriefing(viewOwner.ownerId, dia) : null,
+        viewOwner ? getBriefing(viewOwner.ownerId, diaAnterior) : null,
+        gestor ? getDayBriefings(dia) : [],
+        listarEstrategias(),
+        listarOcultas(),
+        ehFarmer && viewOwner && !isFechar && vista !== "demanda"
+          ? tramitacoesDoDia(dia, new Set([String(viewOwner.ownerId)]))
+          : null,
+      ])
+  );
   // O que o CRM já registrou hoje, negócio a negócio — o closer atua em negócio,
   // não em empresa. Vira sugestão no fechamento, nunca resultado gravado: aqui a
   // observação é obrigatória e só quem falou com o cliente sabe escrevê-la.
@@ -296,8 +319,7 @@ export default async function Page({ searchParams }) {
   const fechamento = viewOwner && isFechar ? await getFechamento(viewOwner.ownerId, dia) : {};
 
   // Briefing do último dia útil, para o closer retomar de onde parou.
-  const diaAnterior = diaUtilAnterior(dia);
-  const anterior = viewOwner ? await m.passo("briefingAnterior", () => getBriefing(viewOwner.ownerId, diaAnterior)) : null;
+
 
   // Preserva closer/segmento ao alternar a visão.
   const qs = (view) => {
@@ -321,9 +343,7 @@ export default async function Page({ searchParams }) {
   };
   // Pendentes que este gestor pode decidir.
   const pendentes = gestor
-    ? briefingsGeriveis(session.user, await m.passo("pendentes", () => getDayBriefings(dia))).filter(
-        (b) => b.status === "enviado"
-      ).length
+    ? briefingsGeriveis(session.user, pendentesBrutos).filter((b) => b.status === "enviado").length
     : 0;
 
   // Tramitações só para o time de CS e quem o gere.
@@ -340,10 +360,7 @@ export default async function Page({ searchParams }) {
 
   // Só quando a visão pede, e só do farmer aberto: a leitura varre o funil de
   // CS inteiro e não vale a pena para quem está olhando outra coisa.
-  const tram =
-    ehFarmer && viewOwner && !isFechar && vista !== "demanda"
-      ? await m.passo("tramitacoes", () => tramitacoesDoDia(dia, new Set([String(viewOwner.ownerId)])))
-      : null;
+
 
   const rows = deals.map((d) => ({
     ...d,
@@ -405,7 +422,6 @@ export default async function Page({ searchParams }) {
   // As dez originais vêm do código; o que a curadoria cadastrou vem do banco.
   // idx sai da lista inteira: uma estratégia removida ainda precisa ter nome no
   // briefing antigo que a gravou. porSeg é só o que ainda dá para escolher.
-  const [listadas, ocultas] = await m.passo("estrategias", () => Promise.all([listarEstrategias(), listarOcultas()]));
   const porSeg = montaEstrategias(listadas);
   const estrat = { porSeg: semOcultas(porSeg, ocultas), idx: indexaPorId(porSeg) };
 

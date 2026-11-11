@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ABORDAGENS, BALDES } from "../lib/carteira";
 import { canaisLiberados } from "../lib/canal";
 import { briefingDoContato } from "../lib/briefing-contato";
@@ -245,13 +246,21 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
           )}
         </div>
         <div className="planbar-actions">
-          <a
-            className={"btn-primary" + (faltam > 0 ? " desativado" : "")}
-            href={faltam > 0 ? undefined : ctx.urlFechamento}
-            title={faltam > 0 ? "Defina a estratégia de todas antes de fechar o dia" : undefined}
-          >
-            Ir para o fechamento
-          </a>
+          {/* Link do Next, não âncora. Como âncora, ir para o fechamento
+              recarregava a página inteira: HTML, scripts e estilos de novo.
+              Era a navegação mais pesada do painel. */}
+          {faltam > 0 ? (
+            <span
+              className="btn-primary desativado"
+              title="Defina a estratégia de todas antes de fechar o dia"
+            >
+              Ir para o fechamento
+            </span>
+          ) : (
+            <Link className="btn-primary" href={ctx.urlFechamento}>
+              Ir para o fechamento
+            </Link>
+          )}
         </div>
       </div>
 

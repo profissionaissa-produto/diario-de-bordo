@@ -1068,3 +1068,24 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .reg-texto { min-height: 120px; width: 100%; }
 .modal-estreito .modal-principal { padding: 20px 24px 22px; }
 .modal-estreito .reprova { padding: 0 24px 18px; }
+
+/* Esqueleto de carregamento. Aparece entre o clique e a tela pronta, que é o
+   intervalo em que o painel parecia travado. Pulso lento de propósito: rápido
+   demais vira ruído e cansa em tela que se abre o dia inteiro. */
+@keyframes esq-pulso { 0%, 100% { opacity: .55; } 50% { opacity: .9; } }
+.esq { background: var(--surface-2); border-radius: 8px; animation: esq-pulso 1.4s ease-in-out infinite; }
+.esq-topo { display: flex; align-items: center; gap: 14px; padding: 4px 0 18px; }
+.esq-logo { width: 54px; height: 26px; }
+.esq-titulo { width: 230px; height: 22px; }
+.esq-barra { display: flex; gap: 10px; margin-bottom: 16px; }
+.esq-aba { width: 110px; height: 34px; border-radius: 999px; }
+.esq-card { padding: 0; overflow: hidden; }
+.esq-linha-topo { display: flex; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.esq-chip { width: 150px; height: 18px; }
+.esq-chip.curto { width: 90px; }
+.esq-linha { display: flex; gap: 14px; padding: 15px 18px; border-bottom: 1px solid var(--line); }
+.esq-linha:last-child { border-bottom: 0; }
+.esq-celula { height: 14px; flex: 1; }
+.esq-celula.larga { flex: 2.2; }
+.esq-celula.media { flex: 1.6; }
+@media (prefers-reduced-motion: reduce) { .esq { animation: none; } }

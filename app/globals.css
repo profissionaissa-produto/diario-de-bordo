@@ -845,12 +845,15 @@ td .emp-orientacao { margin-top: 6px; font-size: 12px; }
 .est-campos { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(300px, 2fr);
   gap: 16px; padding: 16px 18px 12px; }
 .est-campo { display: flex; flex-direction: column; gap: 6px; }
+/* Campo solto no cartão, fora da grade de cadastro: sem este recuo a borda
+   da caixa de texto fica em cima da borda do cartão e parece quebrado. */
+.est-form > .est-campo { padding: 16px 18px 12px; }
 .est-input { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface);
   border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; transition: .15s; }
 .est-input::placeholder { color: var(--muted); opacity: .8; }
 .est-input:focus { outline: none; background: var(--bg); border-color: var(--azul);
   box-shadow: 0 0 0 3px var(--azul-soft); }
-.est-form .fech-rodape { padding: 0 18px; }
+.est-form .fech-rodape { padding: 4px 18px 0; }
 /* "Quando usar" é conteúdo, não legenda: lê-se a tabela inteira por ele. */
 .est-desc { font-size: 13.5px; color: var(--ink); line-height: 1.5; }
 .est-sem { color: var(--muted); font-size: 12px; }

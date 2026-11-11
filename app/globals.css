@@ -813,8 +813,12 @@ a.btn-primary.desativado { opacity: .45; pointer-events: none; }
    ele parecia um link perdido no meio dos filtros. */
 .ctx-limpar { align-self: flex-end; }
 
-/* Edição da estratégia na própria linha da tabela. */
-.est-acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+/* Ações da estratégia: lado a lado e encostadas na direita. Empilhadas, como
+   ficavam quando a coluna era estreita demais, pareciam duas barras coladas
+   na divisória da linha. */
+.est-acoes { display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+  white-space: nowrap; }
+.est-acoes .btn-ghost { padding: 8px 14px; flex: 0 0 auto; }
 .est-area { min-height: 110px; width: 100%; font-size: 13.5px; line-height: 1.55; }
 .modal-principal .est-input { width: 100%; }
 

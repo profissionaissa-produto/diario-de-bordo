@@ -113,11 +113,13 @@ export default async function Configuracoes({ searchParams }) {
           <table>
             <thead>
               <tr>
-                <th style={{ width: "6%" }}>#</th>
-                <th style={{ width: "26%" }}>Título</th>
+                <th style={{ width: "4%" }}>#</th>
+                <th style={{ width: "22%" }}>Título</th>
                 <th style={{ width: "40%" }}>Quando usar</th>
-                <th style={{ width: "16%" }}>Cadastrada por</th>
-                <th style={{ width: "12%" }} />
+                <th style={{ width: "13%" }}>Cadastrada por</th>
+                {/* Larga o bastante para os dois botões ficarem lado a lado:
+                    com menos que isto eles empilhavam. */}
+                <th style={{ width: "21%" }} />
               </tr>
             </thead>
             <tbody>

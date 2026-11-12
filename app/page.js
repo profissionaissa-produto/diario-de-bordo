@@ -16,7 +16,7 @@ import Fechamento from "./Fechamento";
 import ListaDoDia from "./ListaDoDia";
 import FecharDia from "./FecharDia";
 import Link from "next/link";
-import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, aplicarRetornoDeTarefa, MIN_OBS } from "../lib/db";
+import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, aplicarRetornoDeTarefa, MIN_OBS , getBriefingCarteira } from "../lib/db";
 import { getDealsByIds, retornoDasTarefas, contatosDasEmpresas } from "../lib/hubspot";
 import { dayKey, dayLabel, diaUtilAnterior } from "../lib/week";
 import { formatNextActivity } from "../lib/activity";
@@ -270,9 +270,8 @@ export default async function Page({ searchParams }) {
   //
   // As tramitações entram aqui porque a condição delas já está decidida
   // neste ponto: segmento, dono e visão não mudam mais daqui para baixo.
-  const [briefing, anterior, pendentesBrutos, listadas, ocultas, tram] = await m.passo(
-    "juntas",
-    () =>
+  const [briefing, anterior, pendentesBrutos, listadas, ocultas, tram, briefingCarteira] =
+    await m.passo("juntas", () =>
       Promise.all([
         viewOwner ? getBriefing(viewOwner.ownerId, dia) : null,
         viewOwner ? getBriefing(viewOwner.ownerId, diaAnterior) : null,
@@ -282,8 +281,11 @@ export default async function Page({ searchParams }) {
         ehFarmer && viewOwner && !isFechar && vista !== "demanda"
           ? tramitacoesDoDia(dia, new Set([String(viewOwner.ownerId)]))
           : null,
+        // O estado do dia do farmer perante a gestão, como o briefing é para
+        // o closer. Entra no mesmo lote: não depende de nada acima.
+        ehFarmer && viewOwner ? getBriefingCarteira(String(viewOwner.ownerId), dia) : null,
       ])
-  );
+    );
   // O que o CRM já registrou hoje, negócio a negócio — o closer atua em negócio,
   // não em empresa. Vira sugestão no fechamento, nunca resultado gravado: aqui a
   // observação é obrigatória e só quem falou com o cliente sabe escrevê-la.
@@ -582,6 +584,7 @@ export default async function Page({ searchParams }) {
           contatos={contatosDoDia}
           tentativas={tentativasDoDia}
           historicoContato={historicoContato}
+          briefing={briefingCarteira}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,

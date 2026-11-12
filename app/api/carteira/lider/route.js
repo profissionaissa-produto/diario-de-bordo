@@ -1,5 +1,5 @@
 import { auth } from "../../../../auth";
-import { decidirTroca, salvarOrientacao, comentarDia, marcarRevisado, getListaDia, listarEstrategias, dbReady } from "../../../../lib/db";
+import { decidirTroca, salvarOrientacao, comentarDia, marcarRevisado, revisarBriefingCarteira, getListaDia, listarEstrategias, dbReady } from "../../../../lib/db";
 import { podeGerirCloser } from "../../../../lib/permissoes";
 import { propriedadeEmpresa, updateCompany } from "../../../../lib/hubspot";
 import { montaEstrategias, indexaPorId, valorDaEstrategia, valorNaOpcao } from "../../../../lib/estrategias";
@@ -62,7 +62,7 @@ export async function POST(req) {
   const { acao, ownerId, companyId, decisao, texto, dia } = body;
   if (!ownerId) return Response.json({ error: "Dados incompletos." }, { status: 400 });
   // Comentar e revisar são sobre o dia inteiro, não sobre uma empresa.
-  if (!["comentario", "revisado"].includes(acao) && !companyId) {
+  if (!["comentario", "revisado", "aprovar", "reprovar"].includes(acao) && !companyId) {
     return Response.json({ error: "Dados incompletos." }, { status: 400 });
   }
   if (!podeGerirCloser(session.user, ownerId)) {
@@ -96,8 +96,33 @@ export async function POST(req) {
       return Response.json({ ok: true });
     }
 
+    // Aprovar e reprovar o dia, como no briefing do closer. "revisado"
+    // continua existindo para quem só quer dar o aval sem julgar, e aprovar é
+    // ele mais o estado, para a tela do farmer e a agenda mostrarem.
+    if (acao === "aprovar" || acao === "reprovar") {
+      const motivo = String(texto || "").trim();
+      // Reprovar sem motivo devolve o dia sem dizer o que corrigir, e o
+      // farmer refaz no escuro.
+      if (acao === "reprovar" && !motivo) {
+        return Response.json({ error: "Escreva o motivo ao reprovar." }, { status: 400 });
+      }
+      const status = acao === "aprovar" ? "aprovado" : "reprovado";
+      await revisarBriefingCarteira(ownerId, dia, status, motivo, quem(session));
+      // Reprovar não toca no CRM, igual ao B2B: só a aprovação manda o plano
+      // para lá.
+      if (status === "reprovado") return Response.json({ ok: true, status });
+
+      await marcarRevisado(ownerId, dia, quem(session));
+      const hub = await gravarNoHubspot(ownerId, dia).catch((e) => {
+        console.error("[carteira] falha ao gravar o dia no HubSpot:", e);
+        return { gravadas: 0, falhas: ["todas"], semPropriedade: [] };
+      });
+      return Response.json({ ok: true, status, hubspot: hub });
+    }
+
     if (acao === "revisado") {
       await marcarRevisado(ownerId, dia, quem(session));
+      await revisarBriefingCarteira(ownerId, dia, "aprovado", "", quem(session));
       // O dia fica revisado mesmo se o HubSpot recusar: o aval é do líder, não
       // do CRM. O que falhou volta na resposta em vez de sumir no log.
       const hub = await gravarNoHubspot(ownerId, dia).catch((e) => {

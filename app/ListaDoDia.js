@@ -9,6 +9,15 @@ import Mensagem from "./Mensagem";
 
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
 
+// Mesmos quatro estados do briefing do closer, para a leitura ser uma só em
+// todo o painel.
+const STATUS_LABEL = {
+  rascunho: "Não enviado",
+  enviado: "Aguardando aprovação",
+  aprovado: "Aprovado",
+  reprovado: "Reprovado",
+};
+
 function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordagem }) {
   const [abordagem, setAbordagem] = useState(e.abordagem || "");
   // Só leitura desde que a coluna da lista curada saiu: a decisão do dia virou
@@ -203,7 +212,7 @@ function Tabela({ itens, ctx, estrategias, contatos, tentativas, historicoContat
   );
 }
 
-export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {}, historicoContato = {} }) {
+export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {}, historicoContato = {}, briefing = null }) {
   const [abordagens, setAbordagens] = useState(() => {
     const m = {};
     for (const e of itens) if (e.abordagem) m[e.id] = e.abordagem;
@@ -215,6 +224,33 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
   // A lista inteira é o compromisso, extras inclusive.
   const faltam = itens.filter((e) => !abordagens[e.id]).length;
   const marcar = (id, v) => setAbordagens((a) => ({ ...a, [id]: v }));
+
+  // O dia passa pela gestão, como o briefing do closer. O estado vem do
+  // servidor e muda aqui sem recarregar a tela.
+  const [status, setStatus] = useState(briefing?.status || "rascunho");
+  const [envioBusy, setEnvioBusy] = useState(false);
+  const [envioMsg, setEnvioMsg] = useState(null);
+
+  async function enviar() {
+    setEnvioBusy(true);
+    setEnvioMsg(null);
+    try {
+      const res = await fetch("/api/carteira", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: ctx.ownerId, dia: ctx.dia }),
+      });
+      const d = await res.json().catch(() => ({}));
+      // Sem isto o motivo da recusa sumiria e a pessoa clicaria de novo à toa.
+      if (!res.ok) throw new Error(d.error || "Falha ao enviar.");
+      setEnvioMsg({ ok: true, text: status === "reprovado" ? "Reenviado ✓" : "Enviado para a gestão ✓" });
+      setStatus("enviado");
+    } catch (e) {
+      setEnvioMsg({ ok: false, text: e.message });
+    } finally {
+      setEnvioBusy(false);
+    }
+  }
 
   if (itens.length === 0) {
     return (
@@ -239,25 +275,57 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
           <span className="plan-badge">
             {doCompromisso.length} empresas{extras.length ? ` + ${extras.length} extras` : ""}
           </span>
+          <span className="plan-badge">{STATUS_LABEL[status] || "Não enviado"}</span>
           {faltam > 0 ? (
             <span className="plan-motivo">{faltam} sem estratégia definida</span>
           ) : (
             <span className="fech-ok">todas mapeadas</span>
           )}
+          {/* O que a gestão escreveu ao devolver o dia. Sem isto o farmer
+              reenvia sem saber o que corrigir. */}
+          {briefing?.motivo && (status === "reprovado" || status === "aprovado") && (
+            <span className={status === "reprovado" ? "plan-motivo" : "plan-obs-gestor"}>
+              {status === "reprovado" ? "Motivo" : "Observação"}
+              {briefing.revisadoPor ? ` de ${briefing.revisadoPor}` : ""}: {briefing.motivo}
+            </span>
+          )}
         </div>
         <div className="planbar-actions">
+          {envioMsg && <span className={envioMsg.ok ? "saved" : "err"}>{envioMsg.text}</span>}
+          {/* Enviar vem antes de fechar: a gestão valida o plano de manhã, e o
+              fechamento é o que aconteceu à tarde. */}
+          <button
+            className="btn-primary"
+            onClick={enviar}
+            disabled={envioBusy || faltam > 0 || status === "aprovado"}
+            title={
+              faltam > 0
+                ? "Defina a estratégia de todas antes de enviar"
+                : status === "aprovado"
+                  ? "O dia já foi aprovado pela gestão"
+                  : undefined
+            }
+          >
+            {envioBusy
+              ? "Enviando…"
+              : status === "rascunho"
+                ? "Enviar o dia para a gestão"
+                : status === "reprovado"
+                  ? "Reenviar"
+                  : "Reenviar o dia"}
+          </button>
           {/* Link do Next, não âncora. Como âncora, ir para o fechamento
               recarregava a página inteira: HTML, scripts e estilos de novo.
               Era a navegação mais pesada do painel. */}
           {faltam > 0 ? (
             <span
-              className="btn-primary desativado"
+              className="btn-ghost desativado"
               title="Defina a estratégia de todas antes de fechar o dia"
             >
               Ir para o fechamento
             </span>
           ) : (
-            <Link className="btn-primary" href={ctx.urlFechamento}>
+            <Link className="btn-ghost" href={ctx.urlFechamento}>
               Ir para o fechamento
             </Link>
           )}

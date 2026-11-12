@@ -1,6 +1,6 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, dbReady } from "../../../lib/db";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, enviarBriefingCarteira, dbReady } from "../../../lib/db";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
 import { montaEstrategias, semOcultas } from "../../../lib/estrategias";
 import { SEG_TRAMITACOES } from "../../../lib/config";
@@ -133,4 +133,45 @@ export async function PATCH(req) {
     return Response.json({ error: "Falha ao salvar." }, { status: 500 });
   }
   return Response.json({ ok: true });
+}
+
+// O farmer manda o dia do dia para a gestão, como o closer faz com o
+// briefing. Exige estratégia em todas as empresas do compromisso: é
+// justamente a estratégia que a gestão vai validar, e mandar com buraco
+// transformaria a aprovação em formalidade.
+export async function PUT(req) {
+  const session = await auth();
+  if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
+  if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
+
+  const body = await req.json().catch(() => ({}));
+  let ownerId;
+  try {
+    ({ ownerId } = await resolveOwner(session, body.ownerId));
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 503 });
+  }
+  if (!ownerId) return Response.json({ error: "Farmer não encontrado." }, { status: 403 });
+
+  const dia = body.dia || dayKey();
+  const itens = await getListaDia(ownerId, dia);
+  if (itens.length === 0) {
+    return Response.json({ error: "Não há lista para hoje." }, { status: 400 });
+  }
+  // Extras são voluntários e ficam fora da conta das vinte, aqui também.
+  const faltam = itens.filter((e) => !e.extra && !e.abordagem).length;
+  if (faltam > 0) {
+    return Response.json(
+      { error: `Faltam ${faltam} empresa(s) sem estratégia definida.` },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await enviarBriefingCarteira(ownerId, dia);
+  } catch (e) {
+    console.error("[carteira] falha ao enviar o dia:", e);
+    return Response.json({ error: "Falha ao enviar." }, { status: 500 });
+  }
+  return Response.json({ ok: true, status: "enviado" });
 }

@@ -1,6 +1,7 @@
 import { auth } from "../../../auth";
 import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, enviarBriefingCarteira, dbReady } from "../../../lib/db";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, iniciarDiaCarteira, dbReady } from "../../../lib/db";
+import { gravarNoHubspot } from "../../../lib/carteira-hubspot";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
 import { montaEstrategias, semOcultas } from "../../../lib/estrategias";
 import { SEG_TRAMITACOES } from "../../../lib/config";
@@ -135,10 +136,12 @@ export async function PATCH(req) {
   return Response.json({ ok: true });
 }
 
-// O farmer manda o dia do dia para a gestão, como o closer faz com o
-// briefing. Exige estratégia em todas as empresas do compromisso: é
-// justamente a estratégia que a gestão vai validar, e mandar com buraco
-// transformaria a aprovação em formalidade.
+// O farmer inicia o dia. É ele quem confirma as estratégias que escolheu, sem
+// esperar aval de ninguém: clicar aqui grava o plano nas empresas do HubSpot e
+// marca o dia como iniciado na agenda da gestão.
+//
+// Exige estratégia em todas as empresas do compromisso, porque é justamente
+// ela que vai para o CRM: iniciar com buraco gravaria meio dia.
 export async function PUT(req) {
   const session = await auth();
   if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
@@ -168,10 +171,17 @@ export async function PUT(req) {
   }
 
   try {
-    await enviarBriefingCarteira(ownerId, dia);
+    await iniciarDiaCarteira(ownerId, dia);
   } catch (e) {
-    console.error("[carteira] falha ao enviar o dia:", e);
-    return Response.json({ error: "Falha ao enviar." }, { status: 500 });
+    console.error("[carteira] falha ao iniciar o dia:", e);
+    return Response.json({ error: "Falha ao iniciar o dia." }, { status: 500 });
   }
-  return Response.json({ ok: true, status: "enviado" });
+
+  // O dia fica iniciado mesmo se o HubSpot recusar: a decisão é do farmer, não
+  // do CRM. O que não foi gravado volta na resposta em vez de sumir no log.
+  const hubspot = await gravarNoHubspot(ownerId, dia).catch((e) => {
+    console.error("[carteira] falha ao gravar o dia no HubSpot:", e);
+    return { gravadas: 0, falhas: ["todas"], semPropriedade: [] };
+  });
+  return Response.json({ ok: true, status: "iniciado", hubspot });
 }

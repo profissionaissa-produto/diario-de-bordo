@@ -1,55 +1,9 @@
 import { auth } from "../../../../auth";
-import { decidirTroca, salvarOrientacao, comentarDia, marcarRevisado, revisarBriefingCarteira, getListaDia, listarEstrategias, dbReady } from "../../../../lib/db";
+import { decidirTroca, salvarOrientacao, comentarDia, marcarRevisado, dbReady } from "../../../../lib/db";
 import { podeGerirCloser } from "../../../../lib/permissoes";
-import { propriedadeEmpresa, updateCompany } from "../../../../lib/hubspot";
-import { montaEstrategias, indexaPorId, valorDaEstrategia, valorNaOpcao } from "../../../../lib/estrategias";
+import { gravarNoHubspot } from "../../../../lib/carteira-hubspot";
 
 const quem = (s) => s.user.name || s.user.email;
-
-// O aval do líder é o que manda o plano do dia para o CRM, como a aprovação do
-// briefing faz no B2B. Grava na empresa o que o farmer definiu de manhã.
-// Devolve o que foi escrito e o que não foi, com o motivo — um dia marcado
-// como revisado sem nada ter chegado ao HubSpot é pior do que um erro visível.
-async function gravarNoHubspot(ownerId, dia) {
-  const itens = (await getListaDia(ownerId, dia)).filter((e) => e.abordagem || e.estrategia);
-  if (itens.length === 0) return { gravadas: 0, falhas: [], semPropriedade: [] };
-
-  const [propAbordagem, propEstrategia] = await Promise.all([
-    propriedadeEmpresa("abordagem"),
-    propriedadeEmpresa("estrategia"),
-  ]);
-  const idx = indexaPorId(montaEstrategias(await listarEstrategias()));
-
-  const semPropriedade = [];
-  if (!propAbordagem) semPropriedade.push("abordagem");
-  if (!propEstrategia) semPropriedade.push("estrategia");
-  for (const nome of semPropriedade) {
-    console.error(`[carteira] a conta não tem a propriedade "${nome}" em empresas — nada foi gravado nesse campo`);
-  }
-
-  let gravadas = 0;
-  const falhas = [];
-  for (const e of itens) {
-    const props = {};
-    if (e.abordagem) {
-      const v = valorNaOpcao(propAbordagem, [e.abordagem], `[carteira] abordagem "${e.abordagem}"`);
-      if (v !== undefined) props.abordagem = v;
-    }
-    if (e.estrategia) {
-      const v = valorDaEstrategia(propEstrategia, e.estrategia, idx);
-      if (v !== undefined) props.estrategia = v;
-    }
-    if (Object.keys(props).length === 0) continue;
-    try {
-      await updateCompany(e.id, props);
-      gravadas++;
-    } catch (err) {
-      console.error(`[carteira] falha ao gravar a empresa ${e.id}:`, err);
-      falhas.push(e.nome || e.id);
-    }
-  }
-  return { gravadas, falhas, semPropriedade };
-}
 
 // Decisões que só o líder toma sobre a carteira de um farmer: resolver um
 // pedido de troca de segmento e escrever a orientação de uma empresa travada.
@@ -62,7 +16,7 @@ export async function POST(req) {
   const { acao, ownerId, companyId, decisao, texto, dia } = body;
   if (!ownerId) return Response.json({ error: "Dados incompletos." }, { status: 400 });
   // Comentar e revisar são sobre o dia inteiro, não sobre uma empresa.
-  if (!["comentario", "revisado", "aprovar", "reprovar"].includes(acao) && !companyId) {
+  if (!["comentario", "revisado"].includes(acao) && !companyId) {
     return Response.json({ error: "Dados incompletos." }, { status: 400 });
   }
   if (!podeGerirCloser(session.user, ownerId)) {
@@ -96,33 +50,12 @@ export async function POST(req) {
       return Response.json({ ok: true });
     }
 
-    // Aprovar e reprovar o dia, como no briefing do closer. "revisado"
-    // continua existindo para quem só quer dar o aval sem julgar, e aprovar é
-    // ele mais o estado, para a tela do farmer e a agenda mostrarem.
-    if (acao === "aprovar" || acao === "reprovar") {
-      const motivo = String(texto || "").trim();
-      // Reprovar sem motivo devolve o dia sem dizer o que corrigir, e o
-      // farmer refaz no escuro.
-      if (acao === "reprovar" && !motivo) {
-        return Response.json({ error: "Escreva o motivo ao reprovar." }, { status: 400 });
-      }
-      const status = acao === "aprovar" ? "aprovado" : "reprovado";
-      await revisarBriefingCarteira(ownerId, dia, status, motivo, quem(session));
-      // Reprovar não toca no CRM, igual ao B2B: só a aprovação manda o plano
-      // para lá.
-      if (status === "reprovado") return Response.json({ ok: true, status });
-
-      await marcarRevisado(ownerId, dia, quem(session));
-      const hub = await gravarNoHubspot(ownerId, dia).catch((e) => {
-        console.error("[carteira] falha ao gravar o dia no HubSpot:", e);
-        return { gravadas: 0, falhas: ["todas"], semPropriedade: [] };
-      });
-      return Response.json({ ok: true, status, hubspot: hub });
-    }
-
+    // Revisar é o líder dizendo que leu o dia. Não é aprovação: o farmer já
+    // iniciou o dia sozinho e o plano já está no CRM. Regravar aqui é de
+    // propósito, como rede para o caso de a gravação do farmer ter falhado em
+    // parte, e é inofensivo porque escrever o mesmo valor não muda nada.
     if (acao === "revisado") {
       await marcarRevisado(ownerId, dia, quem(session));
-      await revisarBriefingCarteira(ownerId, dia, "aprovado", "", quem(session));
       // O dia fica revisado mesmo se o HubSpot recusar: o aval é do líder, não
       // do CRM. O que falhou volta na resposta em vez de sumir no log.
       const hub = await gravarNoHubspot(ownerId, dia).catch((e) => {

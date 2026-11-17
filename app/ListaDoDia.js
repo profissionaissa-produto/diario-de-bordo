@@ -6,16 +6,15 @@ import { ABORDAGENS, BALDES } from "../lib/carteira";
 import { canaisLiberados } from "../lib/canal";
 import { briefingDoContato } from "../lib/briefing-contato";
 import Mensagem from "./Mensagem";
+import { resumoDoHubspot } from "../lib/carteira-texto";
 
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : "—");
 
-// Mesmos quatro estados do briefing do closer, para a leitura ser uma só em
-// todo o painel.
+// Dois estados, não quatro: o dia do farmer não espera aprovação de ninguém.
+// Ou ele confirmou o que vai fazer, ou ainda está montando.
 const STATUS_LABEL = {
-  rascunho: "Não enviado",
-  enviado: "Aguardando aprovação",
-  aprovado: "Aprovado",
-  reprovado: "Reprovado",
+  rascunho: "Dia não iniciado",
+  iniciado: "Dia iniciado",
 };
 
 function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordagem }) {
@@ -225,13 +224,13 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
   const faltam = itens.filter((e) => !abordagens[e.id]).length;
   const marcar = (id, v) => setAbordagens((a) => ({ ...a, [id]: v }));
 
-  // O dia passa pela gestão, como o briefing do closer. O estado vem do
+  // O farmer inicia o próprio dia e não espera ninguém. O estado vem do
   // servidor e muda aqui sem recarregar a tela.
   const [status, setStatus] = useState(briefing?.status || "rascunho");
   const [envioBusy, setEnvioBusy] = useState(false);
   const [envioMsg, setEnvioMsg] = useState(null);
 
-  async function enviar() {
+  async function iniciar() {
     setEnvioBusy(true);
     setEnvioMsg(null);
     try {
@@ -242,9 +241,11 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
       });
       const d = await res.json().catch(() => ({}));
       // Sem isto o motivo da recusa sumiria e a pessoa clicaria de novo à toa.
-      if (!res.ok) throw new Error(d.error || "Falha ao enviar.");
-      setEnvioMsg({ ok: true, text: status === "reprovado" ? "Reenviado ✓" : "Enviado para a gestão ✓" });
-      setStatus("enviado");
+      if (!res.ok) throw new Error(d.error || "Falha ao iniciar o dia.");
+      setStatus("iniciado");
+      // Diz o que chegou ao CRM. Um dia dado como iniciado sem nada ter sido
+      // gravado é pior do que um erro na cara.
+      setEnvioMsg({ ok: true, text: "Dia iniciado ✓ " + resumoDoHubspot(d.hubspot) });
     } catch (e) {
       setEnvioMsg({ ok: false, text: e.message });
     } finally {
@@ -275,44 +276,38 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
           <span className="plan-badge">
             {doCompromisso.length} empresas{extras.length ? ` + ${extras.length} extras` : ""}
           </span>
-          <span className="plan-badge">{STATUS_LABEL[status] || "Não enviado"}</span>
+          <span className="plan-badge">{STATUS_LABEL[status]}</span>
           {faltam > 0 ? (
             <span className="plan-motivo">{faltam} sem estratégia definida</span>
           ) : (
             <span className="fech-ok">todas mapeadas</span>
           )}
-          {/* O que a gestão escreveu ao devolver o dia. Sem isto o farmer
-              reenvia sem saber o que corrigir. */}
-          {briefing?.motivo && (status === "reprovado" || status === "aprovado") && (
-            <span className={status === "reprovado" ? "plan-motivo" : "plan-obs-gestor"}>
-              {status === "reprovado" ? "Motivo" : "Observação"}
-              {briefing.revisadoPor ? ` de ${briefing.revisadoPor}` : ""}: {briefing.motivo}
+          {/* O que o líder escreveu sobre este dia. É leitura, não trava
+              nada: o farmer já começou. */}
+          {briefing?.comentario && (
+            <span className="plan-obs-gestor">
+              {briefing.comentadoPor ? `${briefing.comentadoPor}: ` : ""}
+              {briefing.comentario}
             </span>
           )}
         </div>
         <div className="planbar-actions">
           {envioMsg && <span className={envioMsg.ok ? "saved" : "err"}>{envioMsg.text}</span>}
-          {/* Enviar vem antes de fechar: a gestão valida o plano de manhã, e o
-              fechamento é o que aconteceu à tarde. */}
+          {/* Iniciar vem antes de fechar: de manhã o farmer confirma o que vai
+              fazer, e o fechamento é o que aconteceu à tarde. */}
           <button
             className="btn-primary"
-            onClick={enviar}
-            disabled={envioBusy || faltam > 0 || status === "aprovado"}
+            onClick={iniciar}
+            disabled={envioBusy || faltam > 0 || status === "iniciado"}
             title={
               faltam > 0
-                ? "Defina a estratégia de todas antes de enviar"
-                : status === "aprovado"
-                  ? "O dia já foi aprovado pela gestão"
+                ? "Defina a estratégia de todas antes de iniciar"
+                : status === "iniciado"
+                  ? "O dia já foi iniciado"
                   : undefined
             }
           >
-            {envioBusy
-              ? "Enviando…"
-              : status === "rascunho"
-                ? "Enviar o dia para a gestão"
-                : status === "reprovado"
-                  ? "Reenviar"
-                  : "Reenviar o dia"}
+            {envioBusy ? "Iniciando…" : status === "iniciado" ? "Dia iniciado" : "Iniciar o dia"}
           </button>
           {/* Link do Next, não âncora. Como âncora, ir para o fechamento
               recarregava a página inteira: HTML, scripts e estilos de novo.

@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { BALDES } from "../lib/carteira";
+import { resumoDoHubspot } from "../lib/carteira-texto";
 
-const STATUS_DIA = {
-  enviado: "Aguardando aprovação",
-  aprovado: "Aprovado",
-  reprovado: "Reprovado",
-};
+// O dia do farmer não espera aprovação: ou ele iniciou, ou ainda não.
+const STATUS_DIA = { iniciado: "Dia iniciado" };
 
 const STATUS_CLS = {
   fechado: "aprovado",
@@ -120,46 +118,13 @@ const brl = (n) => "R$ " + Number(n || 0).toLocaleString("pt-BR", { maximumFract
 
 // O líder comenta e revisa o dia do farmer. Revisar é separado de comentar:
 // dá para revisar sem escrever nada, e comentar sem ter revisado.
-function Comentario({ ownerId, dia, inicial, status }) {
+function Comentario({ ownerId, dia, inicial }) {
   const [texto, setTexto] = useState(inicial?.comentario || "");
   const [salvo, setSalvo] = useState(!!inicial?.comentario);
   const [revisado, setRevisado] = useState(!!inicial?.revisado);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
   const [crm, setCrm] = useState("");
-  const [decidido, setDecidido] = useState(status || "rascunho");
-
-  // Aprovar e reprovar o dia do farmer, como no briefing do closer. O motivo
-  // da reprovação é o mesmo campo do comentário: o farmer precisa ler o que
-  // corrigir, e dois campos separados fariam o líder escrever duas vezes.
-  async function decidir(acao) {
-    setBusy(true);
-    setErro("");
-    setCrm("");
-    try {
-      const res = await fetch("/api/carteira/lider", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ acao, ownerId, dia, texto }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || "Falha ao decidir.");
-      setDecidido(d.status);
-      if (acao === "aprovar") setRevisado(true);
-      const h = d.hubspot;
-      if (h) {
-        const avisos = [];
-        if (h.gravadas) avisos.push(h.gravadas + " empresa(s) gravada(s) no HubSpot");
-        if (h.semPropriedade?.length) avisos.push("a conta não tem a propriedade " + h.semPropriedade.join(" nem ") + " em empresas");
-        if (h.falhas?.length) avisos.push("falhou em " + h.falhas.join(", "));
-        setCrm(avisos.join(" · ") || "nada a gravar neste dia");
-      }
-    } catch (e) {
-      setErro(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function revisar() {
     setBusy(true);
@@ -174,16 +139,10 @@ function Comentario({ ownerId, dia, inicial, status }) {
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || "Falha ao marcar.");
       setRevisado(true);
-      // Revisar é o que leva o plano para o CRM: o líder precisa saber se
-      // chegou lá, senão descobre semanas depois com o campo vazio.
-      const h = d.hubspot;
-      if (h) {
-        const avisos = [];
-        if (h.gravadas) avisos.push(`${h.gravadas} empresa(s) gravada(s) no HubSpot`);
-        if (h.semPropriedade?.length) avisos.push(`a conta não tem a propriedade ${h.semPropriedade.join(" nem ")} em empresas`);
-        if (h.falhas?.length) avisos.push(`falhou em ${h.falhas.join(", ")}`);
-        setCrm(avisos.join(" · ") || "nada a gravar neste dia");
-      }
+      // Quem leva o plano ao CRM é o farmer, ao iniciar o dia. Revisar
+      // regrava como rede, e o líder precisa ver o que chegou lá: sem isto
+      // descobre semanas depois com o campo vazio.
+      if (d.hubspot) setCrm(resumoDoHubspot(d.hubspot));
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -215,45 +174,25 @@ function Comentario({ ownerId, dia, inicial, status }) {
   return (
     <details className="dia-comentario">
       <summary>
-        {decidido === "aprovado" ? "Dia aprovado" : decidido === "enviado" ? "Aprovar ou reprovar" : decidido === "reprovado" ? "Devolvido para correção" : salvo ? "Comentário enviado" : "Comentar ou revisar"}
+        {revisado ? "Dia revisado" : salvo ? "Comentário enviado" : "Comentar ou revisar"}
       </summary>
       <div className="dia-revisar">
-        {/* Só decide o que foi enviado. Aprovar um dia que a pessoa ainda
-            está montando é aprovar o que ela ainda vai mudar. */}
-        {decidido === "aprovado" ? (
+        {/* Revisar é o líder dizendo que leu. Não libera nada: o farmer já
+            iniciou o dia e o plano já está no CRM. */}
+        {revisado ? (
           <span className="fech-ok">
-            aprovado{inicial?.revisadoPor ? ` por ${inicial.revisadoPor}` : ""}
+            revisado{inicial?.revisadoPor ? ` por ${inicial.revisadoPor}` : ""}
           </span>
-        ) : decidido === "enviado" || decidido === "reprovado" ? (
-          <>
-            <button className="btn-primary" onClick={() => decidir("aprovar")} disabled={busy}>
-              {busy ? "…" : "Aprovar"}
-            </button>
-            <button
-              className="btn-ghost"
-              onClick={() => decidir("reprovar")}
-              disabled={busy || !texto.trim()}
-              title={!texto.trim() ? "Escreva abaixo o que precisa ser corrigido" : undefined}
-            >
-              Reprovar
-            </button>
-            {decidido === "reprovado" && <span className="plan-motivo">devolvido para correção</span>}
-          </>
         ) : (
-          <>
-            <span className="fech-opcional">o farmer ainda não enviou o dia</span>
-            {!revisado && (
-              <button className="btn-ghost" onClick={revisar} disabled={busy}>
-                Marcar como revisado
-              </button>
-            )}
-          </>
+          <button className="btn-ghost" onClick={revisar} disabled={busy}>
+            Marcar como revisado
+          </button>
         )}
         {crm && <span className="emp-editado">{crm}</span>}
       </div>
       <textarea
         className="obs"
-        placeholder={decidido === "enviado" ? "Para reprovar, escreva aqui o que precisa ser corrigido" : "O que este dia diz?"}
+        placeholder="O que este dia diz?"
         value={texto}
         onChange={(e) => { setTexto(e.target.value); setSalvo(false); }}
       />
@@ -404,7 +343,7 @@ function Cartoes({ farmers, dia }) {
                 </span>
               </div>
               {/* Dois estados diferentes e os dois importam: o que a pessoa
-                  preencheu, e onde o dia está perante a gestão. */}
+                  preencheu, e se ela já confirmou o dia. */}
               <span className="plan-badge">{STATUS_DIA[f.brief?.status] || f.situacao.label}</span>
             </div>
 
@@ -442,7 +381,7 @@ function Cartoes({ farmers, dia }) {
               <div className="dia-vazio">Ainda não abriu o diário hoje</div>
             )}
 
-            <Comentario ownerId={f.ownerId} dia={dia} inicial={f.brief} status={f.brief?.status} />
+            <Comentario ownerId={f.ownerId} dia={dia} inicial={f.brief} />
           </div>
           );
         })}

@@ -4,8 +4,10 @@ import { useState } from "react";
 import { BALDES } from "../lib/carteira";
 import { resumoDoHubspot } from "../lib/carteira-texto";
 
-// O dia do farmer não espera aprovação: ou ele iniciou, ou ainda não.
-const STATUS_DIA = { iniciado: "Dia iniciado" };
+// O dia do farmer não espera aprovação: ou ele clicou em iniciar, ou não.
+// Dia antigo, de antes de o botão existir, conta como iniciado quando já tem
+// resultado registrado: ninguém vai voltar lá para clicar.
+const iniciou = (f) => f.brief?.status === "iniciado" || f.situacao?.chave === "fechado";
 
 const STATUS_CLS = {
   fechado: "aprovado",
@@ -328,6 +330,15 @@ function Cartoes({ farmers, dia }) {
           // que é a coluna Estratégia da tela dela.
           const comEstrategia = f.itens.filter((e) => e.abordagem).length;
           const fechou = f.placar.total - f.placar.sem_registro;
+          // Um estado só, e a cor dele é a do texto. Antes o texto vinha do
+          // clique em iniciar e a cor vinha do preenchimento: davam "Dia
+          // iniciado" em verde num farmer e em azul noutro, sem a tela dizer
+          // que a diferença era um ter fechado o dia e o outro não.
+          const estado = iniciou(f)
+            ? f.situacao.chave === "fechado"
+              ? { cls: "fechado", label: "Dia fechado" }
+              : { cls: "iniciado", label: "Dia iniciado" }
+            : { cls: "parado", label: f.itens.length ? "Não iniciado" : "Sem lista" };
           // A moldura responde a uma pergunta só, e é a que o líder faz ao
           // bater o olho na grade: esta pessoa começou o dia? Verde começou,
           // vermelho não. O resto do estado continua nos selos e no placar.
@@ -335,7 +346,7 @@ function Cartoes({ farmers, dia }) {
           <div
             className={
               "dia-card farmer st-" + (STATUS_CLS[f.situacao.chave] || "rascunho") +
-              (f.brief?.status === "iniciado" ? " d-iniciado" : " d-parado")
+              (iniciou(f) ? " d-iniciado" : " d-parado")
             }
             key={f.ownerId}
           >
@@ -351,9 +362,7 @@ function Cartoes({ farmers, dia }) {
                     : "não abriu o diário hoje"}
                 </span>
               </div>
-              {/* Dois estados diferentes e os dois importam: o que a pessoa
-                  preencheu, e se ela já confirmou o dia. */}
-              <span className="plan-badge">{STATUS_DIA[f.brief?.status] || f.situacao.label}</span>
+              <span className={"plan-badge e-" + estado.cls}>{estado.label}</span>
             </div>
 
             {/* O placar do dia só aparece depois que alguém começou a fechar:

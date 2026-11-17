@@ -372,6 +372,13 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 /* Começou o dia ou não. É a única coisa que a moldura diz. */
 .dia-card.farmer.d-iniciado { border-color: #17803d; }
 .dia-card.farmer.d-parado { border-color: var(--erro); }
+/* O selo diz o estado fino, e a cor dele é sempre a do próprio texto. Vinha
+   de .st-*, que é a situação de preenchimento: dava "Dia iniciado" verde num
+   farmer e azul noutro sem nada na tela explicar a diferença. */
+.dia-card.farmer .plan-badge { border-color: transparent; color: #fff; }
+.plan-badge.e-fechado { background: #17803d; }
+.plan-badge.e-iniciado { background: var(--azul); }
+.plan-badge.e-parado { background: var(--erro); }
 .dia-card.st-enviado { border-left-color: var(--azul); }
 .dia-card.st-aprovado { border-left-color: #17803d; }
 .dia-card.st-reprovado { border-left-color: var(--laranja); }

@@ -212,17 +212,17 @@ function Tabela({ itens, ctx, estrategias, contatos, tentativas, historicoContat
 }
 
 export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {}, historicoContato = {}, briefing = null }) {
-  const [abordagens, setAbordagens] = useState(() => {
-    const m = {};
-    for (const e of itens) if (e.abordagem) m[e.id] = e.abordagem;
-    return m;
-  });
+  // Só o que mudou nesta sessão. A verdade é `itens`, que vem do servidor:
+  // semear um mapa no primeiro render e contar por ele deixava o contador
+  // preso ao que havia na tela naquele instante.
+  const [mudadas, setMudadas] = useState({});
+  const abordagemDe = (e) => (e.id in mudadas ? mudadas[e.id] : e.abordagem || "");
 
   const doCompromisso = itens.filter((e) => !e.extra);
   const extras = itens.filter((e) => e.extra);
   // A lista inteira é o compromisso, extras inclusive.
-  const faltam = itens.filter((e) => !abordagens[e.id]).length;
-  const marcar = (id, v) => setAbordagens((a) => ({ ...a, [id]: v }));
+  const faltam = itens.filter((e) => !abordagemDe(e)).length;
+  const marcar = (id, v) => setMudadas((a) => ({ ...a, [id]: v }));
 
   // O farmer inicia o próprio dia e não espera ninguém. O estado vem do
   // servidor e muda aqui sem recarregar a tela.

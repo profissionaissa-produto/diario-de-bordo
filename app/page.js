@@ -579,6 +579,12 @@ export default async function Page({ searchParams }) {
         <>
         {vista !== "tramitacoes" && (
         <ListaDoDia
+          // A chave é o dono do dia. Sem ela, trocar de farmer no seletor
+          // reaproveitava a mesma instância, os useState não reinicializavam e
+          // a tela misturava os dois: o contador dizia "22 sem estratégia"
+          // porque ainda contava pelos ids do farmer anterior, e o "dia
+          // iniciado" exibido era o dele, não o de quem estava na tela.
+          key={viewOwner ? String(viewOwner.ownerId) : "sem-dono"}
           itens={carteiraDoDia}
           estrategias={estrat.porSeg[SEG_TRAMITACOES] || []}
           contatos={contatosDoDia}

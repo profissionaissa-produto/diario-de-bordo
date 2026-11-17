@@ -351,21 +351,27 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 /* Grid, não multi-column: com columns o cartão era cortado entre colunas e
    as alturas saíam irregulares. */
 .dia-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px; align-items: start; margin-bottom: 8px; }
+  gap: 16px; align-items: stretch; margin-bottom: 8px; }
 .dia-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); overflow: hidden; border-left: 4px solid var(--azul); }
 /* O cartão do farmer monta o conteúdo direto, sem o cabeçalho com borda que o
    cartão do closer usa — por isso o respiro vem dele mesmo. */
 /* Mesmo cartão do closer na agenda geral: cabeça com borda, lista de itens
    colada nela, e o recuo mora em cada parte, não no cartão. */
-.dia-card.farmer { display: flex; flex-direction: column; }
+/* Altura fixa, igual em todos. A grade é para comparar os farmers, e cartão
+   que cresce conforme o que a pessoa preencheu faz a leitura virar sobe e
+   desce. Quem tem mais empresas rola dentro da própria lista. */
+.dia-card.farmer { display: flex; flex-direction: column; height: 470px; }
 .dia-card.farmer .dia-nums { padding: 11px 16px 0; }
-.dia-card.farmer .dia-vazio { padding: 14px 16px; }
 .dia-card.farmer .dia-comentario { padding: 9px 16px 13px; margin-top: 0; }
-/* A lista do dia tem 20 empresas: sem teto o cartão vira uma coluna sem fim
-   e a grade de farmers deixa de ser comparável. */
-.dia-card.farmer .dia-itens { max-height: 310px; overflow-y: auto; }
+/* A lista ocupa o que sobrar e rola dentro de si. min-height: 0 é o que
+   permite encolher dentro do flex: sem ele o conteúdo empurra o cartão. */
+.dia-card.farmer .dia-itens { flex: 1; min-height: 0; overflow-y: auto; }
+.dia-card.farmer .dia-vazio { flex: 1; padding: 14px 16px; }
 .dia-cab { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+/* Começou o dia ou não. É a única coisa que a moldura diz. */
+.dia-card.farmer.d-iniciado { border-color: #17803d; }
+.dia-card.farmer.d-parado { border-color: var(--erro); }
 .dia-card.st-enviado { border-left-color: var(--azul); }
 .dia-card.st-aprovado { border-left-color: #17803d; }
 .dia-card.st-reprovado { border-left-color: var(--laranja); }

@@ -328,8 +328,17 @@ function Cartoes({ farmers, dia }) {
           // que é a coluna Estratégia da tela dela.
           const comEstrategia = f.itens.filter((e) => e.abordagem).length;
           const fechou = f.placar.total - f.placar.sem_registro;
+          // A moldura responde a uma pergunta só, e é a que o líder faz ao
+          // bater o olho na grade: esta pessoa começou o dia? Verde começou,
+          // vermelho não. O resto do estado continua nos selos e no placar.
           return (
-          <div className={"dia-card farmer st-" + (STATUS_CLS[f.situacao.chave] || "rascunho")} key={f.ownerId}>
+          <div
+            className={
+              "dia-card farmer st-" + (STATUS_CLS[f.situacao.chave] || "rascunho") +
+              (f.brief?.status === "iniciado" ? " d-iniciado" : " d-parado")
+            }
+            key={f.ownerId}
+          >
             <div className="dia-head">
               <span className="aprov-pfp">
                 {f.foto ? <img src={f.foto} alt={f.nome} /> : f.nome.slice(0, 2).toUpperCase()}

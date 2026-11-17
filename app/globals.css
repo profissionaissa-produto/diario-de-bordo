@@ -783,8 +783,11 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .g-compra_18m { background: #eaf7ee; color: #17803d; }
 .g-budget_alto { background: var(--azul-soft); color: var(--azul); }
 .g-sem_criterio { background: var(--surface-2); color: var(--muted); }
-a.btn-primary { text-decoration: none; }
-a.btn-primary.desativado { opacity: .45; pointer-events: none; }
+a.btn-primary, a.btn-ghost { text-decoration: none; }
+/* Sem amarrar à tag nem à classe do botão: o fechamento bloqueado é um span
+   com btn-ghost, e o seletor antigo só pegava a.btn-primary. Ele ficava com a
+   cara de botão vivo e não fazia nada ao clicar. */
+.desativado { opacity: .45; pointer-events: none; }
 
 /* --------------------------------------------------------- página de ajuda */
 .ajuda { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }

@@ -294,21 +294,24 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
         <div className="planbar-actions">
           {envioMsg && <span className={envioMsg.ok ? "saved" : "err"}>{envioMsg.text}</span>}
           {/* Iniciar vem antes de fechar: de manhã o farmer confirma o que vai
-              fazer, e o fechamento é o que aconteceu à tarde. */}
-          <button
-            className="btn-primary"
-            onClick={iniciar}
-            disabled={envioBusy || faltam > 0 || status === "iniciado"}
-            title={
-              faltam > 0
-                ? "Defina a estratégia de todas antes de iniciar"
-                : status === "iniciado"
-                  ? "O dia já foi iniciado"
-                  : undefined
-            }
-          >
-            {envioBusy ? "Iniciando…" : status === "iniciado" ? "Dia iniciado" : "Iniciar o dia"}
-          </button>
+              fazer, e o fechamento é o que aconteceu à tarde.
+
+              Depois de iniciado, "Dia iniciado" vira selo, não botão. Como
+              botão desabilitado ele ficava laranja ao lado do fechamento de
+              contorno, e a tela dizia o contrário do que valia: o morto
+              chamava atenção e a ação viva parecia travada. */}
+          {status === "iniciado" ? (
+            <span className="fech-ok">dia iniciado</span>
+          ) : (
+            <button
+              className="btn-primary"
+              onClick={iniciar}
+              disabled={envioBusy || faltam > 0}
+              title={faltam > 0 ? "Defina a estratégia de todas antes de iniciar" : undefined}
+            >
+              {envioBusy ? "Iniciando…" : "Iniciar o dia"}
+            </button>
+          )}
           {/* Link do Next, não âncora. Como âncora, ir para o fechamento
               recarregava a página inteira: HTML, scripts e estilos de novo.
               Era a navegação mais pesada do painel. */}
@@ -320,7 +323,9 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
               Ir para o fechamento
             </span>
           ) : (
-            <Link className="btn-ghost" href={ctx.urlFechamento}>
+            // Iniciado o dia, fechar é o que sobrou para fazer: a cor vai para
+            // ele.
+            <Link className={status === "iniciado" ? "btn-primary" : "btn-ghost"} href={ctx.urlFechamento}>
               Ir para o fechamento
             </Link>
           )}

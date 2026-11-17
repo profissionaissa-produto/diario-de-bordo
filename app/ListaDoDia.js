@@ -277,10 +277,12 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
             {doCompromisso.length} empresas{extras.length ? ` + ${extras.length} extras` : ""}
           </span>
           <span className="plan-badge">{STATUS_LABEL[status]}</span>
+          {/* Selo, não frase solta: a barra é uma fileira de selos e um texto
+              miúdo no meio deles parece sobra de outra tela. */}
           {faltam > 0 ? (
-            <span className="plan-motivo">{faltam} sem estratégia definida</span>
+            <span className="plan-badge alerta">{faltam} sem estratégia</span>
           ) : (
-            <span className="fech-ok">todas mapeadas</span>
+            <span className="plan-badge ok">todas mapeadas</span>
           )}
           {/* O que o líder escreveu sobre este dia. É leitura, não trava
               nada: o farmer já começou. */}
@@ -299,10 +301,12 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
               Depois de iniciado, "Dia iniciado" vira selo, não botão. Como
               botão desabilitado ele ficava laranja ao lado do fechamento de
               contorno, e a tela dizia o contrário do que valia: o morto
-              chamava atenção e a ação viva parecia travada. */}
-          {status === "iniciado" ? (
-            <span className="fech-ok">dia iniciado</span>
-          ) : (
+              chamava atenção e a ação viva parecia travada.
+
+              Iniciado, nada entra no lugar dele: o selo já está na fileira da
+              esquerda, e repetir ao lado do botão era a mesma informação duas
+              vezes na mesma linha. */}
+          {status === "iniciado" ? null : (
             <button
               className="btn-primary"
               onClick={iniciar}

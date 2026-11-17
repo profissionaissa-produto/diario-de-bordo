@@ -129,6 +129,10 @@ tbody tr:hover { background: var(--surface-2); }
 .st-enviado .plan-badge { background: var(--azul); color: #fff; border-color: transparent; }
 .st-aprovado .plan-badge { background: #17803d; color: #fff; border-color: transparent; }
 .st-reprovado .plan-badge { background: var(--laranja); color: #fff; border-color: transparent; }
+/* Estado do dia como selo, no mesmo formato dos outros da barra. Verde e
+   laranja em texto miúdo e minúsculo pareciam sobra de outra tela. */
+.plan-badge.ok { background: #eaf7ee; color: #17803d; border-color: #bfe3cb; }
+.plan-badge.alerta { background: var(--laranja-soft); color: var(--laranja-forte); border-color: var(--laranja); }
 .plan-week { font-weight: 600; color: var(--ink); }
 .plan-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .plan-motivo { color: var(--laranja); font-weight: 600; }

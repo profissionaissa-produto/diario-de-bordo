@@ -2,6 +2,7 @@ import { auth } from "../../../../auth";
 import { decidirTroca, salvarOrientacao, comentarDia, marcarRevisado, dbReady } from "../../../../lib/db";
 import { podeGerirCloser } from "../../../../lib/permissoes";
 import { gravarNoHubspot } from "../../../../lib/carteira-hubspot";
+import { outrasEmpresas } from "../../../../lib/dia-farmer";
 
 const quem = (s) => s.user.name || s.user.email;
 
@@ -16,7 +17,7 @@ export async function POST(req) {
   const { acao, ownerId, companyId, decisao, texto, dia } = body;
   if (!ownerId) return Response.json({ error: "Dados incompletos." }, { status: 400 });
   // Comentar e revisar são sobre o dia inteiro, não sobre uma empresa.
-  if (!["comentario", "revisado"].includes(acao) && !companyId) {
+  if (!["comentario", "revisado", "outras"].includes(acao) && !companyId) {
     return Response.json({ error: "Dados incompletos." }, { status: 400 });
   }
   if (!podeGerirCloser(session.user, ownerId)) {
@@ -41,6 +42,23 @@ export async function POST(req) {
       }
       await salvarOrientacao(ownerId, companyId, t, quem(session));
       return Response.json({ ok: true });
+    }
+
+    // Troca as empresas do dia pelas próximas da fila. É de quem responde
+    // pelo farmer, não do farmer: trocar a própria lista seria escolher a
+    // dedo com quem falar, que é o oposto do rodízio.
+    if (acao === "outras") {
+      try {
+        const r = await outrasEmpresas(ownerId, dia);
+        return Response.json({ ok: true, ...r });
+      } catch (e) {
+        // O motivo tem que chegar à tela: "falha ao trocar" faria o líder
+        // clicar de novo sem saber que há resultado registrado.
+        if (e.codigo === "tem-resultado") {
+          return Response.json({ error: e.message }, { status: 409 });
+        }
+        throw e;
+      }
     }
 
     if (acao === "comentario") {

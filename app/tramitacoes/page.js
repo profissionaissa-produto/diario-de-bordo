@@ -315,7 +315,7 @@ export default async function Tramitacoes({ searchParams }) {
         com a etapa ainda de preparação. Depois da palestra, nas etapas de NPS,
         pagamento e nota, conta o tempo parado: {POS_AMARELO} dias avisa,{" "}
         {POS_VERMELHO} grita. Ticket sem data de evento fica cinza pedindo o
-        dado, nunca verde. A baixa é em duas mãos — quem executa marca, o líder confirma. Devolver
+        dado, nunca verde. A baixa é em duas mãos: quem executa marca, o líder confirma. Devolver
         traz a pendência de volta com o prazo original, então vencida volta vencida. Contrato com
         status <b>Assinado</b> baixa a assinatura e a minuta sozinho.
       </div>

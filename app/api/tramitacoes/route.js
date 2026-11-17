@@ -163,7 +163,7 @@ export async function PUT(req) {
   // Travado sem explicação não vira pedido de ajuda: vira número.
   if (TRAMITACAO_EXIGE_OBSERVACAO.includes(resultado) && observacao.length < 10) {
     return Response.json(
-      { error: "Diga o que travou — é o que mostra ao líder o que depende de terceiro." },
+      { error: "Diga o que travou: é o que mostra ao líder o que depende de terceiro." },
       { status: 400 }
     );
   }

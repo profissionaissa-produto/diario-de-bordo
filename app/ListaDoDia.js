@@ -83,7 +83,7 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
         {e.orientacao && (
           <div className="emp-orientacao">
             {e.orientacao.texto}
-            <span className="emp-orientacao-autor">— {e.orientacao.autor}</span>
+            <span className="emp-orientacao-autor">{e.orientacao.autor}</span>
           </div>
         )}
       </td>
@@ -283,7 +283,7 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
           <h3>Sem lista para hoje</h3>
           <p>
             A lista é montada a partir das empresas em que você é proprietário no HubSpot.
-            Se ela veio vazia, quase sempre é proprietário errado no CRM — corrigir lá corrige
+            Se ela veio vazia, quase sempre é proprietário errado no CRM: corrigir lá corrige
             aqui no dia seguinte.
           </p>
         </div>
@@ -376,7 +376,7 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
       {extras.length > 0 && (
         <>
           <div className="tab-secao">
-            Extras — clientes recentes, fora da conta das {doCompromisso.length}
+            Extras. Clientes recentes, fora da conta das {doCompromisso.length}
           </div>
           <Tabela itens={extras} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} historicoContato={historicoContato} onAbordagem={marcar} />
         </>

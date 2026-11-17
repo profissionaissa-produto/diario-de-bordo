@@ -74,7 +74,7 @@ function ErroHubspot({ erro }) {
         {diario
           ? "A conta atingiu o limite de chamadas à API do HubSpot por hoje. Os dados voltam assim que a cota renovar (no início do próximo dia)."
           : rajada
-          ? "Foram muitas chamadas em pouco tempo. Atualize a página — esse limite libera em segundos."
+          ? "Foram muitas chamadas em pouco tempo. Atualize a página, esse limite libera em segundos."
           : "Não foi possível falar com o HubSpot agora. Tente novamente em alguns minutos."}
       </p>
     </div>
@@ -398,7 +398,7 @@ export default async function Page({ searchParams }) {
       // Cair para o funil inteiro é melhor que tela vazia, mas o closer precisa
       // saber que está vendo outra coisa — senão some sem ninguém perceber.
       console.error("[funil] não consegui montar a lista do dia:", e?.message);
-      avisoFunil = "Não consegui montar a lista do dia — mostrando o funil inteiro. " + e.message;
+      avisoFunil = "Não consegui montar a lista do dia, mostrando o funil inteiro. " + e.message;
     }
   }
 

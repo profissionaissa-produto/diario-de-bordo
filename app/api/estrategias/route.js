@@ -83,7 +83,7 @@ export async function DELETE(req) {
       return Response.json({ error: "Essa estratégia não está na lista." }, { status: 404 });
     }
     if (atuais.length === 1) {
-      return Response.json({ error: "É a última da lista — o time ficaria sem nenhuma opção." }, { status: 400 });
+      return Response.json({ error: "É a última da lista: o time ficaria sem nenhuma opção." }, { status: 400 });
     }
     await ocultarEstrategia(seg, id, quem(g.session));
     return Response.json({ ok: true });

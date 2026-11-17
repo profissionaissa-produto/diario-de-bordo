@@ -7,7 +7,7 @@ const opcaoDe = (k) => RESULTADOS.find((r) => r.key === k);
 
 const DICA = {
   efetivo: "O que saiu da conversa?",
-  tentativa: "A ligação registrada no CRM já é a evidência — observação é opcional.",
+  tentativa: "A ligação registrada no CRM já é a evidência, observação é opcional.",
   nao_abordei: "Por que a empresa não foi abordada hoje?",
   trocar_segmento: "Para onde ela deveria ir?",
 };
@@ -83,7 +83,7 @@ function Card({ e, ctx, onFechou }) {
       {/* O fechamento é conferência: o CRM responde o que já sabe. */}
       {ativ && (
         <div className="emp-ativ">
-          <span className="emp-ativ-num">{resumoAtividade(ativ)} — hoje no HubSpot</span>
+          <span className="emp-ativ-num">{resumoAtividade(ativ)}, hoje no HubSpot</span>
           {!resultado && ativ.sugerido && (
             <button
               className="btn-ghost"
@@ -192,7 +192,7 @@ export default function FecharDia({ itens, ctx }) {
 
       <div className="evo-nota" style={{ marginBottom: 16 }}>
         O percentual é sobre as <b>{placar.total} empresas do compromisso</b>, não sobre o que foi
-        preenchido — e as trocas de segmento ficam fora da conta. Dia sem fechamento faz a empresa
+        preenchido, e as trocas de segmento ficam fora da conta. Dia sem fechamento faz a empresa
         voltar amanhã como não abordada.
       </div>
 

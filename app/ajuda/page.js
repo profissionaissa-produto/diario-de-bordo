@@ -88,12 +88,12 @@ export default async function Ajuda() {
             Dentro de cada fase a ordem tem lógica: em recompra e nutrição vem primeiro quem está
             mais perto de estourar a janela; em reativação, a mais morna. Empate se resolve por quem
             está há mais tempo sem contato efetivo. Se uma fase não tem empresas suficientes, as
-            vagas são completadas pelas outras — por isso o número não cai quando um balde seca.
+            vagas são completadas pelas outras: por isso o número não cai quando um balde seca.
           </p>
           <p className="ajuda-nota">
             Empresa com negócio aberto seu fica de fora: já está sendo trabalhada e ocuparia uma vaga
             à toa. Empresa faltando ou sobrando na lista quase sempre é proprietário errado no
-            HubSpot — corrigir lá corrige aqui no dia seguinte.
+            HubSpot: corrigir lá corrige aqui no dia seguinte.
           </p>
         </section>
 
@@ -109,8 +109,8 @@ export default async function Ajuda() {
               <li key={r.key}>
                 <b>{r.label}</b>
                 {EXIGE_OBSERVACAO.includes(r.key)
-                  ? ` — observação obrigatória, mínimo ${MINIMO_OBSERVACAO} caracteres`
-                  : " — a atividade registrada no CRM já é a evidência"}
+                  ? `: observação obrigatória, mínimo ${MINIMO_OBSERVACAO} caracteres`
+                  : ": a atividade registrada no CRM já é a evidência"}
                 {FORA_DO_PLACAR.includes(r.key) ? " · fica fora do placar" : ""}
               </li>
             ))}
@@ -136,7 +136,7 @@ export default async function Ajuda() {
               <tr>
                 <td><b>Dia não fechado</b></td>
                 <td>
-                  volta depois de {COOLDOWN_SEM_RESULTADO} dia — sem resultado registrado, o sistema
+                  volta depois de {COOLDOWN_SEM_RESULTADO} dia. Sem resultado registrado, o sistema
                   assume que a empresa não foi abordada
                 </td>
               </tr>
@@ -152,7 +152,7 @@ export default async function Ajuda() {
           <h2>Auxílio do líder e selo de relacionamento</h2>
           <p>
             Depois de <b>{TENTATIVAS_ATE_AUXILIO} tentativas seguidas</b> sem contato, a empresa
-            ganha o selo de auxílio e passa a ir na frente da própria fase — ela continua na lista,
+            ganha o selo de auxílio e passa a ir na frente da própria fase. Ela continua na lista,
             porque tirá-la seria premiar a porta fechada. O líder responde com uma orientação, que
             aparece no card assinada. O selo some sozinho quando um contato efetivo zera a sequência.
           </p>

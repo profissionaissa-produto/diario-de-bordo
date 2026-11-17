@@ -112,7 +112,7 @@ export default function AdminBar({
       {/* Sem isto, quem ficou sem equipe sumiria do filtro sem explicação. */}
       {!equipe && semEquipe > 0 && (
         <span className="plan-motivo">
-          {semEquipe} sem equipe — aparecem só em “Todas”
+          {semEquipe} sem equipe, aparecem só em “Todas”
         </span>
       )}
 

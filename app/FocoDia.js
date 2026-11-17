@@ -76,7 +76,7 @@ export default function FocoDia({ rows, briefing, ctx, options = [], estrat }) {
       </div>
 
       {status === "reprovado" && briefing?.motivo && (
-        <div className="foco-motivo">Reprovado — {briefing.motivo}</div>
+        <div className="foco-motivo">Reprovado: {briefing.motivo}</div>
       )}
 
       <div className="foco-grid">

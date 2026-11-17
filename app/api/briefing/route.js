@@ -18,7 +18,7 @@ async function resolveOwner(session, bodyOwnerId) {
     console.error("[briefing] HubSpot falhou ao identificar o closer:", e);
     throw new Error(
       /429|daily limit/i.test(String(e?.message))
-        ? "Limite diário do HubSpot atingido — o envio não pôde ser identificado. Tente de novo mais tarde."
+        ? "Limite diário do HubSpot atingido, o envio não pôde ser identificado. Tente de novo mais tarde."
         : "Não foi possível falar com o HubSpot para identificar você."
     );
   }

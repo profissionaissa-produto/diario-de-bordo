@@ -203,7 +203,7 @@ export default async function AgendaGeral({ searchParams }) {
 
       {foraDoCadastro > 0 && (
         <div className="aprov-motivo">
-          {foraDoCadastro} briefing{foraDoCadastro === 1 ? "" : "s"} de closer sem time cadastrado —
+          {foraDoCadastro} briefing{foraDoCadastro === 1 ? "" : "s"} de closer sem time cadastrado:
           não aparece{foraDoCadastro === 1 ? "" : "m"} nesta grade.{" "}
           <Link href="/aprovacoes">Ver em Aprovações</Link>
         </div>

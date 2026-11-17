@@ -255,7 +255,7 @@ export default function ApprovalCard({ plano, deals, dia, options = [], estrat }
                   {n.observacoes ? (
                     <p className="brief-obs">{n.observacoes}</p>
                   ) : (
-                    <p className="brief-obs vazia">sem observação — a tarefa vai nascer sem texto</p>
+                    <p className="brief-obs vazia">sem observação: a tarefa vai nascer sem texto</p>
                   )}
                 </div>
 
@@ -366,7 +366,7 @@ export default function ApprovalCard({ plano, deals, dia, options = [], estrat }
         <div className="reprova">
           <input
             className="reprova-input"
-            placeholder="Observação para o closer — obrigatória ao reprovar"
+            placeholder="Observação para o closer, obrigatória ao reprovar"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />

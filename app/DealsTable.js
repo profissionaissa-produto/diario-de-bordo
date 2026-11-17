@@ -252,7 +252,7 @@ export default function DealsTable({ deals, options, closerName, emptyLabel, bri
             {deals.length} de {totalFunil} negócios do funil
           </span>
           <span className="fech-opcional">
-            escalados pelos critérios do dia — a etiqueta em cada um diz por quê
+            escalados pelos critérios do dia. A etiqueta em cada um diz por quê
           </span>
         </div>
       ) : null}

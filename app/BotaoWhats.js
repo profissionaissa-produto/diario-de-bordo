@@ -62,7 +62,7 @@ export default function BotaoWhats({ closer, diaLabel, itens, estrategiaPorId })
 
           {enquete.cortados > 0 && (
             <div className="enq-aviso">
-              O WhatsApp aceita 12 opções por enquete — {enquete.cortados} negócio
+              O WhatsApp aceita 12 opções por enquete. {enquete.cortados} negócio
               {enquete.cortados === 1 ? "" : "s"} ficaram de fora.
             </div>
           )}

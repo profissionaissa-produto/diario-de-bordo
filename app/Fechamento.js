@@ -9,7 +9,7 @@ const brl = (n) => (n == null ? "—" : "R$ " + n.toLocaleString("pt-BR", { maxi
 // Espelha RESULTADOS em lib/db.js — o servidor valida de novo, isto é só a tela.
 const OPCOES = [
   { id: "efetivo", label: "Contato efetivo", cls: "ok", exigeObs: true, dica: "O que saiu da conversa?" },
-  { id: "tentativa", label: "Tentei, sem sucesso", cls: "meio", exigeObs: false, dica: "A atividade no CRM já é a evidência — observação é opcional." },
+  { id: "tentativa", label: "Tentei, sem sucesso", cls: "meio", exigeObs: false, dica: "A atividade no CRM já é a evidência, observação é opcional." },
   { id: "nao_atuei", label: "Não atuei", cls: "nao", exigeObs: true, dica: "Por que o negócio não foi tocado hoje?" },
 ];
 const MIN_OBS = 50;
@@ -107,7 +107,7 @@ function Card({ r, item, inicial, crm, tarefa, ctx, onSalvo, estrategiaPorId = S
           ) : (
             <span className="fech-opcional">
               {tarefa.concluida
-                ? "concluída sem texto — escreva aqui o que aconteceu"
+                ? "concluída sem texto: escreva aqui o que aconteceu"
                 : "responda a tarefa no HubSpot e ela volta preenchida aqui"}
             </span>
           )}

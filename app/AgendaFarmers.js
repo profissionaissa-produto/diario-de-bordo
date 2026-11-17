@@ -253,7 +253,7 @@ export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
       {trocas.length > 0 && (
         <div className="painel-troca">
           <div className="painel-titulo">
-            Trocas de segmento ({trocas.length}) — a empresa fica fora do rodízio até decidir
+            Trocas de segmento ({trocas.length}). A empresa fica fora do rodízio até decidir
           </div>
           <div className="painel-lista">
             {trocas.map((t) => (
@@ -273,7 +273,7 @@ export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
       {auxilios.length > 0 && (
         <div className="painel-aux">
           <div className="painel-titulo">
-            Pedidos de auxílio ({auxilios.length}) — três tentativas sem contato
+            Pedidos de auxílio ({auxilios.length}). Três tentativas sem contato
           </div>
           <div className="painel-lista">
             {auxilios.map((e) => (

@@ -237,7 +237,7 @@ export default async function Evolucao({ searchParams }) {
           <div className="evo-nota">
             <b>Como ler.</b> O número principal é contato efetivo sobre os negócios <b>marcados no
             briefing</b>, não sobre os que foram preenchidos. Medir só o preenchido premiaria quem
-            fecha menos do que planejou — marcar 10 negócios, registrar 2 e conectar em 1 daria 50%.
+            fecha menos do que planejou. Marcar 10 negócios, registrar 2 e conectar em 1 daria 50%.
             Por isso a coluna “sem registro” fica visível: muitas vezes é ela que explica o número.
             As duas leituras podem inverter a ordem entre closers, então compare as duas antes de
             cobrar alguém.

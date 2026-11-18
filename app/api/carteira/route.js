@@ -1,8 +1,9 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, iniciarDiaCarteira, dbReady } from "../../../lib/db";
+import { getOwnerByEmail, criarNotaNaEmpresa } from "../../../lib/hubspot";
+import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, iniciarDiaCarteira, mensagensDoDia, dbReady } from "../../../lib/db";
 import { gravarNoHubspot } from "../../../lib/carteira-hubspot";
-import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO } from "../../../lib/carteira";
+import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO, CONTATO_FEITO } from "../../../lib/carteira";
+import { rotuloCanal } from "../../../lib/canal";
 import { montaEstrategias, semOcultas } from "../../../lib/estrategias";
 import { SEG_TRAMITACOES } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
@@ -28,6 +29,39 @@ async function resolveOwner(session, bodyOwnerId) {
     return { ownerId: dono, editor: dono === meu ? null : session.user.name || session.user.email };
   }
   return { ownerId: meu, editor: null };
+}
+
+const RESULTADO_LABEL = { efetivo: "falou com a empresa", tentativa: "tentou, sem sucesso" };
+
+// Grava no HubSpot o contato que o farmer acabou de registrar aqui.
+//
+// Nunca derruba o registro: o resultado já está salvo no Diário quando isto
+// roda, e perder a nota é menos grave do que perder o dia do farmer. A falha
+// vai para o log e volta como aviso na resposta.
+async function registraContatoNoCrm({ companyId, dia, resultado, observacao, ownerId, quem }) {
+  try {
+    const msgs = await mensagensDoDia(companyId, dia);
+    const corpo = [
+      `<p><b>Diário de bordo · ${RESULTADO_LABEL[resultado] || resultado}</b></p>`,
+      observacao ? `<p>${observacao.replace(/\n/g, "<br>")}</p>` : "",
+      msgs.length
+        ? msgs
+            .map(
+              (m) =>
+                `<p><b>${rotuloCanal(m.canal) || m.canal}</b><br>${String(m.texto || "").replace(/\n/g, "<br>")}</p>`
+            )
+            .join("")
+        : "<p><i>Nenhuma mensagem saiu pelo Diário neste dia. O contato foi registrado à mão.</i></p>",
+      `<p><i>registrado por ${quem}</i></p>`,
+    ]
+      .filter(Boolean)
+      .join("");
+    await criarNotaNaEmpresa(companyId, { corpo, ownerId });
+    return "";
+  } catch (e) {
+    console.error("[carteira] falha ao gravar o contato no HubSpot:", e);
+    return "O resultado foi salvo, mas o registro não chegou ao HubSpot.";
+  }
 }
 
 export async function POST(req) {
@@ -118,10 +152,28 @@ export async function PATCH(req) {
         { status: 400 }
       );
     }
-    // O pedido é o que segura a empresa fora do rodízio até o líder decidir.
+    // Contato registrado deixa rastro no CRM. Antes não deixava: o farmer
+    // marcava "falei", e no HubSpot não havia nada que mostrasse a conversa.
+    // Ninguém conseguia conferir depois, e a janela de 30 dias que tira a
+    // empresa do rodízio passou a se apoiar nisso.
+    //
+    // A nota diz o que saiu pelo Diário e, quando não saiu nada, diz isso com
+    // todas as letras. Falar por telefone sem passar daqui é legítimo, mas
+    // quem ler o registro tem que saber que a evidência é só a palavra.
+    if (CONTATO_FEITO.includes(resultado)) {
+      await registraContatoNoCrm({
+        companyId,
+        dia: body.dia || dayKey(),
+        resultado,
+        observacao,
+        ownerId,
+        quem: session.user.name || session.user.email,
+      });
+    }
     // O contato aconteceu: a cascata de canais zera e os três voltam a valer.
     // O teto de 3 é de tentativas sem sucesso, não de mensagens enviadas.
     if (resultado === "efetivo") await resolveTentativas(companyId);
+    // O pedido é o que segura a empresa fora do rodízio até o líder decidir.
     if (resultado === "trocar_segmento") {
       await pedirTroca(ownerId, companyId, body.nome || null, observacao);
     } else {

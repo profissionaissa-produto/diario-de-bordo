@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ABORDAGENS, BALDES } from "../lib/carteira";
+import { BALDES } from "../lib/carteira";
 import { canaisLiberados } from "../lib/canal";
 import { briefingDoContato } from "../lib/briefing-contato";
 import Mensagem from "./Mensagem";
@@ -104,8 +104,12 @@ function Linha({ e, ctx, estrategias, contatos, tentativas, historico, onAbordag
             onChange={(ev) => escolher(ev.target.value)}
           >
             <option value="">Escolher estratégia…</option>
-            {ABORDAGENS.map((a) => (
-              <option key={a} value={a}>{a}</option>
+            {/* Sai da lista de Configurações, não de uma lista fixa no
+                código: é lá que o time edita o que usa todo dia. O valor
+                gravado continua sendo o título, que é o que vai para a
+                propriedade da empresa no HubSpot. */}
+            {estrategias.map((s) => (
+              <option key={s.id} value={s.titulo} title={s.desc}>{s.titulo}</option>
             ))}
           </select>
         </div>

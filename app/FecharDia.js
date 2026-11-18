@@ -47,6 +47,9 @@ function Card({ e, ctx, onFechou }) {
           ownerId: ctx.ownerId,
           dia: ctx.dia,
           companyId: e.id,
+          // O nome vai junto porque o pedido de troca vive além do dia: o
+          // card do líder mostrava "Empresa 33604020107" sem ele.
+          nome: e.nome,
           resultado,
           observacao: obs,
         }),

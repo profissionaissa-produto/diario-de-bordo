@@ -253,29 +253,6 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
     }
   }
 
-  // Troca as empresas de hoje pelas próximas da fila. A partir de 17/11/2026 a
-  // lista de amanhã já não repete a de hoje sozinha; isto é para o dia que já
-  // está montado e congelado.
-  async function outras() {
-    setEnvioBusy(true);
-    setEnvioMsg(null);
-    try {
-      const res = await fetch("/api/carteira/lider", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ acao: "outras", ownerId: ctx.ownerId, dia: ctx.dia }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || "Falha ao trocar as empresas.");
-      // Recarrega do servidor: a lista inteira mudou, não dá para remendar na
-      // tela sem arriscar mostrar metade velha e metade nova.
-      window.location.reload();
-    } catch (e) {
-      setEnvioMsg({ ok: false, text: e.message });
-      setEnvioBusy(false);
-    }
-  }
-
   if (itens.length === 0) {
     return (
       <div className="card">
@@ -329,18 +306,6 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
               Iniciado, nada entra no lugar dele: o selo já está na fileira da
               esquerda, e repetir ao lado do botão era a mesma informação duas
               vezes na mesma linha. */}
-          {/* De quem responde pelo farmer. Trocar a própria lista seria
-              escolher a dedo com quem falar, que é o oposto do rodízio. */}
-          {ctx.podeZerar && (
-            <button
-              className="btn-ghost"
-              onClick={outras}
-              disabled={envioBusy}
-              title="Descarta as empresas de hoje e traz as próximas da fila"
-            >
-              Outras empresas
-            </button>
-          )}
           {status === "iniciado" ? null : (
             <button
               className="btn-primary"

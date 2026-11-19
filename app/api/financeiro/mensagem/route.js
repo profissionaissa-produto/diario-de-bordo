@@ -19,7 +19,6 @@ import { montaEstrategias, semOcultas, indexaPorId } from "../../../../lib/estra
 import { montaPromptFinanceiro, faltamCampos } from "../../../../lib/prompt-financeiro";
 import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
-import { separaNotaInterna } from "../../../../lib/gmail-texto";
 import { paraWhatsApp } from "../../../../lib/telefone";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../../lib/canal";
 import { classificaContatos, nomeDoPalestrante } from "../../../../lib/contato-ticket";
@@ -276,14 +275,10 @@ export async function POST(req) {
     }
     // O prompt vai pronto: a cobrança não usa o de prospecção, que fala de
     // última compra e de fase na carteira.
-    const bruto = await geraMensagem({ prompt: montaPromptFinanceiro(dados) });
-    // A nota é do Mattheus. Sai do texto antes de chegar à tela, senão iria
-    // junto no corpo do e-mail e na mensagem de WhatsApp.
-    const { corpo, nota } = separaNotaInterna(bruto);
+    const texto = await geraMensagem({ prompt: montaPromptFinanceiro(dados) });
     return Response.json({
       ok: true,
-      texto: corpo,
-      nota,
+      texto,
       tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
       destino: c.destino,
       para: { id: c.contato.id, nome: c.contato.nome, tipo: c.contato.tipo },

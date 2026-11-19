@@ -49,8 +49,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   // nova, que é como a janela do farmer se comporta.
   const [textos, setTextos] = useState({});
   const [assuntos, setAssuntos] = useState({});
-  // A nota interna é do Mattheus e nunca entra no que vai para o cliente.
-  const [notas, setNotas] = useState({});
   const [cc, setCc] = useState("");
   const [busy, setBusy] = useState("");
   const [feito, setFeito] = useState("");
@@ -64,7 +62,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
   const chave = `${abordagem}|${destino}|${contatoId}|${canal}`;
   const texto = textos[chave] || "";
   const setTexto = (v) => setTextos((t) => ({ ...t, [chave]: v }));
-  const nota = notas[chave] || "";
   const assunto = assuntos[chave] || "";
   const setAssunto = (v) => setAssuntos((a) => ({ ...a, [chave]: v }));
   const enviada = !!enviados[chave];
@@ -155,7 +152,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
     setFeito("");
     try {
       const d = await chamar("POST", {});
-      setNotas((n) => ({ ...n, [chave]: d.nota || "" }));
       // No e-mail o assunto é campo próprio, não a primeira linha do corpo:
       // mandado junto, ele saía escrito dentro da mensagem.
       if (canal === "email") {
@@ -375,15 +371,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
               setFeito("");
             }}
           />
-
-          {/* Fica fora da caixa de propósito: o que está na caixa é o que o
-              cliente recebe, e esta linha é para quem vai revisar o envio. */}
-          {nota && (
-            <div className="msg-nota-interna">
-              <span className="ctx-lab">Nota interna, não vai para o cliente</span>
-              <p>{nota}</p>
-            </div>
-          )}
 
           <div className="msg-rodape">
             {erro && <span className="err">{erro}</span>}

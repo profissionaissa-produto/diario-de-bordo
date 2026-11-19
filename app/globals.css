@@ -1109,9 +1109,3 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .esq-celula.larga { flex: 2.2; }
 .esq-celula.media { flex: 1.6; }
 @media (prefers-reduced-motion: reduce) { .esq { animation: none; } }
-
-/* A nota interna da mensagem do financeiro. Fora da caixa de edição porque o
-   que está na caixa é exatamente o que o cliente recebe. */
-.msg-nota-interna { display: grid; gap: 4px; padding: 10px 12px; border-radius: var(--radius);
-  background: var(--laranja-soft); border: 1px solid var(--laranja); }
-.msg-nota-interna p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--laranja-forte); }

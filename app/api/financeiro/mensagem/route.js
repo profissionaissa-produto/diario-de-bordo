@@ -16,9 +16,10 @@ import {
   dbReady,
 } from "../../../../lib/db";
 import { montaEstrategias, semOcultas, indexaPorId } from "../../../../lib/estrategias";
-import { montaPromptFinanceiro } from "../../../../lib/prompt-financeiro";
+import { montaPromptFinanceiro, faltamCampos } from "../../../../lib/prompt-financeiro";
 import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
+import { separaNotaInterna } from "../../../../lib/gmail-texto";
 import { paraWhatsApp } from "../../../../lib/telefone";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../../lib/canal";
 import { classificaContatos, nomeDoPalestrante } from "../../../../lib/contato-ticket";
@@ -178,6 +179,7 @@ async function dadosDoPrompt(c) {
 
   return {
     contextoBase,
+    ticket: c.ticket.id,
     cliente: clienteDo(c.ticket.assunto) || c.ticket.assunto,
     // Normalizado, senão o texto sai com o nome hifenizado que a propriedade
     // guarda: "Arthur Igreja (Arthur-Igreja)" virava "palestrante Arthur-Igreja"
@@ -202,8 +204,10 @@ async function dadosDoPrompt(c) {
     data: s.data,
     valor: c.ticket.valorContrato,
     cache: c.ticket.cache,
+    notaFiscal: c.ticket.notaFiscal || "",
     observacao: String(c.body.observacao || "").trim(),
     remetente: primeiroNome(quem(c.session)),
+    remetenteEmail: c.session.user.email,
   };
 }
 
@@ -259,12 +263,27 @@ export async function POST(req) {
   if (c.erro) return Response.json({ error: c.erro }, { status: c.status });
 
   try {
+    const dados = await dadosDoPrompt(c);
+    // Regra 2 do prompt-base: faltando campo obrigatório, não se escreve a
+    // mensagem. A conta é feita aqui em vez de pelo modelo, para recusar
+    // antes de gastar a chamada e sempre do mesmo jeito.
+    const falta = faltamCampos(dados);
+    if (falta.length > 0) {
+      return Response.json(
+        { error: `FALTA: ${falta.join(", ")}. Preencha no ticket antes de gerar a mensagem.` },
+        { status: 409 }
+      );
+    }
     // O prompt vai pronto: a cobrança não usa o de prospecção, que fala de
     // última compra e de fase na carteira.
-    const texto = await geraMensagem({ prompt: montaPromptFinanceiro(await dadosDoPrompt(c)) });
+    const bruto = await geraMensagem({ prompt: montaPromptFinanceiro(dados) });
+    // A nota é do Mattheus. Sai do texto antes de chegar à tela, senão iria
+    // junto no corpo do e-mail e na mensagem de WhatsApp.
+    const { corpo, nota } = separaNotaInterna(bruto);
     return Response.json({
       ok: true,
-      texto,
+      texto: corpo,
+      nota,
       tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
       destino: c.destino,
       para: { id: c.contato.id, nome: c.contato.nome, tipo: c.contato.tipo },

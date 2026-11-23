@@ -45,6 +45,10 @@ export default async function Financeiro({ searchParams }) {
   }
   if (!podeVerFinanceiro(session.user, meuOwnerId)) redirect("/");
 
+  // Quem não tem segmento de venda nenhum vive só aqui: a raiz devolve essa
+  // pessoa para esta tela, então "Diário de bordo" no menu é esta página.
+  const soFinanceiro = segmentosDe(session.user).length === 0 && !ehGestor(session.user);
+
   let tickets = [];
   let erro = null;
   try {
@@ -118,7 +122,9 @@ export default async function Financeiro({ searchParams }) {
 
       <div className="viewbar">
         <div className="viewtoggle">
-          <Link href="/">Diário de bordo</Link>
+          {/* Para quem só tem o Financeiro, esta É a tela do dia: marcar como
+              ativa em vez de mandar para a raiz, que devolve para cá. */}
+          <Link href="/" className={soFinanceiro ? "on" : ""}>Diário de bordo</Link>
           {ehGestor(session.user) && <Link href="/agenda">Agenda do dia</Link>}
           {ehGestor(session.user) && podeVerEvolucao(session.user) && <Link href="/evolucao">Evolução</Link>}
           {podeConfigurar(session.user) && <Link href="/configuracoes">Configurações</Link>}

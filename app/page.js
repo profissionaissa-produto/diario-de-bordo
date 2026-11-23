@@ -29,7 +29,7 @@ import { listaDoDiaCloser } from "../lib/dia-closer";
 import { empresasComSelo } from "../lib/relacionamento";
 import { montaHistorico, precisaAuxilio } from "../lib/carteira";
 import { getHistoricoCarteira, aplicarAtividade, getListaDia } from "../lib/db";
-import { SEG_TRAMITACOES, SEG_FINANCEIRO, empresaUrl } from "../lib/config";
+import { SEG_TRAMITACOES, SEG_FINANCEIRO, empresaUrl, ehDoFinanceiro } from "../lib/config";
 import { tramitacoesDoDia } from "../lib/dia-tramitacoes";
 import TramitacaoLinha from "./TramitacaoLinha";
 
@@ -154,6 +154,16 @@ export default async function Page({ searchParams }) {
     meuOwnerId = viewOwner.ownerId;
     // O segmento do closer vem do time dele, não da URL.
     seg = segOf(viewOwner.ownerId) || seg;
+
+    // Quem é do Financeiro não tem funil de venda, então segOf não devolve
+    // nada e o segmento ficava no padrão B2B. A tela buscava os negócios dela
+    // no funil B2B, não achava nenhum, e desenhava o painel zerado. Pior: a
+    // barra que leva para /financeiro só é montada para gestor, então não
+    // havia caminho nenhum até a tela certa. A Yaskara e o Charlau abriam o
+    // Diário, viam um funil vazio que não é deles e paravam ali.
+    if (!segOf(viewOwner.ownerId) && ehDoFinanceiro(viewOwner.ownerId)) {
+      redirect("/financeiro");
+    }
     try {
       deals = await m.passo("deals", () => getOpenDeals(viewOwner.ownerId, pipelinesForSeg(seg)));
     } catch (e) {

@@ -98,12 +98,8 @@ export async function GET(req) {
     const { buscaWebPronta, buscaNoticias } = await import("../../../lib/busca-web");
     const tem = (n) => !!(process.env[n] || "").trim();
     const fora = {
-      GOOGLE_CSE_KEY: tem("GOOGLE_CSE_KEY"),
-      GOOGLE_CSE_ID: tem("GOOGLE_CSE_ID"),
+      OPENAI_API_KEY: tem("OPENAI_API_KEY"),
       YOUTUBE_API_KEY: tem("YOUTUBE_API_KEY"),
-      // O começo do id não é segredo e é o que denuncia troca de campo: id
-      // que comece com AIza é chave de API no lugar errado.
-      comecoDoId: (process.env.GOOGLE_CSE_ID || "").trim().slice(0, 4),
       prontaParaBuscar: buscaWebPronta(),
     };
     try {

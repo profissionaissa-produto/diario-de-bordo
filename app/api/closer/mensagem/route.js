@@ -179,10 +179,14 @@ async function dadosDoPrompt(c) {
   // Sem o cache, cada mensagem gastava perto de um minuto e uma chamada paga
   // para repetir a resposta anterior. O primeiro do dia espera, o resto recebe
   // na hora.
+  // O nome da empresa vai junto. Sem ele a busca achava a reforma errada:
+  // "reestruturação" casa com qualquer mudança do país, e é o nome do órgão
+  // que amarra a matéria a este cliente.
   const alvo = {
     dealId: c.negocio.id,
     objetivo: c.negocio.objetivoEvento || "",
     segmento: empresa?.segmento || "",
+    empresa: empresa?.nome || "",
   };
   let noticias = [];
   if (

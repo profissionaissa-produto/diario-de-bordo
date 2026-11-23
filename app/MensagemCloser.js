@@ -340,11 +340,10 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                         >
                           <option value="">Escolher palestrante…</option>
                           {palestrantes.map((p) => (
+                            // Só o nome. O cachê é conversa interna e não ajuda
+                            // a decidir de quem a mensagem vai falar.
                             <option key={p.id} value={p.nome}>
                               {p.nome}
-                              {p.valor > 0
-                                ? ` · ${p.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}`
-                                : " · sem cachê cotado"}
                             </option>
                           ))}
                         </select>

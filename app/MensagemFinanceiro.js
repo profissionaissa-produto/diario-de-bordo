@@ -111,7 +111,6 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
 
   const contato = contatos.find((x) => String(x.id) === contatoId) || null;
   const liberados = canaisLiberados(tentativas);
-  const tentativa = canal ? tentativasNo(tentativas, canal) + 1 : 0;
   const prefEsgotada = contato?.contatarPor && !liberados.includes(contato.contatarPor);
   const semTelefone = canal !== "email" && contato && !contato.telefone;
   const semEmail = canal === "email" && contato && !contato.email;
@@ -259,9 +258,8 @@ export default function MensagemFinanceiro({ c, abordagem, estrategia, observaca
                 );
               })}
             </div>
-            <span className="msg-nota">
-              tentativa {tentativa} de {LIMITE_POR_CANAL} neste canal
-            </span>
+            {/* A contagem já está em cada canal, no 0/3 ao lado do nome.
+                Repetir em frase era a mesma informação duas vezes na linha. */}
           </div>
 
           <div className="msg-linha">

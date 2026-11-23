@@ -97,7 +97,6 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
 
   const contato = contatos.find((x) => String(x.id) === contatoId) || null;
   const liberados = canaisLiberados(tentativas);
-  const tentativa = canal ? tentativasNo(tentativas, canal) + 1 : 0;
   const semTelefone = canal !== "email" && contato && !contato.telefone;
   const semEmail = canal === "email" && contato && !contato.email;
   // A estratégia do dia manda: algumas falam de um palestrante, e aí a
@@ -304,9 +303,8 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                       );
                     })}
                   </div>
-                  <span className="msg-nota">
-                    tentativa {tentativa} de {LIMITE_POR_CANAL} neste canal
-                  </span>
+                  {/* A contagem já está em cada canal, no 0/3 ao lado do nome.
+                      Repetir em frase era a mesma informação duas vezes na linha. */}
                 </div>
 
                 <div className="msg-linha">

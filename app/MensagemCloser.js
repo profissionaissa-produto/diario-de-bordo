@@ -363,7 +363,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                     <input
                       className="est-input"
                       value={referencia}
-                      placeholder="Cole o link do vídeo, do corte ou da notícia"
+                      placeholder="Opcional. O Diário procura no YouTube sozinho; cole aqui só para mandar outro link"
                       onChange={(e) => setReferencia(e.target.value)}
                     />
                   </div>

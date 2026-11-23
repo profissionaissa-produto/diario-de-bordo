@@ -17,6 +17,8 @@ import {
 } from "../../../../lib/db";
 import { montaEstrategias, semOcultas, indexaPorId } from "../../../../lib/estrategias";
 import { montaPromptCloser } from "../../../../lib/prompt-closer";
+import { buscaVideos, termoDaBusca, youtubePronto } from "../../../../lib/youtube";
+import { precisaReferencia } from "../../../../lib/estrategias";
 import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
 import { paraWhatsApp } from "../../../../lib/telefone";
@@ -130,6 +132,25 @@ async function dadosDoPrompt(c) {
   const id = String(c.body.estrategia || "");
   const estrategia = visiveis.some((e) => e.id === id) ? indexaPorId(porSeg)[id] : null;
 
+  const palestrante = String(c.body.palestrante || "").trim();
+  const referencia = String(c.body.referencia || "").trim();
+
+  // O material do vídeo é procurado aqui, não pedido ao closer e não inventado
+  // pelo modelo. Só quando a estratégia depende disso, só quando há palestrante
+  // e só quando o closer não colou um link melhor à mão.
+  //
+  // Falha de busca não derruba a mensagem: sem vídeo o prompt proíbe inventar
+  // link e o texto propõe mandar o material depois. Pior do que sair sem link
+  // é não sair mensagem nenhuma.
+  let videos = [];
+  if (!referencia && palestrante && precisaReferencia(estrategia?.titulo) && youtubePronto()) {
+    try {
+      videos = await buscaVideos(termoDaBusca(palestrante, estrategia?.titulo), 3);
+    } catch (e) {
+      console.error("[closer] falha ao buscar vídeo no YouTube:", e?.message);
+    }
+  }
+
   return {
     contextoBase,
     negocio: c.negocio.name,
@@ -138,10 +159,11 @@ async function dadosDoPrompt(c) {
     canal: c.body.canal,
     tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
     estrategia,
-    // De quem a mensagem fala, e o material que o closer achou na internet.
-    // Os dois vêm da tela: são escolha do momento, não dado do CRM.
-    palestrante: String(c.body.palestrante || "").trim(),
-    referencia: String(c.body.referencia || "").trim(),
+    // De quem a mensagem fala, o link que o closer colou à mão quando colou, e
+    // os vídeos que o Diário achou no YouTube.
+    palestrante,
+    referencia,
+    videos,
     // A atual vem do CRM; a pretendida é a decisão do closer na tela de hoje.
     temperaturaAtual: c.negocio.temperatura,
     temperaturaPretendida: String(c.body.para || ""),

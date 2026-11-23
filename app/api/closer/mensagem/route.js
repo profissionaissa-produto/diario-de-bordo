@@ -4,6 +4,7 @@ import {
   getDealById,
   contatosDosNegocios,
   itensDeLinha,
+  empresaDoNegocio,
   criarNotaNoNegocio,
 } from "../../../../lib/hubspot";
 import {
@@ -132,6 +133,14 @@ async function dadosDoPrompt(c) {
   const id = String(c.body.estrategia || "");
   const estrategia = visiveis.some((e) => e.id === id) ? indexaPorId(porSeg)[id] : null;
 
+  // O segmento da empresa, para a estratégia que pede notícia do setor dela.
+  // Falha ou segmento vazio não derruba nada: o prompt só deixa de ter o
+  // setor e a regra abaixo proíbe inventar um.
+  const empresa = (await empresaDoNegocio([c.negocio.id]).catch((e) => {
+    console.error("[closer] falha ao ler a empresa do negócio:", e?.message);
+    return {};
+  }))[String(c.negocio.id)] || null;
+
   const palestrante = String(c.body.palestrante || "").trim();
   const referencia = String(c.body.referencia || "").trim();
 
@@ -164,6 +173,8 @@ async function dadosDoPrompt(c) {
     palestrante,
     referencia,
     videos,
+    empresaNome: empresa?.nome || "",
+    segmento: empresa?.segmento || "",
     // A atual vem do CRM; a pretendida é a decisão do closer na tela de hoje.
     temperaturaAtual: c.negocio.temperatura,
     temperaturaPretendida: String(c.body.para || ""),

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL } from "../lib/canal";
 import { telefoneLegivel, paraWhatsApp } from "../lib/telefone";
 import { separaAssunto } from "../lib/gmail-texto";
-import { numeroDa, precisaPalestrante, precisaReferencia } from "../lib/estrategias";
+import { numeroDa, precisaPalestrante } from "../lib/estrategias";
 import { TEMP_STYLE } from "../lib/config";
 
 const ACAO = {
@@ -100,10 +100,9 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
   const tentativa = canal ? tentativasNo(tentativas, canal) + 1 : 0;
   const semTelefone = canal !== "email" && contato && !contato.telefone;
   const semEmail = canal === "email" && contato && !contato.email;
-  // A estratégia do dia manda: algumas falam de um palestrante, e duas
-  // dessas dependem de material que está no YouTube ou no Instagram.
+  // A estratégia do dia manda: algumas falam de um palestrante, e aí a
+  // mensagem não é escrita antes de o closer escolher de quem ela fala.
   const pedePalestrante = precisaPalestrante(estrategia?.titulo);
-  const pedeReferencia = precisaReferencia(estrategia?.titulo);
   const podeGerar =
     !!contato && !!canal && !semTelefone && !semEmail && (!pedePalestrante || !!palestrante);
 
@@ -356,21 +355,11 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                   </div>
                 )}
 
-                {/* O vídeo, o corte ou a notícia vivem fora do sistema. O
-                    Diário não navega na internet, então quem procura é o
-                    closer e o link entra aqui. Vazio, o prompt proíbe inventar
-                    URL e a mensagem só propõe mandar o material. */}
-                {pedeReferencia && (
-                  <div className="msg-linha">
-                    <span className="ctx-lab">Material</span>
-                    <input
-                      className="est-input"
-                      value={referencia}
-                      placeholder="Opcional. O Diário procura no YouTube sozinho; cole aqui só para mandar outro link"
-                      onChange={(e) => setReferencia(e.target.value)}
-                    />
-                  </div>
-                )}
+                {/* O campo de colar link à mão saiu: o Diário procura sozinho,
+                    e trocar de vídeo é um clique em "usar este" na lista
+                    abaixo. `referencia` continua existindo, agora só escrita
+                    por esse clique, porque é ela que manda o prompt usar um
+                    vídeo específico em vez de escolher da lista. */}
 
                 {/* Conferência antes de mandar. O que está destacado é o vídeo
                     que entrou na mensagem, e clicar em outro troca por ele.

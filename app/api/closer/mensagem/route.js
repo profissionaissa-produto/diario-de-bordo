@@ -23,7 +23,7 @@ import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
 import { paraWhatsApp } from "../../../../lib/telefone";
 import { CANAL_VALIDO, canaisLiberados, rotuloCanal, tentativasNo, LIMITE_POR_CANAL } from "../../../../lib/canal";
-import { SEG_CLOSER, dealUrl } from "../../../../lib/config";
+import { SEG_CLOSER, NOME_CLOSER, dealUrl } from "../../../../lib/config";
 import { dayKey } from "../../../../lib/week";
 import { podeGerirCloser } from "../../../../lib/permissoes";
 
@@ -174,7 +174,12 @@ async function dadosDoPrompt(c) {
     transcricao: c.negocio.transcricao,
     valor: c.negocio.amount,
     eventoEm: c.negocio.eventoEm,
-    remetente: primeiroNome(quem(c.session)),
+    // Quem assina é o DONO do negócio, não quem está olhando a tela. O admin
+    // abre o negócio do closer para conferir, e com o nome da sessão a
+    // mensagem saía assinada por ele. Pior: o resumo da reunião fala do
+    // closer na terceira pessoa, e o modelo copiava isso, mandando ao cliente
+    // "o João consultou os palestrantes" escrito pelo próprio João.
+    remetente: primeiroNome(NOME_CLOSER[String(c.negocio.ownerId)] || quem(c.session)),
   };
 }
 

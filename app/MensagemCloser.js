@@ -156,6 +156,23 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
     }
   }
 
+  // Trocar de vídeo troca o link no texto, não refaz a mensagem. Refazer
+  // custava uma chamada ao modelo, demorava e ainda reescrevia tudo: quem
+  // gostou do texto e só queria outro vídeo perdia o texto junto.
+  //
+  // Quando o texto não tem link nenhum, não há o que substituir e aí sim vale
+  // escrever de novo, agora com o vídeo que a pessoa escolheu.
+  function trocarVideo(v) {
+    const atual = videos.find((x) => texto.includes(x.url));
+    if (!atual) {
+      setReferencia(v.url);
+      return;
+    }
+    setTexto(texto.split(atual.url).join(v.url));
+    setEnviados((x) => ({ ...x, [chave]: false }));
+    setFeito("");
+  }
+
   function tentarDeNovo() {
     jaPediu.current.delete(chave);
     gerar();
@@ -206,7 +223,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                 <span className={"temp-alvo t-" + (TEMP_STYLE[negocio.temperatura] || "none")}>
                   {label?.(negocio.temperatura) || negocio.temperatura || "sem temperatura"}
                 </span>
-                <span className="msg-seta">→</span>
+                <span className="msg-seta">para</span>
                 <span className={"temp-alvo t-" + (TEMP_STYLE[item?.para] || "none")}>
                   {item?.para ? label?.(item.para) || item.para : "não definida"}
                 </span>
@@ -392,7 +409,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                                 <button
                                   type="button"
                                   className="btn-link"
-                                  onClick={() => setReferencia(v.url)}
+                                  onClick={() => trocarVideo(v)}
                                 >
                                   usar este
                                 </button>

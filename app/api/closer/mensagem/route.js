@@ -3,6 +3,7 @@ import {
   getOwnerByEmail,
   getDealById,
   contatosDosNegocios,
+  itensDeLinha,
   criarNotaNoNegocio,
 } from "../../../../lib/hubspot";
 import {
@@ -91,14 +92,21 @@ export async function GET(req) {
   if (!dealId) return Response.json({ error: "Informe o negócio." }, { status: 400 });
 
   try {
-    const [porNegocio, contagem] = await Promise.all([
+    const [porNegocio, contagem, itens] = await Promise.all([
       contatosDosNegocios([dealId]),
       tentativasPorNegocio([dealId]),
+      // A shortlist do negócio. É dela que sai a lista de palestrantes para a
+      // estratégia que fala de um nome específico.
+      itensDeLinha([dealId]).catch((e) => {
+        console.error('[closer] falha ao ler os itens de linha:', e?.message);
+        return {};
+      }),
     ]);
     return Response.json({
       ok: true,
       contatos: porNegocio[String(dealId)] || [],
       tentativas: contagem[String(dealId)] || {},
+      palestrantes: itens[String(dealId)] || [],
       remetente: { nome: quem(session), email: session.user.email },
     });
   } catch (e) {

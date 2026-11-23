@@ -38,10 +38,10 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
   // De quem a mensagem fala. Algumas estratégias são sobre um palestrante,
   // não sobre a empresa, e sem o nome o texto sai genérico.
   const [palestrante, setPalestrante] = useState("");
-  const [buscaNome, setBuscaNome] = useState("");
-  const [achados, setAchados] = useState([]);
-  const [buscando, setBuscando] = useState(false);
-  const [erroBusca, setErroBusca] = useState("");
+  // A shortlist do negócio, que no HubSpot são os itens de linha. É ela que
+  // vira as opções: a mensagem fala de alguém que já está em negociação com
+  // este cliente, não de um nome qualquer do cadastro.
+  const [palestrantes, setPalestrantes] = useState([]);
   // Vídeo, corte ou notícia: mora fora do sistema, então o closer cola aqui.
   const [referencia, setReferencia] = useState("");
   const [busy, setBusy] = useState("");
@@ -78,6 +78,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
         setContatos(d.contatos || []);
         setRemetente(d.remetente || null);
         setTentativas(d.tentativas || {});
+        setPalestrantes(d.palestrantes || []);
         setContatoId(String(d.contatos?.[0]?.id || ""));
         setCanal(canalSugerido(d.tentativas || {}) || "");
       } catch (e) {
@@ -109,37 +110,6 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
     jaPediu.current.add(chave);
     gerar();
   }, [chave, podeGerar]);
-
-  // Busca no Dash enquanto digita. Espera a pessoa parar, senão sai uma
-  // chamada por tecla e o Dash leva a culpa pela lentidão.
-  useEffect(() => {
-    if (!pedePalestrante) return;
-    const q = buscaNome.trim();
-    if (q.length < 3) {
-      setAchados([]);
-      return;
-    }
-    let vivo = true;
-    const id = setTimeout(async () => {
-      setBuscando(true);
-      setErroBusca("");
-      try {
-        const res = await fetch(`/api/palestrantes?q=${encodeURIComponent(q)}`);
-        const d = await res.json().catch(() => ({}));
-        if (!vivo) return;
-        if (!res.ok) throw new Error(d.error || "Falha ao buscar no Dash.");
-        setAchados(d.itens || []);
-      } catch (e) {
-        if (vivo) setErroBusca(e.message);
-      } finally {
-        if (vivo) setBuscando(false);
-      }
-    }, 400);
-    return () => {
-      vivo = false;
-      clearTimeout(id);
-    };
-  }, [buscaNome, pedePalestrante]);
 
   async function chamar(metodo, corpo) {
     const res = await fetch("/api/closer/mensagem", {
@@ -356,49 +326,28 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                 {pedePalestrante && (
                   <div className="msg-linha">
                     <span className="ctx-lab">Palestrante</span>
-                    {palestrante ? (
-                      <span className="msg-contato">
-                        {palestrante}
-                        <button
-                          type="button"
-                          className="btn-link"
-                          onClick={() => {
-                            setPalestrante("");
-                            setBuscaNome("");
-                            setAchados([]);
-                          }}
-                        >
-                          trocar
-                        </button>
+                    {palestrantes.length === 0 ? (
+                      <span className="err">
+                        Este negócio não tem item de linha no HubSpot, então não há
+                        shortlist para escolher. Acrescente os palestrantes lá.
                       </span>
                     ) : (
-                      <div className="msg-busca">
-                        <input
-                          className="est-input"
-                          value={buscaNome}
-                          placeholder="Nome do palestrante, a partir de 3 letras"
-                          onChange={(e) => setBuscaNome(e.target.value)}
-                        />
-                        {buscando && <span className="est-sem">buscando no Dash…</span>}
-                        {erroBusca && <span className="err">{erroBusca}</span>}
-                        {achados.length > 0 && (
-                          <div className="msg-achados">
-                            {achados.map((p) => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                className="btn-ghost"
-                                onClick={() => {
-                                  setPalestrante(p.nome);
-                                  setAchados([]);
-                                }}
-                              >
-                                {p.nome}
-                                {p.ativo ? "" : " · inativo"}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                      <div className="select-wrap">
+                        <select
+                          className="emp-abordagem"
+                          value={palestrante}
+                          onChange={(e) => setPalestrante(e.target.value)}
+                        >
+                          <option value="">Escolher palestrante…</option>
+                          {palestrantes.map((p) => (
+                            <option key={p.id} value={p.nome}>
+                              {p.nome}
+                              {p.valor > 0
+                                ? ` · ${p.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}`
+                                : " · sem cachê cotado"}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     )}
                   </div>

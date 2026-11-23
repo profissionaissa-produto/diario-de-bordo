@@ -1128,3 +1128,5 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .vid-titulo:hover { text-decoration: underline; }
 .vid-info .btn-link { justify-self: start; }
+/* Notícia não tem miniatura: quem diz se a fonte presta é o domínio. */
+.vid.noticia { padding: 10px 12px; }

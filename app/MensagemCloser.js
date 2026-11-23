@@ -45,6 +45,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
   // Os vídeos que o Diário achou, com miniatura, para o closer conferir se o
   // que entrou na mensagem é mesmo do palestrante antes de mandar.
   const [videos, setVideos] = useState([]);
+  const [noticias, setNoticias] = useState([]);
   // Vídeo, corte ou notícia: mora fora do sistema, então o closer cola aqui.
   const [referencia, setReferencia] = useState("");
   const [busy, setBusy] = useState("");
@@ -141,6 +142,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
     try {
       const d = await chamar("POST", {});
       setVideos(d.videos || []);
+      setNoticias(d.noticias || []);
       if (canal === "email") {
         const { assunto: a, corpo } = separaAssunto(d.texto);
         setAssunto(a);
@@ -162,7 +164,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
   // Quando o texto não tem link nenhum, não há o que substituir e aí sim vale
   // escrever de novo, agora com o vídeo que a pessoa escolheu.
   function trocarVideo(v) {
-    const atual = videos.find((x) => texto.includes(x.url));
+    const atual = [...videos, ...noticias].find((x) => texto.includes(x.url));
     if (!atual) {
       setReferencia(v.url);
       return;
@@ -410,6 +412,39 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                                   onClick={() => trocarVideo(v)}
                                 >
                                   usar este
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mesma conferência dos vídeos, para a notícia do setor. Aqui
+                    não há miniatura, então quem diz se a fonte presta é o
+                    domínio: o closer manda isso para um cliente. */}
+                {noticias.length > 0 && (
+                  <div className="msg-videos">
+                    <span className="ctx-lab">
+                      Notícias encontradas sobre o setor do cliente. Confira a fonte.
+                    </span>
+                    <div className="vid-lista">
+                      {noticias.map((n) => {
+                        const usada = texto.includes(n.url);
+                        return (
+                          <div key={n.url} className={"vid noticia" + (usada ? " usado" : "")}>
+                            <div className="vid-info">
+                              <a className="vid-titulo" href={n.url} target="_blank" rel="noreferrer">
+                                {n.titulo}
+                              </a>
+                              <span className="est-sem">{n.fonte}</span>
+                              {usada ? (
+                                <span className="fech-ok">na mensagem</span>
+                              ) : (
+                                <button type="button" className="btn-link" onClick={() => trocarVideo(n)}>
+                                  usar esta
                                 </button>
                               )}
                             </div>

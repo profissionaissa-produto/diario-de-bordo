@@ -19,6 +19,7 @@ import {
 import { montaEstrategias, semOcultas, indexaPorId } from "../../../../lib/estrategias";
 import { montaPromptCloser } from "../../../../lib/prompt-closer";
 import { buscaVideos, termoDaBusca, youtubePronto } from "../../../../lib/youtube";
+import { buscaNoticias, buscaWebPronta } from "../../../../lib/busca-web";
 import { precisaReferencia } from "../../../../lib/estrategias";
 import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
@@ -160,6 +161,18 @@ async function dadosDoPrompt(c) {
     }
   }
 
+  // A notícia do setor é procurada aqui pelo mesmo motivo do vídeo: o modelo
+  // não navega, e manchete pedida a ele vinha plausível e inexistente.
+  let noticias = [];
+  const deNoticia = /not[íi]cia|conte[úu]do/i.test(String(estrategia?.titulo || ""));
+  if (!referencia && deNoticia && empresa?.segmento && buscaWebPronta()) {
+    try {
+      noticias = await buscaNoticias(empresa.segmento, 3);
+    } catch (e) {
+      console.error("[closer] falha ao buscar notícia do setor:", e?.message);
+    }
+  }
+
   return {
     contextoBase,
     negocio: c.negocio.name,
@@ -173,6 +186,7 @@ async function dadosDoPrompt(c) {
     palestrante,
     referencia,
     videos,
+    noticias,
     empresaNome: empresa?.nome || "",
     segmento: empresa?.segmento || "",
     // A atual vem do CRM; a pretendida é a decisão do closer na tela de hoje.
@@ -211,6 +225,7 @@ export async function POST(req) {
       // Título e canal enganam: existe homônimo e canal de cortes com nome de
       // palestrante.
       videos: dados.videos || [],
+      noticias: dados.noticias || [],
       tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
       para: { id: c.contato.id, nome: c.contato.nome },
     });

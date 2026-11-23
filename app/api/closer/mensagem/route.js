@@ -1,3 +1,8 @@
+// Busca na web mais escrita passam de um minuto juntas, e o limite padrão da
+// função é menor do que isso em alguns planos. Estourar aqui devolve 504 e a
+// tela diz só "falha ao gerar", sem pista do motivo.
+export const maxDuration = 120;
+
 import { auth } from "../../../../auth";
 import {
   getOwnerByEmail,
@@ -13,13 +18,14 @@ import {
   tentativasPorNegocio,
   registraTentativa,
   lerTexto,
+  salvarTexto,
   chaveContexto,
   dbReady,
 } from "../../../../lib/db";
 import { montaEstrategias, semOcultas, indexaPorId } from "../../../../lib/estrategias";
 import { montaPromptCloser } from "../../../../lib/prompt-closer";
 import { buscaVideos, termoDaBusca, youtubePronto } from "../../../../lib/youtube";
-import { buscaNoticias, buscaWebPronta } from "../../../../lib/busca-web";
+import { buscaNoticias, buscaWebPronta, chaveDaNoticia } from "../../../../lib/busca-web";
 import { precisaVideo, precisaNoticia } from "../../../../lib/estrategias";
 import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
@@ -163,13 +169,34 @@ async function dadosDoPrompt(c) {
 
   // A notícia do setor é procurada aqui pelo mesmo motivo do vídeo: o modelo
   // não navega, e manchete pedida a ele vinha plausível e inexistente.
+  //
+  // Guardada por setor e por dia: a notícia do setor financeiro é a mesma para
+  // todo closer e todo negócio daquele setor hoje. Sem o cache, cada mensagem
+  // gastava perto de um minuto e uma chamada paga para repetir a resposta
+  // anterior. O primeiro do dia espera, o resto recebe na hora.
   let noticias = [];
-  const deNoticia = precisaNoticia(estrategia?.titulo);
-  if (!referencia && deNoticia && empresa?.segmento && buscaWebPronta()) {
+  if (!referencia && precisaNoticia(estrategia?.titulo) && empresa?.segmento && buscaWebPronta()) {
+    const chave = chaveDaNoticia(empresa.segmento, c.body.dia || dayKey());
     try {
-      noticias = await buscaNoticias(empresa.segmento, 3);
+      const guardado = await lerTexto(chave);
+      if (guardado) noticias = JSON.parse(guardado);
     } catch (e) {
-      console.error("[closer] falha ao buscar notícia do setor:", e?.message);
+      // Cache ilegível é como cache vazio: busca de novo e regrava.
+      console.error("[closer] cache de notícia ilegível:", e?.message);
+    }
+    if (noticias.length === 0) {
+      try {
+        noticias = await buscaNoticias(empresa.segmento, 3);
+        // Gravar não pode derrubar a mensagem: no pior caso o próximo também
+        // busca, que é exatamente como era antes do cache.
+        if (noticias.length) {
+          await salvarTexto(chave, JSON.stringify(noticias), "busca automática").catch((e) =>
+            console.error("[closer] falha ao guardar a notícia:", e?.message)
+          );
+        }
+      } catch (e) {
+        console.error("[closer] falha ao buscar notícia do setor:", e?.message);
+      }
     }
   }
 

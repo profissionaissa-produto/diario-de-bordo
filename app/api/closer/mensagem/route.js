@@ -130,6 +130,10 @@ async function dadosDoPrompt(c) {
     canal: c.body.canal,
     tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
     estrategia,
+    // De quem a mensagem fala, e o material que o closer achou na internet.
+    // Os dois vêm da tela: são escolha do momento, não dado do CRM.
+    palestrante: String(c.body.palestrante || "").trim(),
+    referencia: String(c.body.referencia || "").trim(),
     // A atual vem do CRM; a pretendida é a decisão do closer na tela de hoje.
     temperaturaAtual: c.negocio.temperatura,
     temperaturaPretendida: String(c.body.para || ""),

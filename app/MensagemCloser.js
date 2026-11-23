@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CANAIS, canaisLiberados, canalSugerido, tentativasNo, LIMITE_POR_CANAL } from "../lib/canal";
 import { telefoneLegivel, paraWhatsApp } from "../lib/telefone";
 import { separaAssunto } from "../lib/gmail-texto";
-import { numeroDa } from "../lib/estrategias";
+import { numeroDa, precisaPalestrante, precisaReferencia } from "../lib/estrategias";
 import { TEMP_STYLE } from "../lib/config";
 
 const ACAO = {
@@ -35,12 +35,21 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
   const [textos, setTextos] = useState({});
   const [assuntos, setAssuntos] = useState({});
   const [cc, setCc] = useState("");
+  // De quem a mensagem fala. Algumas estratégias são sobre um palestrante,
+  // não sobre a empresa, e sem o nome o texto sai genérico.
+  const [palestrante, setPalestrante] = useState("");
+  const [buscaNome, setBuscaNome] = useState("");
+  const [achados, setAchados] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+  const [erroBusca, setErroBusca] = useState("");
+  // Vídeo, corte ou notícia: mora fora do sistema, então o closer cola aqui.
+  const [referencia, setReferencia] = useState("");
   const [busy, setBusy] = useState("");
   const [feito, setFeito] = useState("");
   const [enviados, setEnviados] = useState({});
   const jaPediu = useRef(new Set());
 
-  const chave = `${contatoId}|${canal}`;
+  const chave = `${contatoId}|${canal}|${palestrante}|${referencia}`;
   const texto = textos[chave] || "";
   const setTexto = (v) => setTextos((t) => ({ ...t, [chave]: v }));
   const assunto = assuntos[chave] || "";
@@ -87,7 +96,12 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
   const tentativa = canal ? tentativasNo(tentativas, canal) + 1 : 0;
   const semTelefone = canal !== "email" && contato && !contato.telefone;
   const semEmail = canal === "email" && contato && !contato.email;
-  const podeGerar = !!contato && !!canal && !semTelefone && !semEmail;
+  // A estratégia do dia manda: algumas falam de um palestrante, e duas
+  // dessas dependem de material que está no YouTube ou no Instagram.
+  const pedePalestrante = precisaPalestrante(estrategia?.titulo);
+  const pedeReferencia = precisaReferencia(estrategia?.titulo);
+  const podeGerar =
+    !!contato && !!canal && !semTelefone && !semEmail && (!pedePalestrante || !!palestrante);
 
   // A mensagem chega escrita, como nas outras duas janelas.
   useEffect(() => {
@@ -95,6 +109,37 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
     jaPediu.current.add(chave);
     gerar();
   }, [chave, podeGerar]);
+
+  // Busca no Dash enquanto digita. Espera a pessoa parar, senão sai uma
+  // chamada por tecla e o Dash leva a culpa pela lentidão.
+  useEffect(() => {
+    if (!pedePalestrante) return;
+    const q = buscaNome.trim();
+    if (q.length < 3) {
+      setAchados([]);
+      return;
+    }
+    let vivo = true;
+    const id = setTimeout(async () => {
+      setBuscando(true);
+      setErroBusca("");
+      try {
+        const res = await fetch(`/api/palestrantes?q=${encodeURIComponent(q)}`);
+        const d = await res.json().catch(() => ({}));
+        if (!vivo) return;
+        if (!res.ok) throw new Error(d.error || "Falha ao buscar no Dash.");
+        setAchados(d.itens || []);
+      } catch (e) {
+        if (vivo) setErroBusca(e.message);
+      } finally {
+        if (vivo) setBuscando(false);
+      }
+    }, 400);
+    return () => {
+      vivo = false;
+      clearTimeout(id);
+    };
+  }, [buscaNome, pedePalestrante]);
 
   async function chamar(metodo, corpo) {
     const res = await fetch("/api/closer/mensagem", {
@@ -107,6 +152,8 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
         // Vêm da tela: são a decisão de hoje e ainda não foram gravadas.
         estrategia: item?.estrategia || "",
         para: item?.para || "",
+        palestrante,
+        referencia,
         observacao: negocio._obs ?? negocio.observacoes ?? "",
         ...corpo,
       }),
@@ -302,6 +349,76 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                     </div>
                   )}
                 </div>
+
+                {/* De quem a mensagem fala. Só aparece nas estratégias que são
+                    sobre um palestrante, e sem ele a geração nem começa: o
+                    texto sairia falando de "um nome que separamos". */}
+                {pedePalestrante && (
+                  <div className="msg-linha">
+                    <span className="ctx-lab">Palestrante</span>
+                    {palestrante ? (
+                      <span className="msg-contato">
+                        {palestrante}
+                        <button
+                          type="button"
+                          className="btn-link"
+                          onClick={() => {
+                            setPalestrante("");
+                            setBuscaNome("");
+                            setAchados([]);
+                          }}
+                        >
+                          trocar
+                        </button>
+                      </span>
+                    ) : (
+                      <div className="msg-busca">
+                        <input
+                          className="est-input"
+                          value={buscaNome}
+                          placeholder="Nome do palestrante, a partir de 3 letras"
+                          onChange={(e) => setBuscaNome(e.target.value)}
+                        />
+                        {buscando && <span className="est-sem">buscando no Dash…</span>}
+                        {erroBusca && <span className="err">{erroBusca}</span>}
+                        {achados.length > 0 && (
+                          <div className="msg-achados">
+                            {achados.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                className="btn-ghost"
+                                onClick={() => {
+                                  setPalestrante(p.nome);
+                                  setAchados([]);
+                                }}
+                              >
+                                {p.nome}
+                                {p.ativo ? "" : " · inativo"}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* O vídeo, o corte ou a notícia vivem fora do sistema. O
+                    Diário não navega na internet, então quem procura é o
+                    closer e o link entra aqui. Vazio, o prompt proíbe inventar
+                    URL e a mensagem só propõe mandar o material. */}
+                {pedeReferencia && (
+                  <div className="msg-linha">
+                    <span className="ctx-lab">Material</span>
+                    <input
+                      className="est-input"
+                      value={referencia}
+                      placeholder="Cole o link do vídeo, do corte ou da notícia"
+                      onChange={(e) => setReferencia(e.target.value)}
+                    />
+                  </div>
+                )}
 
                 {semTelefone && <p className="msg-nota">{contato.nome} está sem telefone no HubSpot.</p>}
                 {semEmail && <p className="msg-nota">{contato.nome} está sem e-mail no HubSpot.</p>}

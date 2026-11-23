@@ -190,10 +190,16 @@ export async function POST(req) {
   if (c.erro) return Response.json({ error: c.erro }, { status: c.status });
 
   try {
-    const texto = await geraMensagem({ prompt: montaPromptCloser(await dadosDoPrompt(c)) });
+    const dados = await dadosDoPrompt(c);
+    const texto = await geraMensagem({ prompt: montaPromptCloser(dados) });
     return Response.json({
       ok: true,
       texto,
+      // Os vídeos voltam para a tela com miniatura, para o closer conferir se
+      // o que entrou na mensagem é mesmo do palestrante antes de mandar.
+      // Título e canal enganam: existe homônimo e canal de cortes com nome de
+      // palestrante.
+      videos: dados.videos || [],
       tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
       para: { id: c.contato.id, nome: c.contato.nome },
     });

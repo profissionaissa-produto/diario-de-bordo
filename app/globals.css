@@ -1114,3 +1114,17 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .msg-busca { display: grid; gap: 6px; min-width: 0; flex: 1; }
 .msg-achados { display: flex; flex-wrap: wrap; gap: 6px; }
 .msg-achados .btn-ghost { padding: 5px 11px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+
+/* Vídeos achados no YouTube, na janela de mensagem do closer. A miniatura é o
+   que deixa conferir se é o palestrante certo: título e canal enganam. */
+.msg-videos { display: grid; gap: 8px; }
+.vid-lista { display: grid; gap: 8px; }
+.vid { display: flex; gap: 10px; align-items: flex-start; padding: 8px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.vid.usado { border-color: var(--laranja); background: var(--laranja-soft); }
+.vid img { width: 112px; height: 63px; object-fit: cover; border-radius: 6px; flex: none; display: block; }
+.vid-info { display: grid; gap: 3px; min-width: 0; }
+.vid-titulo { font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: none;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.vid-titulo:hover { text-decoration: underline; }
+.vid-info .btn-link { justify-self: start; }

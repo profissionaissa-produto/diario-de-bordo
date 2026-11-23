@@ -42,6 +42,9 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
   // vira as opções: a mensagem fala de alguém que já está em negociação com
   // este cliente, não de um nome qualquer do cadastro.
   const [palestrantes, setPalestrantes] = useState([]);
+  // Os vídeos que o Diário achou, com miniatura, para o closer conferir se o
+  // que entrou na mensagem é mesmo do palestrante antes de mandar.
+  const [videos, setVideos] = useState([]);
   // Vídeo, corte ou notícia: mora fora do sistema, então o closer cola aqui.
   const [referencia, setReferencia] = useState("");
   const [busy, setBusy] = useState("");
@@ -139,6 +142,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
     setFeito("");
     try {
       const d = await chamar("POST", {});
+      setVideos(d.videos || []);
       if (canal === "email") {
         const { assunto: a, corpo } = separaAssunto(d.texto);
         setAssunto(a);
@@ -365,6 +369,50 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                       placeholder="Opcional. O Diário procura no YouTube sozinho; cole aqui só para mandar outro link"
                       onChange={(e) => setReferencia(e.target.value)}
                     />
+                  </div>
+                )}
+
+                {/* Conferência antes de mandar. O que está destacado é o vídeo
+                    que entrou na mensagem, e clicar em outro troca por ele.
+                    Título e canal enganam: existe homônimo e canal de cortes
+                    com nome de palestrante, então a miniatura é o que resolve. */}
+                {videos.length > 0 && (
+                  <div className="msg-videos">
+                    <span className="ctx-lab">
+                      Vídeos encontrados no YouTube. Confira se é o palestrante certo.
+                    </span>
+                    <div className="vid-lista">
+                      {videos.map((v) => {
+                        const usado = texto.includes(v.url);
+                        return (
+                          <div key={v.id} className={"vid" + (usado ? " usado" : "")}>
+                            <a href={v.url} target="_blank" rel="noreferrer" title="Abrir no YouTube">
+                              <img src={v.thumb} alt="" loading="lazy" />
+                            </a>
+                            <div className="vid-info">
+                              <a className="vid-titulo" href={v.url} target="_blank" rel="noreferrer">
+                                {v.titulo}
+                              </a>
+                              <span className="est-sem">
+                                {v.canal}
+                                {v.publicadoEm ? ` · ${v.publicadoEm.slice(0, 4)}` : ""}
+                              </span>
+                              {usado ? (
+                                <span className="fech-ok">na mensagem</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn-link"
+                                  onClick={() => setReferencia(v.url)}
+                                >
+                                  usar este
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

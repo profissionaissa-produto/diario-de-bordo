@@ -110,6 +110,7 @@ export async function GET(req) {
       fora.resultado = await buscaNoticias(searchParams.get("busca"), 3);
     } catch (e) {
       fora.erro = e.message;
+      fora.google = e.bruto || null;
     }
     return Response.json(fora);
   }

@@ -25,7 +25,7 @@ import {
 import { montaEstrategias, semOcultas, indexaPorId } from "../../../../lib/estrategias";
 import { montaPromptCloser } from "../../../../lib/prompt-closer";
 import { buscaVideos, termoDaBusca, youtubePronto } from "../../../../lib/youtube";
-import { buscaNoticias, buscaWebPronta, chaveDaNoticia } from "../../../../lib/busca-web";
+import { buscaNoticias, buscaWebPronta, chaveDaNoticia, objetivoUtil } from "../../../../lib/busca-web";
 import { precisaVideo, precisaNoticia } from "../../../../lib/estrategias";
 import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
@@ -167,16 +167,31 @@ async function dadosDoPrompt(c) {
     }
   }
 
-  // A notícia do setor é procurada aqui pelo mesmo motivo do vídeo: o modelo
-  // não navega, e manchete pedida a ele vinha plausível e inexistente.
+  // A notícia é procurada aqui pelo mesmo motivo do vídeo: o modelo não
+  // navega, e manchete pedida a ele vinha plausível e inexistente.
   //
-  // Guardada por setor e por dia: a notícia do setor financeiro é a mesma para
-  // todo closer e todo negócio daquele setor hoje. Sem o cache, cada mensagem
-  // gastava perto de um minuto e uma chamada paga para repetir a resposta
-  // anterior. O primeiro do dia espera, o resto recebe na hora.
+  // O assunto sai de "Objetivos do evento", que é o que o próprio cliente
+  // escreveu sobre o que o levou a procurar o tema. É ali que está o ponto
+  // concreto. O setor da empresa só entra quando esse campo vem vazio ou com
+  // lixo, porque notícia de setor serve para qualquer empresa dele.
+  //
+  // Guardada por dia: pelo objetivo a chave é o negócio, pelo setor é o setor.
+  // Sem o cache, cada mensagem gastava perto de um minuto e uma chamada paga
+  // para repetir a resposta anterior. O primeiro do dia espera, o resto recebe
+  // na hora.
+  const alvo = {
+    dealId: c.negocio.id,
+    objetivo: c.negocio.objetivoEvento || "",
+    segmento: empresa?.segmento || "",
+  };
   let noticias = [];
-  if (!referencia && precisaNoticia(estrategia?.titulo) && empresa?.segmento && buscaWebPronta()) {
-    const chave = chaveDaNoticia(empresa.segmento, c.body.dia || dayKey());
+  if (
+    !referencia &&
+    precisaNoticia(estrategia?.titulo) &&
+    (objetivoUtil(alvo.objetivo) || alvo.segmento) &&
+    buscaWebPronta()
+  ) {
+    const chave = chaveDaNoticia(alvo, c.body.dia || dayKey());
     try {
       const guardado = await lerTexto(chave);
       if (guardado) noticias = JSON.parse(guardado);
@@ -186,7 +201,7 @@ async function dadosDoPrompt(c) {
     }
     if (noticias.length === 0) {
       try {
-        noticias = await buscaNoticias(empresa.segmento, 3);
+        noticias = await buscaNoticias(alvo, 3);
         // Gravar não pode derrubar a mensagem: no pior caso o próximo também
         // busca, que é exatamente como era antes do cache.
         if (noticias.length) {
@@ -195,7 +210,7 @@ async function dadosDoPrompt(c) {
           );
         }
       } catch (e) {
-        console.error("[closer] falha ao buscar notícia do setor:", e?.message);
+        console.error("[closer] falha ao buscar notícia:", e?.message);
       }
     }
   }
@@ -216,6 +231,10 @@ async function dadosDoPrompt(c) {
     noticias,
     empresaNome: empresa?.nome || "",
     segmento: empresa?.segmento || "",
+    // O que o cliente escreveu sobre o evento. Vale como contexto na mensagem
+    // inteira, não só na estratégia de notícia.
+    objetivoEvento: c.negocio.objetivoEvento || "",
+    temaEvento: c.negocio.temaEvento || "",
     // A atual vem do CRM; a pretendida é a decisão do closer na tela de hoje.
     temperaturaAtual: c.negocio.temperatura,
     temperaturaPretendida: String(c.body.para || ""),

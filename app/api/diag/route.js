@@ -92,6 +92,28 @@ export async function GET(req) {
     }
   }
 
+  // Diagnóstico da busca na web. Diz só SE cada variável existe e devolve o
+  // erro cru do Google. Valor de chave não sai daqui nem em diagnóstico.
+  if (searchParams.get("busca")) {
+    const { buscaWebPronta, buscaNoticias } = await import("../../../lib/busca-web");
+    const tem = (n) => !!(process.env[n] || "").trim();
+    const fora = {
+      GOOGLE_CSE_KEY: tem("GOOGLE_CSE_KEY"),
+      GOOGLE_CSE_ID: tem("GOOGLE_CSE_ID"),
+      YOUTUBE_API_KEY: tem("YOUTUBE_API_KEY"),
+      // O começo do id não é segredo e é o que denuncia troca de campo: id
+      // que comece com AIza é chave de API no lugar errado.
+      comecoDoId: (process.env.GOOGLE_CSE_ID || "").trim().slice(0, 4),
+      prontaParaBuscar: buscaWebPronta(),
+    };
+    try {
+      fora.resultado = await buscaNoticias(searchParams.get("busca"), 3);
+    } catch (e) {
+      fora.erro = e.message;
+    }
+    return Response.json(fora);
+  }
+
   const dia = searchParams.get("dia") || dayKey();
   const briefings = await getDayBriefings(dia);
 

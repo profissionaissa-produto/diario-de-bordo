@@ -20,7 +20,7 @@ import { montaEstrategias, semOcultas, indexaPorId } from "../../../../lib/estra
 import { montaPromptCloser } from "../../../../lib/prompt-closer";
 import { buscaVideos, termoDaBusca, youtubePronto } from "../../../../lib/youtube";
 import { buscaNoticias, buscaWebPronta } from "../../../../lib/busca-web";
-import { precisaReferencia } from "../../../../lib/estrategias";
+import { precisaVideo, precisaNoticia } from "../../../../lib/estrategias";
 import { geraMensagem } from "../../../../lib/ia";
 import { enviar, envioConfigurado, bccDeLog, separaAssunto, paraHtml } from "../../../../lib/gmail";
 import { paraWhatsApp } from "../../../../lib/telefone";
@@ -153,7 +153,7 @@ async function dadosDoPrompt(c) {
   // link e o texto propõe mandar o material depois. Pior do que sair sem link
   // é não sair mensagem nenhuma.
   let videos = [];
-  if (!referencia && palestrante && precisaReferencia(estrategia?.titulo) && youtubePronto()) {
+  if (!referencia && palestrante && precisaVideo(estrategia?.titulo) && youtubePronto()) {
     try {
       videos = await buscaVideos(termoDaBusca(palestrante, estrategia?.titulo), 3);
     } catch (e) {
@@ -164,7 +164,7 @@ async function dadosDoPrompt(c) {
   // A notícia do setor é procurada aqui pelo mesmo motivo do vídeo: o modelo
   // não navega, e manchete pedida a ele vinha plausível e inexistente.
   let noticias = [];
-  const deNoticia = /not[íi]cia|conte[úu]do/i.test(String(estrategia?.titulo || ""));
+  const deNoticia = precisaNoticia(estrategia?.titulo);
   if (!referencia && deNoticia && empresa?.segmento && buscaWebPronta()) {
     try {
       noticias = await buscaNoticias(empresa.segmento, 3);

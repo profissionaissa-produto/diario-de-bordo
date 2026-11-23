@@ -428,7 +428,7 @@ export default function MensagemCloser({ negocio, item, estrategia, label, onFec
                 {noticias.length > 0 && (
                   <div className="msg-videos">
                     <span className="ctx-lab">
-                      Notícias encontradas para este cliente. Confira a fonte.
+                      Conteúdos e notícias encontrados para este cliente. Confira a fonte.
                     </span>
                     <div className="vid-lista">
                       {noticias.map((n) => {

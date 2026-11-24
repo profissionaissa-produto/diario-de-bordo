@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { clienteDo, palestranteDo } from "../lib/tramitacoes";
 import { abordagensDa, emReais } from "../lib/financeiro";
+import { ticketUrl } from "../lib/config";
 import RegistroTramitacao from "./RegistroTramitacao";
 
 const dataBR = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : "");
@@ -24,7 +25,15 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
         <span>{c.texto}</span>
       </header>
 
-      <h4 className="tram-cliente">{cliente}</h4>
+      {/* O nome do cliente abre o ticket, do mesmo jeito que o nome do negócio
+          abre o negócio na tela do closer. O link existia só dentro da janela
+          de registro, e para conferir qualquer coisa do caso era preciso abrir
+          a janela ou procurar o ticket no HubSpot pelo nome. */}
+      <h4 className="tram-cliente">
+        <a className="deal-link" href={ticketUrl(c.ticketId)} target="_blank" rel="noreferrer">
+          {cliente}
+        </a>
+      </h4>
       <div className="tram-meta">
         <span>{c.label}</span>
         {palestrante && <span>· {palestrante}</span>}

@@ -17,7 +17,20 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
   const valor = Number(String(c.cache).replace(",", ".")) || 0;
 
   return (
-    <article className={`tram-card n-${c.nivel}`}>
+    <article className={`tram-card fin-card n-${c.nivel}`}>
+      {/* O card inteiro abre o ticket. É um link esticado por cima do card, e
+          não um onClick no article, porque link de verdade mantém o clique do
+          meio, o ctrl-clique e o "abrir em nova aba" do botão direito.
+          O botão de marcar fica por cima dele, pela regra .fin-card > * no
+          globals.css. */}
+      <a
+        className="card-hub"
+        href={ticketUrl(c.ticketId)}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={`Abrir ${cliente} no HubSpot`}
+      />
+
       {/* A linha de cima é a parcela: é por ela que o card está nesta coluna,
           e é dela que sai a cor. */}
       <header className="tram-grav">
@@ -25,15 +38,7 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
         <span>{c.texto}</span>
       </header>
 
-      {/* O nome do cliente abre o ticket, do mesmo jeito que o nome do negócio
-          abre o negócio na tela do closer. O link existia só dentro da janela
-          de registro, e para conferir qualquer coisa do caso era preciso abrir
-          a janela ou procurar o ticket no HubSpot pelo nome. */}
-      <h4 className="tram-cliente">
-        <a className="deal-link" href={ticketUrl(c.ticketId)} target="_blank" rel="noreferrer">
-          {cliente}
-        </a>
-      </h4>
+      <h4 className="tram-cliente">{cliente}</h4>
       <div className="tram-meta">
         <span>{c.label}</span>
         {palestrante && <span>· {palestrante}</span>}

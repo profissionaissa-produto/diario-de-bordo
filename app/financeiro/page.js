@@ -214,13 +214,13 @@ export default async function Financeiro({ searchParams }) {
           {ladosNaTela.has("receber") && (
             <div className="kpi">
               <div className="lab">{LADO.receber.vencido}</div>
-              <div className="kpi-par">
+              <div className="kpi-par dinheiro">
                 <div>
-                  <div className="val">{emReais(comissao.bruta)}</div>
+                  <div className="val dinheiro">{emReais(comissao.bruta)}</div>
                   <div className="kpi-leg">bruto</div>
                 </div>
                 <div>
-                  <div className="val">{emReais(comissao.liquida)}</div>
+                  <div className="val dinheiro">{emReais(comissao.liquida)}</div>
                   <div className="kpi-leg">líquido</div>
                 </div>
               </div>
@@ -229,7 +229,7 @@ export default async function Financeiro({ searchParams }) {
           {ladosNaTela.has("pagar") && (
             <div className="kpi">
               <div className="lab">{LADO.pagar.vencido}</div>
-              <div className="val">{emReais(vencido.pagar)}</div>
+              <div className="val dinheiro">{emReais(vencido.pagar)}</div>
               <div className="sub">{LADO.pagar.somaDoVencido}</div>
             </div>
           )}

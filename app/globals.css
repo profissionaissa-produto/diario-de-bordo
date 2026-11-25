@@ -69,6 +69,10 @@ body {
 .kpi .sub { color: var(--ink); font-size: 13px; margin-top: 7px; }
 /* Dois números no mesmo card, com o mesmo peso. */
 .kpi-par { display: flex; gap: 26px; flex-wrap: wrap; }
+/* Valor em reais é largo: em 38px o par quebrava em duas linhas e virava
+   dois números empilhados em vez de lado a lado. */
+.kpi-par.dinheiro { gap: 20px; flex-wrap: nowrap; }
+.kpi .val.dinheiro { font-size: 24px; }
 /* A legenda de cada um é dado, não apoio: sai na cor cheia. Em cinza de 12px
    ela sumia no fundo do card. */
 .kpi-leg { color: var(--ink); font-size: 12.5px; font-weight: 600; margin-top: 6px; }

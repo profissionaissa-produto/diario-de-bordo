@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { clienteDo, palestranteDo } from "../lib/tramitacoes";
-import { abordagensDa, emReais } from "../lib/financeiro";
+import { abordagensDa, emReais, valorDoTicket, textoDoLado } from "../lib/financeiro";
 import { ticketUrl } from "../lib/config";
 import RegistroTramitacao from "./RegistroTramitacao";
 
@@ -14,7 +14,10 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
   const assunto = ticket?.assunto || "";
   const cliente = clienteDo(assunto) || `Ticket ${c.ticketId}`;
   const palestrante = palestranteDo(assunto);
-  const valor = Number(String(c.cache).replace(",", ".")) || 0;
+  // O valor que o lado da etapa promete: o que o cliente deve nas etapas de
+  // cobrança, o cachê nas de repasse ao palestrante.
+  const valor = valorDoTicket(c);
+  const lado = textoDoLado(c.etapa);
 
   return (
     <article className={`tram-card fin-card n-${c.nivel}`}>
@@ -61,7 +64,10 @@ export default function FinanceiroCard({ c, ticket, estrategias, ehGestor }) {
       )}
 
       <div className="tram-meta">
-        {valor > 0 && <span>cachê {emReais(valor)}</span>}
+        {/* Quem paga quem. Sem isto, "pagamento" nomeia duas coisas opostas
+            no mesmo quadro e o card não diz de qual se trata. */}
+        {lado && <span className="fin-lado">{lado.quem}</span>}
+        {valor > 0 && <span>{lado ? lado.curto : "valor"} {emReais(valor)}</span>}
         {c.pagamentoPalestrante && <span>· palestrante {dataBR(c.pagamentoPalestrante)}</span>}
       </div>
 

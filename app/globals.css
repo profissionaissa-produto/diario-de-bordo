@@ -1086,6 +1086,10 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 /* Card do financeiro: o card inteiro abre o ticket no HubSpot.
    Só o nome do cliente clicável era alvo pequeno e ninguém adivinhava que
    dava para clicar. */
+/* Quem paga quem. É a primeira coisa a ler no card: cobrar um cliente e
+   repassar um cachê são trabalhos opostos com o mesmo nome de "pagamento". */
+.fin-lado { font-weight: 700; color: var(--ink); }
+
 .fin-card { position: relative; cursor: pointer; }
 .fin-card:hover { border-color: var(--azul); }
 /* O link esticado cobre o card inteiro. O texto embaixo dele continua

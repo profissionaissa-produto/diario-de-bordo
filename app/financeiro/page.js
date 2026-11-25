@@ -21,7 +21,8 @@ import {
   cartaoFinanceiro,
   porSituacao,
   placarFinanceiro,
-  somaCache,
+  somaPorLado,
+  LADO,
   emReais,
   SITUACOES,
 } from "../../lib/financeiro";
@@ -95,7 +96,7 @@ export default async function Financeiro({ searchParams }) {
   const lista = etapaSel ? todos.filter((c) => c.etapa === etapaSel) : todos;
   const grupos = porSituacao(lista);
   const pl = placarFinanceiro(lista);
-  const vencido = somaCache(grupos.vencida);
+  const vencido = somaPorLado(grupos.vencida);
 
   const ticketsById = Object.fromEntries(tickets.map((t) => [t.id, t]));
 
@@ -186,15 +187,24 @@ export default async function Financeiro({ searchParams }) {
             <div className="val a">{pl.hoje}</div>
             <div className="sub">cai hoje, é o dia de cobrar</div>
           </div>
+          {/* Dois totais, nunca um só. São pontas opostas do caixa: o cliente
+              deve à PSA nas etapas de faturar e confirmar pagamento, e a PSA
+              deve ao palestrante nas de NF e repasse. Somar junto dava um
+              número que não responde pergunta nenhuma. */}
           <div className="kpi">
-            <div className="lab">Em cachê vencido</div>
-            <div className="val">{emReais(vencido)}</div>
-            <div className="sub">soma do cachê dos tickets vencidos</div>
+            <div className="lab">{LADO.receber.vencido}</div>
+            <div className="val">{emReais(vencido.receber)}</div>
+            <div className="sub">{LADO.receber.somaDoVencido}</div>
+          </div>
+          <div className="kpi">
+            <div className="lab">{LADO.pagar.vencido}</div>
+            <div className="val">{emReais(vencido.pagar)}</div>
+            <div className="sub">{LADO.pagar.somaDoVencido}</div>
           </div>
           <div className="kpi">
             <div className="lab">Tickets</div>
             <div className="val">{lista.length}</div>
-            <div className="sub">{etapaSel ? "na etapa escolhida" : "nas quatro etapas"}</div>
+            <div className="sub">{etapaSel ? "na etapa escolhida" : "nas cinco etapas"}</div>
           </div>
         </div>
       )}

@@ -73,6 +73,23 @@ body {
    dois números empilhados em vez de lado a lado. */
 .kpi-par.dinheiro { gap: 20px; flex-wrap: nowrap; }
 .kpi .val.dinheiro { font-size: 24px; }
+
+/* O financeiro tem um card com quatro números, então a grade dele flui em vez
+   de travar em quatro colunas iguais. */
+.kpis.fin { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.kpi.largo { grid-column: span 2; }
+
+/* Em aberto e vencido, bruto e líquido. Quatro números numa tabela pequena,
+   porque em cards separados viram quatro caixas para ler uma comparação. */
+.kpi-tab { border-collapse: collapse; margin-top: 10px; width: 100%; }
+.kpi-tab th, .kpi-tab td { text-align: right; padding: 5px 0 5px 16px; }
+.kpi-tab thead th { color: var(--muted); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .3px; text-transform: uppercase; }
+.kpi-tab tbody th { text-align: left; padding-left: 0; color: var(--ink);
+  font-size: 13px; font-weight: 600; white-space: nowrap; }
+.kpi-tab tbody td { font-family: "Bruta Pro"; font-size: 22px; line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: var(--ink); }
+.kpi-tab tr.vencido td { color: var(--laranja); }
 /* A legenda de cada um é dado, não apoio: sai na cor cheia. Em cinza de 12px
    ela sumia no fundo do card. */
 .kpi-leg { color: var(--ink); font-size: 12.5px; font-weight: 600; margin-top: 6px; }
@@ -352,7 +369,14 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
   border: 0; font: inherit; font-weight: 600; font-size: 15px; padding: 13px 22px; border-radius: 12px;
   cursor: pointer; transition: .15s; }
 .gbtn:hover { background: var(--laranja-forte); }
-@media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } .title { font-size: 24px; } }
+@media (max-width: 720px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  /* No telefone o card de quatro números ocupa a largura toda, senão a tabela
+     dele espreme as duas colunas de valor. */
+  .kpis.fin { grid-template-columns: 1fr; }
+  .kpi.largo { grid-column: auto; }
+  .title { font-size: 24px; }
+}
 
 .aprov-pfp { width: 34px; height: 34px; border-radius: 999px; background: var(--azul); color: #fff;
   display: grid; place-items: center; font-weight: 700; font-size: 12px; overflow: hidden; flex: none; }

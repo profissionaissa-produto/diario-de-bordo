@@ -97,8 +97,12 @@ export default async function Financeiro({ searchParams }) {
   const lista = etapaSel ? todos.filter((c) => c.etapa === etapaSel) : todos;
   const grupos = porSituacao(lista);
   const pl = placarFinanceiro(lista);
+  // Vencido e em aberto, os dois. Só o vencido esconde o que está por vir, e é
+  // em cima do que está em aberto que o financeiro decide o dia.
   const vencido = somaPorLado(grupos.vencida);
-  const comissao = somaComissao(grupos.vencida);
+  const aberto = somaPorLado(lista);
+  const comissaoVencida = somaComissao(grupos.vencida);
+  const comissaoAberta = somaComissao(lista);
   // Só os lados que estão na tela. Filtrando por uma etapa de recebimento, o
   // total a pagar seria sempre zero, e card zerado ocupa espaço dizendo nada.
   const ladosNaTela = new Set(lista.map((c) => c.lado).filter(Boolean));
@@ -181,7 +185,7 @@ export default async function Financeiro({ searchParams }) {
       {!dbReady() && <div className="card"><div className="cal-empty">Banco não configurado.</div></div>}
 
       {!erro && (
-        <div className="kpis">
+        <div className="kpis fin">
           {/* Os dois números com o mesmo peso, no mesmo card. Eram dois cards,
               e o segundo só dizia o denominador do primeiro. Virar legenda
               cinza embaixo do número grande não é mesclar: some na tela e dá
@@ -208,29 +212,48 @@ export default async function Financeiro({ searchParams }) {
               deve à PSA nas etapas de faturar e confirmar pagamento, e a PSA
               deve ao palestrante nas de NF e repasse. Somar junto dava um
               número que não responde pergunta nenhuma. */}
-          {/* Bruto e líquido no mesmo card. São as duas perguntas que o
-              financeiro faz junto: quanto o cliente deve e quanto sobra para
-              a PSA depois dos descontos. */}
+          {/* Em aberto e vencido, bruto e líquido, no mesmo card. Mostrar só o
+              vencido esconde o que está por vir, e é em cima do que está em
+              aberto que o financeiro decide onde atuar. */}
           {ladosNaTela.has("receber") && (
-            <div className="kpi">
-              <div className="lab">{LADO.receber.vencido}</div>
-              <div className="kpi-par dinheiro">
-                <div>
-                  <div className="val dinheiro">{emReais(comissao.bruta)}</div>
-                  <div className="kpi-leg">bruto</div>
-                </div>
-                <div>
-                  <div className="val dinheiro">{emReais(comissao.liquida)}</div>
-                  <div className="kpi-leg">líquido</div>
-                </div>
-              </div>
+            <div className="kpi largo">
+              <div className="lab">{LADO.receber.titulo}</div>
+              <table className="kpi-tab">
+                <thead>
+                  <tr>
+                    <th />
+                    <th>Bruto</th>
+                    <th>Líquido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>Em aberto</th>
+                    <td>{emReais(comissaoAberta.bruta)}</td>
+                    <td>{emReais(comissaoAberta.liquida)}</td>
+                  </tr>
+                  <tr className="vencido">
+                    <th>Vencido</th>
+                    <td>{emReais(comissaoVencida.bruta)}</td>
+                    <td>{emReais(comissaoVencida.liquida)}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           )}
           {ladosNaTela.has("pagar") && (
             <div className="kpi">
-              <div className="lab">{LADO.pagar.vencido}</div>
-              <div className="val dinheiro">{emReais(vencido.pagar)}</div>
-              <div className="sub">{LADO.pagar.somaDoVencido}</div>
+              <div className="lab">{LADO.pagar.titulo}</div>
+              <div className="kpi-par dinheiro">
+                <div>
+                  <div className="val dinheiro">{emReais(aberto.pagar)}</div>
+                  <div className="kpi-leg">em aberto</div>
+                </div>
+                <div>
+                  <div className="val dinheiro o">{emReais(vencido.pagar)}</div>
+                  <div className="kpi-leg">vencido</div>
+                </div>
+              </div>
             </div>
           )}
         </div>

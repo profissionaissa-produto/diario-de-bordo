@@ -17,6 +17,7 @@ import { podeVerFinanceiro, podeVerTramitacoes, podeVerEvolucao, podeConfigurar,
 import { PIPELINE_CS, ETAPAS_TICKET, gravidade } from "../../lib/tramitacoes";
 import {
   ETAPAS_FINANCEIRO,
+  ticketEncerradoPelaEtiqueta,
   cartaoFinanceiro,
   porSituacao,
   placarFinanceiro,
@@ -53,6 +54,11 @@ export default async function Financeiro({ searchParams }) {
   let erro = null;
   try {
     tickets = await getTicketsCS(PIPELINE_CS, ETAPAS_FINANCEIRO);
+    // Em Confirmar PGTO Palestrante a etiqueta "Palestrante Pago" encerra o
+    // ticket: o repasse saiu e não há o que cobrar. Medido em 25/11/2026: 19
+    // dos 48 da etapa já estavam assim, e sem este corte a tela abriria com
+    // 19 cobranças que ninguém precisa fazer.
+    tickets = tickets.filter((t) => !ticketEncerradoPelaEtiqueta(t.etapa, t.etiquetas));
   } catch (e) {
     console.error("[financeiro] falha ao buscar tickets:", e);
     erro = e;

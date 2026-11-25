@@ -102,6 +102,10 @@ export const SLA: Record<string, Regra> = {
   '1451268423': { label: 'Coletar NPS e Fotos', ordem: 7, tipo: 'relogio' },
   '1088361911': { label: 'Confirmar PGTO Pós palestra', ordem: 8, tipo: 'relogio' },
   '1333136740': { label: 'Solicitar NF Palestrante', ordem: 9, tipo: 'dias', dias: 20 },
+  // Etapa criada pelo CS em 16/11/2026. Entra no Diário em 25/11/2026, só no
+  // segmento Financeiro. Sem prazo acordado, então relógio: mostra o tempo
+  // parado em vez de inventar um limite.
+  '1486821674': { label: 'Confirmar PGTO Palestrante', ordem: 10, tipo: 'relogio' },
   // O HubSpot jogou "Em andamento" para o fim do board e ela está com zero
   // ticket. Fica aqui porque continua aberta lá, e some do quadro sozinha
   // enquanto ninguém a usar.

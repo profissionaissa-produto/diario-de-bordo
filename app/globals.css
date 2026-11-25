@@ -77,13 +77,17 @@ body {
 /* A grade do financeiro é a mesma de quatro colunas do resto do painel. Teve
    uma versão com auto-fit e um card ocupando duas colunas, e ela deixava o
    conteúdo de dentro mandar na largura: a página abria barra de rolagem.
-   align-items: start porque card de grade estica até a altura do mais alto, e
-   aqui um card tem quatro números e o outro tem dois: os curtos ficavam com um
-   vão de espaço vazio embaixo.
    min-width: 0 para o card poder encolher abaixo do conteúdo em vez de
-   empurrar a linha. */
-.kpis.fin { align-items: start; }
-.kpis.fin .kpi { min-width: 0; overflow: hidden; }
+   empurrar a linha.
+   Card nenhum pode ser maior que o outro, então eles seguem esticando até a
+   altura do mais alto. Cheguei a pôr align-items: start para matar o vão de
+   espaço embaixo dos curtos, e aí eles ficaram de tamanhos diferentes, que é
+   pior. O vão se resolve pelo conteúdo: ele se espalha na altura toda em vez
+   de se amontoar em cima. */
+.kpis.fin .kpi { min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+/* O último bloco do card desce para o rodapé: é ele que ocupa o vão em vez de
+   deixá-lo vazio embaixo. */
+.kpis.fin .kpi > :last-child { margin-top: auto; }
 
 /* Em aberto e vencido cruzados com bruto e líquido.
    Grade CSS e não tabela: tabela HTML cresce além do container para caber o
@@ -382,6 +386,9 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
   /* No telefone o card dos quatro números ocupa a largura toda, senão as duas
      colunas de valor ficam espremidas demais para ler. */
   .kpis.fin { grid-template-columns: 1fr; }
+  /* Em coluna única a altura igual não vale: cada card fica do seu tamanho e
+     ninguém compara lado a lado. */
+  .kpis.fin .kpi > :last-child { margin-top: 0; }
   .title { font-size: 24px; }
 }
 

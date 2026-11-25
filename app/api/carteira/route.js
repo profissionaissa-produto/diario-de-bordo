@@ -173,7 +173,7 @@ export async function PATCH(req) {
     }
     // Contato registrado deixa rastro no CRM. Antes não deixava: o farmer
     // marcava "falei", e no HubSpot não havia nada que mostrasse a conversa.
-    // Ninguém conseguia conferir depois, e a janela de 30 dias que tira a
+    // Ninguém conseguia conferir depois, e a janela sem contato que tira a
     // empresa do rodízio passou a se apoiar nisso.
     //
     // A nota diz o que saiu pelo Diário e, quando não saiu nada, diz isso com

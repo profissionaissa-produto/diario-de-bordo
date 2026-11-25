@@ -11,7 +11,7 @@ const quem = (s) => s.user.name || s.user.email;
 // A ação "troca" saiu em 25/11/2026 junto com o painel que a chamava. Ela
 // resolvia um pedido de troca de segmento, e ninguém resolvia: a fila parada
 // mantinha 44 empresas fora do rodízio. Agora elas voltam a ser listadas, com
-// o mesmo portão de todas, que é não ter contato nos últimos 30 dias.
+// o mesmo portão de todas, que é não ter contato nos últimos 15 dias.
 export async function POST(req) {
   const session = await auth();
   if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });

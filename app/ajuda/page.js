@@ -145,7 +145,7 @@ export default async function Ajuda() {
           <p className="ajuda-nota">
             Trocar de segmento fica registrado no resultado do dia e serve para quem for arrumar
             o cadastro no HubSpot. A empresa continua no rodízio e volta a ser listada quando
-            completar 30 dias sem contato, como todas as outras.
+            completar 15 dias sem contato, como todas as outras.
           </p>
         </section>
 

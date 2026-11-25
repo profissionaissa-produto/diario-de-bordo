@@ -74,29 +74,30 @@ body {
 .kpi-par.dinheiro { gap: 20px; flex-wrap: nowrap; }
 .kpi .val.dinheiro { font-size: 24px; }
 
-/* O financeiro tem um card com quatro números, então a grade dele flui em vez
-   de travar em quatro colunas iguais. */
-/* align-items: start porque card de grade estica até a altura do mais alto, e
+/* A grade do financeiro é a mesma de quatro colunas do resto do painel. Teve
+   uma versão com auto-fit e um card ocupando duas colunas, e ela deixava o
+   conteúdo de dentro mandar na largura: a página abria barra de rolagem.
+   align-items: start porque card de grade estica até a altura do mais alto, e
    aqui um card tem quatro números e o outro tem dois: os curtos ficavam com um
-   vão de espaço vazio embaixo. */
-.kpis.fin { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-items: start; }
-/* min-width: 0 porque item de grade não encolhe abaixo do conteúdo por
-   padrão, e sem isso a tabela de dentro empurrava a largura. */
-.kpi.largo { grid-column: span 2; min-width: 0; }
+   vão de espaço vazio embaixo.
+   min-width: 0 para o card poder encolher abaixo do conteúdo em vez de
+   empurrar a linha. */
+.kpis.fin { align-items: start; }
+.kpis.fin .kpi { min-width: 0; overflow: hidden; }
 
 /* Em aberto e vencido cruzados com bruto e líquido.
-   table-layout: fixed é o que segura a tabela dentro do card. Com o padrão,
-   que é auto, ela cresce além do container para caber o conteúdo, e os valores
-   saíam para fora da borda cinza. */
-.kpi-tab { border-collapse: collapse; margin-top: 10px; width: 100%; table-layout: fixed; }
-.kpi-tab th, .kpi-tab td { text-align: right; padding: 5px 0 5px 14px; }
-.kpi-tab thead th { color: var(--muted); font-size: 11.5px; font-weight: 600;
-  letter-spacing: .3px; text-transform: uppercase; }
-.kpi-tab tbody th { text-align: left; padding-left: 0; color: var(--ink);
-  font-size: 13px; font-weight: 600; }
-.kpi-tab tbody td { font-family: "Bruta Pro"; font-size: 21px; line-height: 1.2;
-  font-variant-numeric: tabular-nums; color: var(--ink); }
-.kpi-tab tr.vencido td { color: var(--laranja); }
+   Grade CSS e não tabela: tabela HTML cresce além do container para caber o
+   conteúdo, e era isso que empurrava os valores para fora do card e abria
+   barra de rolagem na página inteira. minmax(0, 1fr) é o que deixa a coluna
+   encolher em vez de empurrar. */
+.kpi-quadro { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px 12px; margin-top: 10px; align-items: baseline; }
+.kpi-quadro .qh { color: var(--muted); font-size: 11px; font-weight: 600;
+  letter-spacing: .3px; text-transform: uppercase; text-align: right; }
+.kpi-quadro .ql { color: var(--ink); font-size: 13px; font-weight: 600; }
+.kpi-quadro .qv { font-family: "Bruta Pro"; font-size: 19px; line-height: 1.2;
+  font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
+.kpi-quadro .qv.o { color: var(--laranja); }
 /* A legenda de cada um é dado, não apoio: sai na cor cheia. Em cinza de 12px
    ela sumia no fundo do card. */
 .kpi-leg { color: var(--ink); font-size: 12.5px; font-weight: 600; margin-top: 6px; }
@@ -378,10 +379,9 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .gbtn:hover { background: var(--laranja-forte); }
 @media (max-width: 720px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
-  /* No telefone o card de quatro números ocupa a largura toda, senão a tabela
-     dele espreme as duas colunas de valor. */
+  /* No telefone o card dos quatro números ocupa a largura toda, senão as duas
+     colunas de valor ficam espremidas demais para ler. */
   .kpis.fin { grid-template-columns: 1fr; }
-  .kpi.largo { grid-column: auto; }
   .title { font-size: 24px; }
 }
 

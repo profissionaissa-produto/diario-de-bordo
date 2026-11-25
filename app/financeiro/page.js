@@ -216,29 +216,24 @@ export default async function Financeiro({ searchParams }) {
               vencido esconde o que está por vir, e é em cima do que está em
               aberto que o financeiro decide onde atuar. */}
           {ladosNaTela.has("receber") && (
-            <div className="kpi largo">
+            <div className="kpi">
               <div className="lab">{LADO.receber.titulo}</div>
-              <table className="kpi-tab">
-                <thead>
-                  <tr>
-                    <th scope="col" />
-                    <th scope="col">Bruto</th>
-                    <th scope="col">Líquido</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">Em aberto</th>
-                    <td>{emReais(comissaoAberta.bruta)}</td>
-                    <td>{emReais(comissaoAberta.liquida)}</td>
-                  </tr>
-                  <tr className="vencido">
-                    <th scope="row">Vencido</th>
-                    <td>{emReais(comissaoVencida.bruta)}</td>
-                    <td>{emReais(comissaoVencida.liquida)}</td>
-                  </tr>
-                </tbody>
-              </table>
+              {/* Grade CSS, não tabela. Tabela HTML cresce além do container
+                  para caber o conteúdo, e era isso que empurrava os valores
+                  para fora do card e abria barra de rolagem na página. */}
+              <div className="kpi-quadro">
+                <span />
+                <span className="qh">Bruto</span>
+                <span className="qh">Líquido</span>
+
+                <span className="ql">Em aberto</span>
+                <span className="qv">{emReais(comissaoAberta.bruta)}</span>
+                <span className="qv">{emReais(comissaoAberta.liquida)}</span>
+
+                <span className="ql">Vencido</span>
+                <span className="qv o">{emReais(comissaoVencida.bruta)}</span>
+                <span className="qv o">{emReais(comissaoVencida.liquida)}</span>
+              </div>
             </div>
           )}
           {ladosNaTela.has("pagar") && (

@@ -187,6 +187,8 @@ async function dadosDoPrompt(c) {
     objetivo: c.negocio.objetivoEvento || "",
     segmento: empresa?.segmento || "",
     empresa: empresa?.nome || "",
+    // Para a busca não devolver o site do próprio cliente como notícia.
+    dominio: empresa?.dominio || "",
   };
   let noticias = [];
   if (

@@ -22,6 +22,7 @@ import {
   porSituacao,
   placarFinanceiro,
   somaPorLado,
+  somaComissao,
   LADO,
   emReais,
   SITUACOES,
@@ -97,6 +98,7 @@ export default async function Financeiro({ searchParams }) {
   const grupos = porSituacao(lista);
   const pl = placarFinanceiro(lista);
   const vencido = somaPorLado(grupos.vencida);
+  const comissao = somaComissao(grupos.vencida);
   // Só os lados que estão na tela. Filtrando por uma etapa de recebimento, o
   // total a pagar seria sempre zero, e card zerado ocupa espaço dizendo nada.
   const ladosNaTela = new Set(lista.map((c) => c.lado).filter(Boolean));
@@ -206,11 +208,22 @@ export default async function Financeiro({ searchParams }) {
               deve à PSA nas etapas de faturar e confirmar pagamento, e a PSA
               deve ao palestrante nas de NF e repasse. Somar junto dava um
               número que não responde pergunta nenhuma. */}
+          {/* Bruto e líquido no mesmo card. São as duas perguntas que o
+              financeiro faz junto: quanto o cliente deve e quanto sobra para
+              a PSA depois dos descontos. */}
           {ladosNaTela.has("receber") && (
             <div className="kpi">
               <div className="lab">{LADO.receber.vencido}</div>
-              <div className="val">{emReais(vencido.receber)}</div>
-              <div className="sub">{LADO.receber.somaDoVencido}</div>
+              <div className="kpi-par">
+                <div>
+                  <div className="val">{emReais(comissao.bruta)}</div>
+                  <div className="kpi-leg">bruto</div>
+                </div>
+                <div>
+                  <div className="val">{emReais(comissao.liquida)}</div>
+                  <div className="kpi-leg">líquido</div>
+                </div>
+              </div>
             </div>
           )}
           {ladosNaTela.has("pagar") && (

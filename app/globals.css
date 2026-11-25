@@ -79,17 +79,13 @@ body {
 .kpis.fin { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
 .kpi.largo { grid-column: span 2; }
 
-/* Em aberto e vencido, bruto e líquido. Quatro números numa tabela pequena,
-   porque em cards separados viram quatro caixas para ler uma comparação. */
-.kpi-tab { border-collapse: collapse; margin-top: 10px; width: 100%; }
-.kpi-tab th, .kpi-tab td { text-align: right; padding: 5px 0 5px 16px; }
-.kpi-tab thead th { color: var(--muted); font-size: 11.5px; font-weight: 600;
-  letter-spacing: .3px; text-transform: uppercase; }
-.kpi-tab tbody th { text-align: left; padding-left: 0; color: var(--ink);
-  font-size: 13px; font-weight: 600; white-space: nowrap; }
-.kpi-tab tbody td { font-family: "Bruta Pro"; font-size: 22px; line-height: 1.15;
-  font-variant-numeric: tabular-nums; color: var(--ink); }
-.kpi-tab tr.vencido td { color: var(--laranja); }
+/* Em aberto e vencido, cada um com bruto e líquido. Tentei tabela e ela
+   estourou para fora do card: aqui é o mesmo par de números que os outros
+   cards usam, repetido em dois blocos. */
+.kpi-bloco { margin-top: 12px; }
+.kpi-bloco-tit { color: var(--ink); font-size: 12.5px; font-weight: 700;
+  letter-spacing: .2px; }
+.kpi-bloco .kpi-par { margin-top: 2px; }
 /* A legenda de cada um é dado, não apoio: sai na cor cheia. Em cinza de 12px
    ela sumia no fundo do card. */
 .kpi-leg { color: var(--ink); font-size: 12.5px; font-weight: 600; margin-top: 6px; }

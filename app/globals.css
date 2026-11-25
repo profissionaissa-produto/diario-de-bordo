@@ -65,6 +65,11 @@ body {
 .kpi .val { font-family: "Bruta Pro"; font-size: 38px; line-height: 1; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .kpi .val.o { color: var(--laranja); } .kpi .val.a { color: var(--azul); }
 .kpi .sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
+/* Dois números no mesmo card, com o mesmo peso. */
+.kpi-par { display: flex; gap: 26px; flex-wrap: wrap; }
+/* A legenda de cada um é dado, não apoio: sai na cor cheia. Em cinza de 12px
+   ela sumia no fundo do card. */
+.kpi-leg { color: var(--ink); font-size: 12.5px; font-weight: 600; margin-top: 6px; }
 
 .card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
 .tscroll { overflow-x: auto; }

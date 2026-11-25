@@ -180,15 +180,21 @@ export default async function Financeiro({ searchParams }) {
 
       {!erro && (
         <div className="kpis">
-          {/* Vencidas e total no mesmo card. Eram dois, e o segundo só dizia
-              o denominador do primeiro. O total fica na linha de baixo, que é
-              onde os outros cards põem o contexto: dentro do número grande
-              ele competia com o que importa ler. */}
+          {/* Os dois números com o mesmo peso, no mesmo card. Eram dois cards,
+              e o segundo só dizia o denominador do primeiro. Virar legenda
+              cinza embaixo do número grande não é mesclar: some na tela e dá
+              destaque só a metade da informação. */}
           <div className="kpi">
-            <div className="lab">Vencidas</div>
-            <div className="val o">{pl.vencida}</div>
-            <div className="sub">
-              de {lista.length} {etapaSel ? "na etapa escolhida" : "nas cinco etapas"}
+            <div className="lab">Tickets</div>
+            <div className="kpi-par">
+              <div>
+                <div className="val o">{pl.vencida}</div>
+                <div className="kpi-leg">vencidas</div>
+              </div>
+              <div>
+                <div className="val">{lista.length}</div>
+                <div className="kpi-leg">{etapaSel ? "na etapa" : "nas cinco etapas"}</div>
+              </div>
             </div>
           </div>
           <div className="kpi">

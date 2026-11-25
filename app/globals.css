@@ -77,15 +77,23 @@ body {
 /* O financeiro tem um card com quatro números, então a grade dele flui em vez
    de travar em quatro colunas iguais. */
 .kpis.fin { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-.kpi.largo { grid-column: span 2; }
+/* min-width: 0 porque item de grade não encolhe abaixo do conteúdo por
+   padrão, e sem isso a tabela de dentro empurrava a largura. */
+.kpi.largo { grid-column: span 2; min-width: 0; }
 
-/* Em aberto e vencido, cada um com bruto e líquido. Tentei tabela e ela
-   estourou para fora do card: aqui é o mesmo par de números que os outros
-   cards usam, repetido em dois blocos. */
-.kpi-bloco { margin-top: 12px; }
-.kpi-bloco-tit { color: var(--ink); font-size: 12.5px; font-weight: 700;
-  letter-spacing: .2px; }
-.kpi-bloco .kpi-par { margin-top: 2px; }
+/* Em aberto e vencido cruzados com bruto e líquido.
+   table-layout: fixed é o que segura a tabela dentro do card. Com o padrão,
+   que é auto, ela cresce além do container para caber o conteúdo, e os valores
+   saíam para fora da borda cinza. */
+.kpi-tab { border-collapse: collapse; margin-top: 10px; width: 100%; table-layout: fixed; }
+.kpi-tab th, .kpi-tab td { text-align: right; padding: 5px 0 5px 14px; }
+.kpi-tab thead th { color: var(--muted); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .3px; text-transform: uppercase; }
+.kpi-tab tbody th { text-align: left; padding-left: 0; color: var(--ink);
+  font-size: 13px; font-weight: 600; }
+.kpi-tab tbody td { font-family: "Bruta Pro"; font-size: 21px; line-height: 1.2;
+  font-variant-numeric: tabular-nums; color: var(--ink); }
+.kpi-tab tr.vencido td { color: var(--laranja); }
 /* A legenda de cada um é dado, não apoio: sai na cor cheia. Em cinza de 12px
    ela sumia no fundo do card. */
 .kpi-leg { color: var(--ink); font-size: 12.5px; font-weight: 600; margin-top: 6px; }

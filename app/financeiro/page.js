@@ -218,32 +218,27 @@ export default async function Financeiro({ searchParams }) {
           {ladosNaTela.has("receber") && (
             <div className="kpi largo">
               <div className="lab">{LADO.receber.titulo}</div>
-              <div className="kpi-bloco">
-                <div className="kpi-bloco-tit">Em aberto</div>
-                <div className="kpi-par dinheiro">
-                  <div>
-                    <div className="val dinheiro">{emReais(comissaoAberta.bruta)}</div>
-                    <div className="kpi-leg">bruto</div>
-                  </div>
-                  <div>
-                    <div className="val dinheiro">{emReais(comissaoAberta.liquida)}</div>
-                    <div className="kpi-leg">líquido</div>
-                  </div>
-                </div>
-              </div>
-              <div className="kpi-bloco">
-                <div className="kpi-bloco-tit">Vencido</div>
-                <div className="kpi-par dinheiro">
-                  <div>
-                    <div className="val dinheiro o">{emReais(comissaoVencida.bruta)}</div>
-                    <div className="kpi-leg">bruto</div>
-                  </div>
-                  <div>
-                    <div className="val dinheiro o">{emReais(comissaoVencida.liquida)}</div>
-                    <div className="kpi-leg">líquido</div>
-                  </div>
-                </div>
-              </div>
+              <table className="kpi-tab">
+                <thead>
+                  <tr>
+                    <th scope="col" />
+                    <th scope="col">Bruto</th>
+                    <th scope="col">Líquido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">Em aberto</th>
+                    <td>{emReais(comissaoAberta.bruta)}</td>
+                    <td>{emReais(comissaoAberta.liquida)}</td>
+                  </tr>
+                  <tr className="vencido">
+                    <th scope="row">Vencido</th>
+                    <td>{emReais(comissaoVencida.bruta)}</td>
+                    <td>{emReais(comissaoVencida.liquida)}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           )}
           {ladosNaTela.has("pagar") && (

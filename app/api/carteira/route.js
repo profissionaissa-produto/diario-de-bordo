@@ -1,9 +1,8 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail, criarNotaNaEmpresa } from "../../../lib/hubspot";
+import { getOwnerByEmail, criarNotaNaEmpresa, registrarContatoNaEmpresa, canalGravaAtividade } from "../../../lib/hubspot";
 import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, iniciarDiaCarteira, mensagensDoDia, dbReady } from "../../../lib/db";
 import { gravarNoHubspot } from "../../../lib/carteira-hubspot";
 import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO, CONTATO_FEITO } from "../../../lib/carteira";
-import { rotuloCanal } from "../../../lib/canal";
 import { montaEstrategias, semOcultas } from "../../../lib/estrategias";
 import { SEG_TRAMITACOES } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
@@ -41,17 +40,37 @@ const RESULTADO_LABEL = { efetivo: "falou com a empresa", tentativa: "tentou, se
 async function registraContatoNoCrm({ companyId, dia, resultado, observacao, ownerId, quem }) {
   try {
     const msgs = await mensagensDoDia(companyId, dia);
+
+    // Cada mensagem que saiu pelo Diário vira a ATIVIDADE do canal dela:
+    // WhatsApp e e-mail viram comunicação, ligação vira chamada.
+    //
+    // Era nota até 25/11/2026, e nota não é contato para o HubSpot: ela move
+    // o notes_last_updated e não move o notes_last_contacted. A empresa saía
+    // do rodízio por 30 dias como se tivesse sido contatada e, ao mesmo
+    // tempo, aparecia como não contatada em todo relatório. Medido na
+    // carteira da Francielle Lenz: 18 empresas trabalhadas pelo Diário que o
+    // CRM dava como paradas há até 77 dias.
+    const comAtividade = msgs.filter((m) => canalGravaAtividade(m.canal));
+    for (const m of comAtividade) {
+      const corpo = [
+        `<p><b>Diário de bordo · ${RESULTADO_LABEL[resultado] || resultado}</b></p>`,
+        observacao ? `<p>${observacao.replace(/\n/g, "<br>")}</p>` : "",
+        `<p>${String(m.texto || "").replace(/\n/g, "<br>")}</p>`,
+        `<p><i>registrado por ${quem}</i></p>`,
+      ]
+        .filter(Boolean)
+        .join("");
+      await registrarContatoNaEmpresa(companyId, { canal: m.canal, corpo, ownerId });
+    }
+    if (comAtividade.length) return "";
+
+    // Sem mensagem pelo Diário não há o que registrar como atividade: o
+    // contato foi por fora e a evidência é a palavra de quem marcou. Nota,
+    // e dizendo isso com todas as letras.
     const corpo = [
       `<p><b>Diário de bordo · ${RESULTADO_LABEL[resultado] || resultado}</b></p>`,
       observacao ? `<p>${observacao.replace(/\n/g, "<br>")}</p>` : "",
-      msgs.length
-        ? msgs
-            .map(
-              (m) =>
-                `<p><b>${rotuloCanal(m.canal) || m.canal}</b><br>${String(m.texto || "").replace(/\n/g, "<br>")}</p>`
-            )
-            .join("")
-        : "<p><i>Nenhuma mensagem saiu pelo Diário neste dia. O contato foi registrado à mão.</i></p>",
+      "<p><i>Nenhuma mensagem saiu pelo Diário neste dia. O contato foi registrado à mão.</i></p>",
       `<p><i>registrado por ${quem}</i></p>`,
     ]
       .filter(Boolean)

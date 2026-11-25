@@ -181,16 +181,14 @@ export default async function Financeiro({ searchParams }) {
       {!erro && (
         <div className="kpis">
           {/* Vencidas e total no mesmo card. Eram dois, e o segundo só dizia
-              o denominador do primeiro: separados viravam duas caixas para ler
-              uma fração. */}
+              o denominador do primeiro. O total fica na linha de baixo, que é
+              onde os outros cards põem o contexto: dentro do número grande
+              ele competia com o que importa ler. */}
           <div className="kpi">
             <div className="lab">Vencidas</div>
-            <div className="val o">
-              {pl.vencida}
-              <span className="kpi-de"> de {lista.length}</span>
-            </div>
+            <div className="val o">{pl.vencida}</div>
             <div className="sub">
-              data combinada já passou · {etapaSel ? "na etapa escolhida" : "nas cinco etapas"}
+              de {lista.length} {etapaSel ? "na etapa escolhida" : "nas cinco etapas"}
             </div>
           </div>
           <div className="kpi">

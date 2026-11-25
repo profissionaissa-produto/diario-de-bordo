@@ -76,7 +76,10 @@ body {
 
 /* O financeiro tem um card com quatro números, então a grade dele flui em vez
    de travar em quatro colunas iguais. */
-.kpis.fin { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+/* align-items: start porque card de grade estica até a altura do mais alto, e
+   aqui um card tem quatro números e o outro tem dois: os curtos ficavam com um
+   vão de espaço vazio embaixo. */
+.kpis.fin { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); align-items: start; }
 /* min-width: 0 porque item de grade não encolhe abaixo do conteúdo por
    padrão, e sem isso a tabela de dentro empurrava a largura. */
 .kpi.largo { grid-column: span 2; min-width: 0; }

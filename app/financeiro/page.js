@@ -97,6 +97,9 @@ export default async function Financeiro({ searchParams }) {
   const grupos = porSituacao(lista);
   const pl = placarFinanceiro(lista);
   const vencido = somaPorLado(grupos.vencida);
+  // Só os lados que estão na tela. Filtrando por uma etapa de recebimento, o
+  // total a pagar seria sempre zero, e card zerado ocupa espaço dizendo nada.
+  const ladosNaTela = new Set(lista.map((c) => c.lado).filter(Boolean));
 
   const ticketsById = Object.fromEntries(tickets.map((t) => [t.id, t]));
 
@@ -191,16 +194,20 @@ export default async function Financeiro({ searchParams }) {
               deve à PSA nas etapas de faturar e confirmar pagamento, e a PSA
               deve ao palestrante nas de NF e repasse. Somar junto dava um
               número que não responde pergunta nenhuma. */}
-          <div className="kpi">
-            <div className="lab">{LADO.receber.vencido}</div>
-            <div className="val">{emReais(vencido.receber)}</div>
-            <div className="sub">{LADO.receber.somaDoVencido}</div>
-          </div>
-          <div className="kpi">
-            <div className="lab">{LADO.pagar.vencido}</div>
-            <div className="val">{emReais(vencido.pagar)}</div>
-            <div className="sub">{LADO.pagar.somaDoVencido}</div>
-          </div>
+          {ladosNaTela.has("receber") && (
+            <div className="kpi">
+              <div className="lab">{LADO.receber.vencido}</div>
+              <div className="val">{emReais(vencido.receber)}</div>
+              <div className="sub">{LADO.receber.somaDoVencido}</div>
+            </div>
+          )}
+          {ladosNaTela.has("pagar") && (
+            <div className="kpi">
+              <div className="lab">{LADO.pagar.vencido}</div>
+              <div className="val">{emReais(vencido.pagar)}</div>
+              <div className="sub">{LADO.pagar.somaDoVencido}</div>
+            </div>
+          )}
           <div className="kpi">
             <div className="lab">Tickets</div>
             <div className="val">{lista.length}</div>

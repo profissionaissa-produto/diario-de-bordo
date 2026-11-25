@@ -189,6 +189,10 @@ async function dadosDoPrompt(c) {
     empresa: empresa?.nome || "",
     // Para a busca não devolver o site do próprio cliente como notícia.
     dominio: empresa?.dominio || "",
+    // A saída quando o texto do cliente é só sentimento e não dá termo para
+    // procurar: o palestrante falando do tema do evento.
+    tema: c.negocio.temaEvento || "",
+    palestrante,
   };
   let noticias = [];
   if (

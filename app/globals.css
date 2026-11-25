@@ -1090,6 +1090,10 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
    repassar um cachê são trabalhos opostos com o mesmo nome de "pagamento". */
 .fin-lado { font-weight: 700; color: var(--ink); }
 
+/* O total ao lado das vencidas, menor e sem a cor de alerta: ele é o
+   denominador, não o número que manda olhar. */
+.kpi-de { font-size: .5em; font-weight: 600; color: var(--muted); }
+
 .fin-card { position: relative; cursor: pointer; }
 .fin-card:hover { border-color: var(--azul); }
 /* O link esticado cobre o card inteiro. O texto embaixo dele continua

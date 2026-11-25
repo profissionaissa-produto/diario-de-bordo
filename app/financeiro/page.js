@@ -180,10 +180,18 @@ export default async function Financeiro({ searchParams }) {
 
       {!erro && (
         <div className="kpis">
+          {/* Vencidas e total no mesmo card. Eram dois, e o segundo só dizia
+              o denominador do primeiro: separados viravam duas caixas para ler
+              uma fração. */}
           <div className="kpi">
             <div className="lab">Vencidas</div>
-            <div className="val o">{pl.vencida}</div>
-            <div className="sub">data combinada já passou</div>
+            <div className="val o">
+              {pl.vencida}
+              <span className="kpi-de"> de {lista.length}</span>
+            </div>
+            <div className="sub">
+              data combinada já passou · {etapaSel ? "na etapa escolhida" : "nas cinco etapas"}
+            </div>
           </div>
           <div className="kpi">
             <div className="lab">Vence hoje</div>
@@ -208,11 +216,6 @@ export default async function Financeiro({ searchParams }) {
               <div className="sub">{LADO.pagar.somaDoVencido}</div>
             </div>
           )}
-          <div className="kpi">
-            <div className="lab">Tickets</div>
-            <div className="val">{lista.length}</div>
-            <div className="sub">{etapaSel ? "na etapa escolhida" : "nas cinco etapas"}</div>
-          </div>
         </div>
       )}
 

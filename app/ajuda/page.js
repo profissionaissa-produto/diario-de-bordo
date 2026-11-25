@@ -143,8 +143,9 @@ export default async function Ajuda() {
             </tbody>
           </table>
           <p className="ajuda-nota">
-            Trocar de segmento não volta enquanto o líder não decidir: ele troca no HubSpot ou
-            devolve a empresa ao rodízio.
+            Trocar de segmento fica registrado no resultado do dia e serve para quem for arrumar
+            o cadastro no HubSpot. A empresa continua no rodízio e volta a ser listada quando
+            completar 30 dias sem contato, como todas as outras.
           </p>
         </section>
 

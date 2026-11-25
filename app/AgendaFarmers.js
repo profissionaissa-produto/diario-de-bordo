@@ -17,50 +17,13 @@ const STATUS_CLS = {
   sem_lista: "rascunho",
 };
 
-// Troca de segmento em aberto: a empresa está parada até alguém decidir.
-function Troca({ t, ownerId, onDecidido }) {
-  const [busy, setBusy] = useState(false);
-  const [erro, setErro] = useState("");
-
-  async function decidir(decisao) {
-    setBusy(true);
-    setErro("");
-    try {
-      const res = await fetch("/api/carteira/lider", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ acao: "troca", ownerId, companyId: t.id, decisao }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "Falha ao registrar.");
-      }
-      onDecidido(t.id);
-    } catch (e) {
-      setErro(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="troca-item">
-      <div className="troca-cab">
-        <a className="emp-nome" href={t.url} target="_blank" rel="noreferrer">{t.nome}</a>
-        {erro && <span className="err">{erro}</span>}
-      </div>
-      {t.motivo && <div className="troca-motivo">{t.motivo}</div>}
-      <div className="tram-acoes">
-        <button className="btn-ghost" onClick={() => decidir("mantido")} disabled={busy}>
-          Segmento está certo
-        </button>
-        <button className="btn-primary" onClick={() => decidir("trocado")} disabled={busy}>
-          Troquei no HubSpot
-        </button>
-      </div>
-    </div>
-  );
-}
+// O painel de trocas de segmento saiu em 25/11/2026. Era uma fila que o
+// farmer alimentava e ninguém trabalhava: 44 empresas paradas nela, algumas
+// desde a criação do Diário. Pior, empresa com troca em aberto ficava fora do
+// rodízio até alguém decidir, então a fila parada encolhia a lista do farmer
+// todo dia. O farmer segue podendo registrar que o segmento está errado no
+// fechamento do dia, e isso aparece no resultado do dia dele; o que saiu foi
+// a fila do líder e o bloqueio que ela causava.
 
 // Empresa travada em três tentativas: o líder responde com uma orientação.
 function Auxilio({ e, ownerId }) {
@@ -210,13 +173,6 @@ function Comentario({ ownerId, dia, inicial }) {
 }
 
 export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
-  const [resolvidas, setResolvidas] = useState({});
-
-  const trocas = farmers.flatMap((f) =>
-    (f.trocas || [])
-      .filter((t) => !resolvidas[f.ownerId + "|" + t.id])
-      .map((t) => ({ ...t, ownerId: f.ownerId, farmer: f.nome }))
-  );
   // Agrupa por equipe, na ordem em que os farmers chegam do cadastro.
   const grupos = [];
   for (const f of farmers) {
@@ -247,26 +203,6 @@ export default function AgendaFarmers({ farmers, diaLabel, dia, resumo }) {
           <div className="kpi"><div className="lab">Receita gerada</div><div className="val">{brl(resumo.receita)}</div><div className="sub">negócios ganhos no mês</div></div>
           <div className="kpi"><div className="lab">Tickets ativos</div><div className="val">{resumo.ticketsAtivos}</div><div className="sub">eventos em execução</div></div>
           <div className="kpi"><div className="lab">Carteira tocada</div><div className="val o">{resumo.pctContato}%</div><div className="sub">{resumo.comContato} de {resumo.carteira} empresas no mês</div></div>
-        </div>
-      )}
-
-      {trocas.length > 0 && (
-        <div className="painel-troca">
-          <div className="painel-titulo">
-            Trocas de segmento ({trocas.length}). A empresa fica fora do rodízio até decidir
-          </div>
-          <div className="painel-lista">
-            {trocas.map((t) => (
-              <div key={t.ownerId + t.id}>
-                <div className="painel-quem">{t.farmer}</div>
-                <Troca
-                  t={t}
-                  ownerId={t.ownerId}
-                  onDecidido={(id) => setResolvidas((r) => ({ ...r, [t.ownerId + "|" + id]: true }))}
-                />
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

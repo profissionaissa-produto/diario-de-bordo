@@ -1,19 +1,24 @@
 import { auth } from "../../../../auth";
-import { decidirTroca, salvarOrientacao, comentarDia, marcarRevisado, dbReady } from "../../../../lib/db";
+import { salvarOrientacao, comentarDia, marcarRevisado, dbReady } from "../../../../lib/db";
 import { podeGerirCloser } from "../../../../lib/permissoes";
 import { gravarNoHubspot } from "../../../../lib/carteira-hubspot";
 
 const quem = (s) => s.user.name || s.user.email;
 
-// Decisões que só o líder toma sobre a carteira de um farmer: resolver um
-// pedido de troca de segmento e escrever a orientação de uma empresa travada.
+// Decisões que só o líder toma sobre a carteira de um farmer: escrever a
+// orientação de uma empresa travada, comentar e revisar o dia.
+//
+// A ação "troca" saiu em 25/11/2026 junto com o painel que a chamava. Ela
+// resolvia um pedido de troca de segmento, e ninguém resolvia: a fila parada
+// mantinha 44 empresas fora do rodízio. Agora elas voltam a ser listadas, com
+// o mesmo portão de todas, que é não ter contato nos últimos 30 dias.
 export async function POST(req) {
   const session = await auth();
   if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
   if (!dbReady()) return Response.json({ error: "Banco não configurado." }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
-  const { acao, ownerId, companyId, decisao, texto, dia } = body;
+  const { acao, ownerId, companyId, texto, dia } = body;
   if (!ownerId) return Response.json({ error: "Dados incompletos." }, { status: 400 });
   // Comentar e revisar são sobre o dia inteiro, não sobre uma empresa.
   if (!["comentario", "revisado"].includes(acao) && !companyId) {
@@ -24,15 +29,6 @@ export async function POST(req) {
   }
 
   try {
-    if (acao === "troca") {
-      // "trocado": saiu da carteira no HubSpot. "mantido": volta ao rodízio.
-      if (!["trocado", "mantido"].includes(decisao)) {
-        return Response.json({ error: "Decisão inválida." }, { status: 400 });
-      }
-      await decidirTroca(ownerId, companyId, decisao, quem(session));
-      return Response.json({ ok: true });
-    }
-
     if (acao === "orientacao") {
       const t = String(texto || "").trim();
       // Orientação vazia não ajuda ninguém e ocuparia espaço no card.

@@ -750,33 +750,27 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
   text-transform: uppercase; letter-spacing: .4px; }
 
 /* ------------------------------------------- painéis do líder (carteira) */
-.painel-troca, .painel-aux { border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; }
-.painel-troca { background: #fdf0ee; border: 1px solid #f3c9c1; }
-.painel-aux { background: var(--laranja-soft); border: 1px solid #f6cdb4; }
+/* O painel de trocas de segmento saiu em 25/11/2026, e com ele as classes
+   .painel-troca, .troca-item e .troca-motivo. Ficou só o painel de auxílio.
+   .troca-cab sobrevive porque o card de auxílio usa o mesmo cabeçalho. */
+.painel-aux { border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px;
+  background: var(--laranja-soft); border: 1px solid #f6cdb4; }
 .painel-titulo { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
-.painel-troca .painel-titulo { color: #b3261e; }
 .painel-aux .painel-titulo { color: var(--laranja); }
-/* Card nenhum pode ser maior que o outro. Tinha align-items: start aqui, e
-   com isso cada célula ficava da altura do próprio texto: a grade virava uma
-   escada. Agora a célula estica e o card ocupa a altura toda dela. */
+/* Card nenhum pode ser maior que o outro: sem a célula esticada, cada card
+   ficava da altura do próprio texto e a grade virava uma escada. */
 .painel-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
 /* Cada item é o nome do farmer mais o card. Sem a coluna flex aqui, o card
    não tem como preencher a célula esticada. */
 .painel-lista > * { display: flex; flex-direction: column; min-width: 0; }
 .painel-quem { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
   color: var(--muted); margin-bottom: 5px; }
-.troca-item, .aux-item { background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
+.aux-item { background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
   padding: 13px 15px; display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 0; }
 .troca-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-/* O motivo às vezes traz a mensagem inteira do WhatsApp. Um card assim
-   esticava a linha inteira da grade e empurrava os botões dos vizinhos para
-   baixo. Quatro linhas e corta: quem precisa do texto todo abre a empresa. */
-.troca-motivo { font-size: 12.5px; color: var(--muted); line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical;
-  overflow: hidden; overflow-wrap: anywhere; }
 /* Os botões descem para o rodapé do card, senão eles param na altura em que o
    texto acabou e cada card decide a sua. */
-.troca-item .tram-acoes, .aux-item .fech-rodape { margin-top: auto; }
+.aux-item .fech-rodape { margin-top: auto; }
 .dia-empresas { display: flex; flex-wrap: wrap; gap: 5px; }
 .dia-emp { font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: var(--surface);
   color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

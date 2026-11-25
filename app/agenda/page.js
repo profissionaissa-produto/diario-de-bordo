@@ -6,7 +6,7 @@ import { getDealsByIds } from "../../lib/hubspot";
 import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe, SEG_TRAMITACOES, empresaUrl } from "../../lib/config";
-import { getDiasDosFarmers, getTrocasPendentes, getOrientacoes, getHistoricoCarteira, getBriefingsCarteira } from "../../lib/db";
+import { getDiasDosFarmers, getOrientacoes, getHistoricoCarteira, getBriefingsCarteira } from "../../lib/db";
 import { resumoDoMes } from "../../lib/metricas-farmer";
 import { atividadeDoDia } from "../../lib/atividade";
 import { aplicarAtividade } from "../../lib/db";
@@ -97,9 +97,8 @@ export default async function AgendaGeral({ searchParams }) {
       await aplicarAtividade(id, dia, ativTime[id] || {}).catch(() => {});
     }
 
-    const [dias, trocas, orientacoes, briefs] = await Promise.all([
+    const [dias, orientacoes, briefs] = await Promise.all([
       getDiasDosFarmers(idsTime, dia),
-      getTrocasPendentes(idsTime),
       getOrientacoes(idsTime),
       getBriefingsCarteira(idsTime, dia),
     ]);
@@ -127,7 +126,6 @@ export default async function AgendaGeral({ searchParams }) {
           precisaAuxilio: precisaAuxilio(h.get(String(e.id))),
           orientacao: orientacoes[c.id]?.[e.id] || null,
         })),
-        trocas: (trocas[c.id] || []).map((t) => ({ ...t, url: empresaUrl(t.id) })),
         brief: briefs[c.id] || null,
       };
     });

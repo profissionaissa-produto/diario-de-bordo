@@ -30,7 +30,12 @@ async function resolveOwner(session, bodyOwnerId) {
   return { ownerId: meu, editor: null };
 }
 
-const RESULTADO_LABEL = { efetivo: "falou com a empresa", tentativa: "tentou, sem sucesso" };
+const RESULTADO_LABEL = {
+  efetivo: "falou com a empresa",
+  tentativa: "tentou, sem sucesso",
+  nao_abordei: "não abordou",
+  trocar_segmento: "pediu troca de segmento",
+};
 
 // Grava no HubSpot o contato que o farmer acabou de registrar aqui.
 //
@@ -39,6 +44,21 @@ const RESULTADO_LABEL = { efetivo: "falou com a empresa", tentativa: "tentou, se
 // vai para o log e volta como aviso na resposta.
 async function registraContatoNoCrm({ companyId, dia, resultado, observacao, ownerId, quem }) {
   try {
+    // Resultado que não é contato não vira atividade: ninguém falou com
+    // ninguém. Vira nota, com a observação que o farmer escreveu, que é a
+    // informação que antes ficava presa no Diário.
+    if (!CONTATO_FEITO.includes(resultado)) {
+      const corpo = [
+        `<p><b>Diário de bordo · ${RESULTADO_LABEL[resultado] || resultado}</b></p>`,
+        observacao ? `<p>${observacao.replace(/\n/g, "<br>")}</p>` : "",
+        `<p><i>registrado por ${quem}</i></p>`,
+      ]
+        .filter(Boolean)
+        .join("");
+      await criarNotaNaEmpresa(companyId, { corpo, ownerId });
+      return "";
+    }
+
     const msgs = await mensagensDoDia(companyId, dia);
 
     // Cada mensagem que saiu pelo Diário vira a ATIVIDADE do canal dela:
@@ -203,6 +223,7 @@ export async function PATCH(req) {
 
   const { companyId, resultado } = body;
   const observacao = String(body.observacao || "").trim();
+  let avisoCrm = "";
   if (!companyId) return Response.json({ error: "Informe a empresa." }, { status: 400 });
   if (!RESULTADOS.some((r) => r.key === resultado)) {
     return Response.json({ error: "Resultado inválido." }, { status: 400 });
@@ -226,24 +247,29 @@ export async function PATCH(req) {
         { status: 400 }
       );
     }
-    // Contato registrado deixa rastro no CRM. Antes não deixava: o farmer
-    // marcava "falei", e no HubSpot não havia nada que mostrasse a conversa.
-    // Ninguém conseguia conferir depois, e a janela sem contato que tira a
-    // empresa do rodízio passou a se apoiar nisso.
+    // TODO resultado deixa rastro no CRM, não só os de contato.
     //
-    // A nota diz o que saiu pelo Diário e, quando não saiu nada, diz isso com
-    // todas as letras. Falar por telefone sem passar daqui é legítimo, mas
-    // quem ler o registro tem que saber que a evidência é só a palavra.
-    if (CONTATO_FEITO.includes(resultado)) {
-      await registraContatoNoCrm({
-        companyId,
-        dia: body.dia || dayKey(),
-        resultado,
-        observacao,
-        ownerId,
-        quem: session.user.name || session.user.email,
-      });
-    }
+    // Até 26/11/2026 só "falei" e "tentei" escreviam alguma coisa. Quem
+    // marcasse "não abordei" ou "trocar de segmento" registrava no Diário e
+    // tinha que ir ao HubSpot escrever de novo, à mão. Caso do Vitor Martini
+    // na Cruzeiro do Sul Educacional: a observação dizia que o site só tem
+    // atendimento por bot, informação que ficou presa no Diário.
+    //
+    // A forma muda conforme o que aconteceu. Contato vira atividade do canal,
+    // porque houve conversa. "Não abordei" e "trocar de segmento" viram nota:
+    // ninguém falou com ninguém, e gravar atividade ali seria mentir sobre o
+    // que aconteceu e ainda mexeria no "Último contato".
+    // O aviso sobe para a tela. A função nunca derruba o registro, porque o
+    // resultado já está salvo no Diário, mas falha engolida aqui vira farmer
+    // achando que gravou no CRM quando não gravou.
+    avisoCrm = await registraContatoNoCrm({
+      companyId,
+      dia: body.dia || dayKey(),
+      resultado,
+      observacao,
+      ownerId,
+      quem: session.user.name || session.user.email,
+    });
     // O contato aconteceu: a cascata de canais zera e os três voltam a valer.
     // O teto de 3 é de tentativas sem sucesso, não de mensagens enviadas.
     if (resultado === "efetivo") await resolveTentativas(companyId);
@@ -259,7 +285,7 @@ export async function PATCH(req) {
     console.error("[carteira] falha ao salvar o resultado:", e);
     return Response.json({ error: "Falha ao salvar." }, { status: 500 });
   }
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, aviso: avisoCrm || undefined });
 }
 
 // O farmer inicia o dia. É ele quem confirma as estratégias que escolheu, sem

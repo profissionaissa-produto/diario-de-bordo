@@ -54,10 +54,12 @@ function Card({ e, ctx, onFechou }) {
           observacao: obs,
         }),
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "Falha ao salvar.");
-      }
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Falha ao salvar.");
+      // O resultado foi salvo mas o registro não chegou ao HubSpot. Sem
+      // mostrar isto, o farmer fecha o dia achando que o CRM recebeu, e o
+      // retrabalho só aparece dias depois, quando alguém procura e não acha.
+      if (d.aviso) setErro(d.aviso);
       setSalvo(true);
       onFechou(e.id, resultado);
     } catch (err) {

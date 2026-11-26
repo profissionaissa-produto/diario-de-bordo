@@ -291,10 +291,15 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
           {/* O resultado do mês, o mesmo número que a gestão vê na Agenda do
               dia. Some quando a contagem falha, em vez de virar zero: zero
               aqui seria lido como mês sem nenhuma demanda levantada. */}
-          {demandas !== null && demandas !== undefined && (
-            <span className="plan-badge demanda">
-              {demandas} {demandas === 1 ? "demanda" : "demandas"} no mês
-            </span>
+          {demandas && (
+            <>
+              <span className="plan-badge demanda">
+                {demandas.demandas} {demandas.demandas === 1 ? "demanda" : "demandas"} no mês
+              </span>
+              <span className="plan-badge demanda">
+                {demandas.reunioes} {demandas.reunioes === 1 ? "reunião" : "reuniões"}
+              </span>
+            </>
           )}
           {/* O que o líder escreveu sobre este dia. É leitura, não trava
               nada: o farmer já começou. */}

@@ -308,7 +308,12 @@ function Cartoes({ farmers, dia }) {
                 informa, porque é o resultado que o farmer leva para o mês. */}
             <div className="dia-nums">
               <span className="dia-demandas">
-                <b>{f.demandas ?? 0}</b> {f.demandas === 1 ? "demanda" : "demandas"} no mês
+                <b>{f.metricas?.demandas ?? 0}</b>{" "}
+                {f.metricas?.demandas === 1 ? "demanda" : "demandas"} no mês
+              </span>
+              <span className="dia-demandas">
+                <b>{f.metricas?.reunioes ?? 0}</b>{" "}
+                {f.metricas?.reunioes === 1 ? "reunião" : "reuniões"}
               </span>
               {fechou > 0 && (
                 <>

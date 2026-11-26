@@ -261,7 +261,7 @@ export default async function Page({ searchParams }) {
       // Falha aqui não derruba o dia: o contador some da tela, o resto fica.
       demandasDoFarmer = await m
         .passo("demandasDoMes", () => demandasDoMes([owner], dayKey()))
-        .then((d) => d[String(owner)] ?? 0)
+        .then((d) => d[String(owner)] || { demandas: 0, reunioes: 0 })
         .catch((err) => {
           console.error("[carteira] não consegui contar as demandas do mês:", err?.message);
           return null;

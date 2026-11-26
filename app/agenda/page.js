@@ -131,7 +131,7 @@ export default async function AgendaGeral({ searchParams }) {
           orientacao: orientacoes[c.id]?.[e.id] || null,
         })),
         brief: briefs[c.id] || null,
-        demandas: demandas[c.id] || 0,
+        metricas: demandas[c.id] || { demandas: 0, reunioes: 0 },
       };
     });
   }

@@ -7,7 +7,7 @@ import { getDayBriefings, dbReady } from "../../lib/db";
 import { dayKey, dayLabel } from "../../lib/week";
 import { CLOSERS, SEG_CLOSER, SEGMENTOS, TEMP_STYLE, dealUrl, fotoDe, EQUIPES_DE, closersDe, semEquipe, SEG_TRAMITACOES, empresaUrl } from "../../lib/config";
 import { getDiasDosFarmers, getOrientacoes, getHistoricoCarteira, getBriefingsCarteira } from "../../lib/db";
-import { resumoDoMes } from "../../lib/metricas-farmer";
+import { resumoDoMes, demandasDoMes } from "../../lib/metricas-farmer";
 import { atividadeDoDia } from "../../lib/atividade";
 import { aplicarAtividade } from "../../lib/db";
 import { situacaoDoDia, placarDoDia, montaHistorico, precisaAuxilio } from "../../lib/carteira";
@@ -97,10 +97,14 @@ export default async function AgendaGeral({ searchParams }) {
       await aplicarAtividade(id, dia, ativTime[id] || {}).catch(() => {});
     }
 
-    const [dias, orientacoes, briefs] = await Promise.all([
+    const [dias, orientacoes, briefs, demandas] = await Promise.all([
       getDiasDosFarmers(idsTime, dia),
       getOrientacoes(idsTime),
       getBriefingsCarteira(idsTime, dia),
+      // Demanda levantada no mês, por pessoa. A regra é do time: origem da
+      // qualificação igual a Farmer, criada no mês, creditada a quem está em
+      // SDR/Farmer Responsável.
+      demandasDoMes(idsTime, dia),
     ]);
     // Números do time no topo. Falha aqui não derruba a agenda.
     resumoTime = await resumoDoMes(idsTime, dia).catch((e) => {
@@ -127,6 +131,7 @@ export default async function AgendaGeral({ searchParams }) {
           orientacao: orientacoes[c.id]?.[e.id] || null,
         })),
         brief: briefs[c.id] || null,
+        demandas: demandas[c.id] || 0,
       };
     });
   }

@@ -302,13 +302,21 @@ function Cartoes({ farmers, dia }) {
             </div>
 
             {/* O placar do dia só aparece depois que alguém começou a fechar:
-                antes disso ele é zero em todo mundo e não informa nada. */}
-            {fechou > 0 && (
-              <div className="dia-nums">
-                <span><b>{f.placar.pct}%</b> efetivo</span>
-                <span>{fechou} de {f.placar.total} fechadas</span>
-              </div>
-            )}
+                antes disso ele é zero em todo mundo e não informa nada.
+
+                A demanda do mês aparece sempre, inclusive zerada: ali o zero
+                informa, porque é o resultado que o farmer leva para o mês. */}
+            <div className="dia-nums">
+              <span className="dia-demandas">
+                <b>{f.demandas ?? 0}</b> {f.demandas === 1 ? "demanda" : "demandas"} no mês
+              </span>
+              {fechou > 0 && (
+                <>
+                  <span><b>{f.placar.pct}%</b> efetivo</span>
+                  <span>{fechou} de {f.placar.total} fechadas</span>
+                </>
+              )}
+            </div>
 
             {f.itens.length > 0 ? (
               <div className="dia-itens">

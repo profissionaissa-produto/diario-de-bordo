@@ -1220,3 +1220,8 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 .incluir-lista li { display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .incluir-lista li span { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Demanda levantada no mês, no card do farmer. Cor cheia porque é o número
+   que a pessoa leva para o mês, não apoio. */
+.dia-demandas { color: var(--ink); }
+.dia-demandas b { color: var(--azul); }

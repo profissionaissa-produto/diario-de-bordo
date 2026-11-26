@@ -43,15 +43,19 @@ export async function GET() {
   const linhas = await pendentes();
   const porResultado = {};
   const porDia = {};
+  const porFarmer = {};
   for (const r of linhas) {
     porResultado[r.resultado] = (porResultado[r.resultado] || 0) + 1;
     porDia[r.dia] = (porDia[r.dia] || 0) + 1;
+    const quem = NOME_CLOSER[String(r.owner_id)] || r.owner_id;
+    porFarmer[quem] = (porFarmer[quem] || 0) + 1;
   }
   return Response.json({
     ok: true,
     simulacao: true,
     total: linhas.length,
     porResultado,
+    porFarmer,
     porDia,
     amostra: linhas.slice(0, 5).map((r) => ({ dia: r.dia, empresa: r.nome, resultado: r.resultado, corpo: r.corpo })),
   });

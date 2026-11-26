@@ -1,8 +1,8 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail, criarNotaNaEmpresa, registrarContatoNaEmpresa, canalGravaAtividade } from "../../../lib/hubspot";
-import { salvarAbordagem, salvarResultadoCarteira, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, iniciarDiaCarteira, mensagensDoDia, dbReady } from "../../../lib/db";
+import { getOwnerByEmail, getCarteira, criarNotaNaEmpresa, registrarContatoNaEmpresa, canalGravaAtividade } from "../../../lib/hubspot";
+import { salvarAbordagem, salvarResultadoCarteira, incluirNaLista, pedirTroca, cancelarTrocaPendente, resolveTentativas, listarEstrategias, listarOcultas, getListaDia, iniciarDiaCarteira, mensagensDoDia, dbReady } from "../../../lib/db";
 import { gravarNoHubspot } from "../../../lib/carteira-hubspot";
-import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO, CONTATO_FEITO } from "../../../lib/carteira";
+import { ABORDAGENS, RESULTADOS, EXIGE_OBSERVACAO, MINIMO_OBSERVACAO, CONTATO_FEITO, classifica, VERSAO_REGRAS } from "../../../lib/carteira";
 import { montaEstrategias, semOcultas } from "../../../lib/estrategias";
 import { SEG_TRAMITACOES } from "../../../lib/config";
 import { dayKey } from "../../../lib/week";
@@ -83,6 +83,31 @@ async function registraContatoNoCrm({ companyId, dia, resultado, observacao, own
   }
 }
 
+// A carteira de quem está na tela, só id e nome, para o seletor de incluir
+// empresa no dia. Vem daqui e não da página porque a lista do dia carrega
+// vinte empresas e a carteira tem centenas: mandar tudo em toda abertura
+// pesaria o carregamento para uma caixa que quase nunca é usada.
+export async function GET(req) {
+  const session = await auth();
+  if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
+
+  let ownerId;
+  try {
+    ({ ownerId } = await resolveOwner(session, new URL(req.url).searchParams.get("ownerId")));
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 503 });
+  }
+  if (!ownerId) return Response.json({ error: "Farmer não encontrado." }, { status: 403 });
+
+  try {
+    const carteira = await getCarteira(ownerId);
+    return Response.json({ ok: true, empresas: carteira.map((e) => ({ id: e.id, nome: e.nome })) });
+  } catch (e) {
+    console.error("[carteira] falha ao ler a carteira:", e?.message);
+    return Response.json({ error: "Não foi possível falar com o HubSpot agora." }, { status: 503 });
+  }
+}
+
 export async function POST(req) {
   const session = await auth();
   if (!session?.user?.email) return Response.json({ error: "Não autenticado." }, { status: 401 });
@@ -98,6 +123,36 @@ export async function POST(req) {
   if (!ownerId) return Response.json({ error: "Farmer não encontrado." }, { status: 403 });
 
   const { companyId, abordagem, contexto, estrategia } = body;
+
+  // Incluir na lista do dia uma empresa da carteira que o sorteio não trouxe.
+  //
+  // A lista é a sugestão do dia, não a cerca dele. Antes, falar com uma
+  // empresa fora dela deixava o farmer sem como registrar, e o trabalho sumia.
+  //
+  // A empresa precisa ser da carteira de quem está registrando: isto é o que
+  // impede alguém pôr no dia uma empresa que não é sua.
+  if (body.acao === "incluir") {
+    if (!companyId) {
+      return Response.json({ error: "Informe a empresa." }, { status: 400 });
+    }
+    let dela;
+    try {
+      dela = (await getCarteira(ownerId)).find((e) => String(e.id) === String(companyId));
+    } catch (e) {
+      console.error("[carteira] falha ao conferir a carteira:", e?.message);
+      return Response.json({ error: "Não foi possível falar com o HubSpot agora." }, { status: 503 });
+    }
+    if (!dela) {
+      return Response.json({ error: "Essa empresa não está na carteira deste farmer." }, { status: 400 });
+    }
+    const dia = body.dia || dayKey();
+    const r = await incluirNaLista(ownerId, dia, {
+      ...dela,
+      ...classifica(dela.ultimaCompra, dia),
+      regras: VERSAO_REGRAS,
+    });
+    return Response.json({ ok: true, resultado: r, nome: dela.nome });
+  }
   if (!companyId) return Response.json({ error: "Informe a empresa." }, { status: 400 });
   if (abordagem && !ABORDAGENS.includes(abordagem)) {
     return Response.json({ error: "Abordagem inválida." }, { status: 400 });

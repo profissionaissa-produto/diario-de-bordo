@@ -350,6 +350,115 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
           <Tabela itens={extras} ctx={ctx} estrategias={estrategias} contatos={contatos} tentativas={tentativas} historicoContato={historicoContato} onAbordagem={marcar} />
         </>
       )}
+
+      <IncluirEmpresa ctx={ctx} />
+    </div>
+  );
+}
+
+// Falou com uma empresa da carteira que o sorteio não trouxe? Ela entra no
+// dia por aqui.
+//
+// A lista do dia era uma cerca: sem a empresa nela, não havia onde registrar
+// e o trabalho sumia. Agora a lista é a sugestão do dia, não o limite dele.
+//
+// A carteira só é buscada quando a caixa abre. São centenas de empresas e a
+// caixa quase nunca é usada; carregar junto com a página pesaria toda abertura
+// por causa de um caso de exceção.
+function IncluirEmpresa({ ctx }) {
+  const [aberta, setAberta] = useState(false);
+  const [empresas, setEmpresas] = useState(null);
+  const [termo, setTermo] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  async function abrir() {
+    setAberta(true);
+    if (empresas) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/carteira?ownerId=${encodeURIComponent(ctx.ownerId)}`);
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Falha ao carregar a carteira.");
+      setEmpresas(d.empresas || []);
+    } catch (e) {
+      setMsg({ ok: false, text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function incluir(empresa) {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/carteira", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "incluir", ownerId: ctx.ownerId, dia: ctx.dia, companyId: empresa.id }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || "Falha ao incluir.");
+      // Recarrega porque a lista vem do servidor: sem isto a empresa entrava
+      // no banco e não aparecia na tela, que é pior do que não ter incluído.
+      window.location.reload();
+    } catch (e) {
+      setMsg({ ok: false, text: e.message });
+      setBusy(false);
+    }
+  }
+
+  if (!aberta) {
+    return (
+      <div className="incluir-barra">
+        <button className="btn-link" onClick={abrir}>
+          Incluir outra empresa da minha carteira
+        </button>
+      </div>
+    );
+  }
+
+  const busca = termo.trim().toLowerCase();
+  const achadas = !empresas
+    ? []
+    : busca.length < 2
+      ? []
+      : empresas.filter((e) => String(e.nome || "").toLowerCase().includes(busca)).slice(0, 12);
+
+  return (
+    <div className="incluir-barra aberta">
+      <div className="incluir-cab">
+        <strong>Incluir empresa no dia</strong>
+        <button className="btn-link" onClick={() => setAberta(false)}>Fechar</button>
+      </div>
+      <input
+        className="incluir-busca"
+        autoFocus
+        placeholder={busy && !empresas ? "Carregando a carteira…" : "Digite o nome da empresa"}
+        value={termo}
+        onChange={(ev) => setTermo(ev.target.value)}
+        disabled={busy && !empresas}
+      />
+      {msg && <span className={msg.ok ? "saved" : "err"}>{msg.text}</span>}
+      {empresas && busca.length >= 2 && achadas.length === 0 && (
+        <p className="incluir-nada">
+          Nenhuma empresa da sua carteira com esse nome. Se ela é sua e não aparece aqui,
+          o proprietário está errado no HubSpot.
+        </p>
+      )}
+      {achadas.length > 0 && (
+        <ul className="incluir-lista">
+          {achadas.map((e) => (
+            <li key={e.id}>
+              <span>{e.nome}</span>
+              <button className="btn-ghost" onClick={() => incluir(e)} disabled={busy}>
+                {busy ? "Incluindo…" : "Incluir"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

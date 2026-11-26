@@ -14,6 +14,7 @@ import FocoDia from "./FocoDia";
 import Ontem from "./Ontem";
 import Fechamento from "./Fechamento";
 import ListaDoDia from "./ListaDoDia";
+import { demandasDoMes } from "../lib/metricas-farmer";
 import FecharDia from "./FecharDia";
 import Link from "next/link";
 import { getBriefing, getDayBriefings, getFechamento, dbReady, tarefasDoDia, aplicarRetornoDeTarefa, MIN_OBS , getBriefingCarteira } from "../lib/db";
@@ -182,6 +183,10 @@ export default async function Page({ searchParams }) {
   // Farmer trabalha empresas da própria carteira, não negócios do funil.
   const ehFarmer = seg === SEG_TRAMITACOES;
   let carteiraDoDia = null;
+  // Demanda levantada no mês por este farmer. Mesmo número da Agenda do dia:
+  // sem ele aqui, a pessoa só via o próprio resultado do mês na tela da
+  // gestão, que é justamente a que ela não abre.
+  let demandasDoFarmer = null;
   let contatosDoDia = {};
   let tentativasDoDia = {};
   let historicoContato = {};
@@ -252,6 +257,15 @@ export default async function Page({ searchParams }) {
       if (aplicadas > 0) {
         itens = await m.passo("relerLista", () => getListaDia(owner, dayKey()));
       }
+
+      // Falha aqui não derruba o dia: o contador some da tela, o resto fica.
+      demandasDoFarmer = await m
+        .passo("demandasDoMes", () => demandasDoMes([owner], dayKey()))
+        .then((d) => d[String(owner)] ?? 0)
+        .catch((err) => {
+          console.error("[carteira] não consegui contar as demandas do mês:", err?.message);
+          return null;
+        });
 
       carteiraDoDia = itens.map((e) => ({
         ...e,
@@ -601,6 +615,7 @@ export default async function Page({ searchParams }) {
           tentativas={tentativasDoDia}
           historicoContato={historicoContato}
           briefing={briefingCarteira}
+          demandas={demandasDoFarmer}
           ctx={{
             ownerId: viewOwner ? String(viewOwner.ownerId) : "",
             dia,

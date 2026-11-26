@@ -215,7 +215,7 @@ function Tabela({ itens, ctx, estrategias, contatos, tentativas, historicoContat
   );
 }
 
-export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {}, historicoContato = {}, briefing = null }) {
+export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}, tentativas = {}, historicoContato = {}, briefing = null, demandas = null }) {
   // Só o que mudou nesta sessão. A verdade é `itens`, que vem do servidor:
   // semear um mapa no primeiro render e contar por ele deixava o contador
   // preso ao que havia na tela naquele instante.
@@ -287,6 +287,14 @@ export default function ListaDoDia({ itens, ctx, estrategias = [], contatos = {}
             <span className="plan-badge alerta">{faltam} sem estratégia</span>
           ) : (
             <span className="plan-badge ok">todas mapeadas</span>
+          )}
+          {/* O resultado do mês, o mesmo número que a gestão vê na Agenda do
+              dia. Some quando a contagem falha, em vez de virar zero: zero
+              aqui seria lido como mês sem nenhuma demanda levantada. */}
+          {demandas !== null && demandas !== undefined && (
+            <span className="plan-badge demanda">
+              {demandas} {demandas === 1 ? "demanda" : "demandas"} no mês
+            </span>
           )}
           {/* O que o líder escreveu sobre este dia. É leitura, não trava
               nada: o farmer já começou. */}

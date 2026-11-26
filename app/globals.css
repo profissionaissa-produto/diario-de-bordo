@@ -1225,3 +1225,7 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
    que a pessoa leva para o mês, não apoio. */
 .dia-demandas { color: var(--ink); }
 .dia-demandas b { color: var(--azul); }
+
+/* Demanda do mês na barra do dia do farmer. É resultado, não aviso: cor de
+   informação, não de alerta. */
+.plan-badge.demanda { background: var(--azul-soft); color: var(--azul); }

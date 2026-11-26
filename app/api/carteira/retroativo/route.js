@@ -71,7 +71,7 @@ export async function POST() {
   const falhas = [];
   for (const r of linhas) {
     try {
-      await criarNotaNaEmpresa(r.company_id, { corpo: r.corpo, ownerId: r.owner_id });
+      await criarNotaNaEmpresa(r.company_id, { corpo: r.corpo, ownerId: r.owner_id, quando: r.dia });
       gravadas += 1;
     } catch (e) {
       // Uma empresa que falha não derruba o lote, mas também não some: volta

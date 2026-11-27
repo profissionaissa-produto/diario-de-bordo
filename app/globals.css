@@ -648,6 +648,8 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
   .wrap { padding: 22px 20px 56px; }
   table { min-width: 1080px; }
   thead th, tbody td { padding: 12px 12px; }
+  /* O bloco de incluir empresa acompanha o recuo da tabela também aqui. */
+  .incluir-barra { padding-left: 12px; padding-right: 12px; }
   .obs { min-width: 0; }
   .act select { min-width: 0; width: 100%; }
   .closer-select { min-width: 200px; }
@@ -1209,7 +1211,9 @@ tbody tr.linha-msg td { background: var(--surface-2); padding: 0 18px 16px; }
 /* Incluir no dia uma empresa da carteira que o sorteio não trouxe.
    A lista é a sugestão do dia, não a cerca dele: antes, falar com uma empresa
    fora dela deixava o farmer sem onde registrar e o trabalho sumia. */
-.incluir-barra { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+/* O recuo acompanha o da tabela, 18px. Sem ele o bloco encostava na borda do
+   card, e como o card tem overflow hidden a primeira letra sumia. */
+.incluir-barra { padding: 13px 18px; border-top: 1px solid var(--line); }
 .incluir-barra.aberta { display: grid; gap: 9px; }
 .incluir-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .incluir-busca { width: 100%; max-width: 420px; padding: 8px 11px; font-size: 13.5px;

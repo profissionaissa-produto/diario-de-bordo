@@ -478,7 +478,10 @@ tbody tr.in-plan .deal-link { color: var(--azul); }
 .foco-motivo { background: var(--laranja-soft); color: var(--laranja); font-size: 13px; font-weight: 600;
   padding: 12px 18px; border-radius: 12px; margin-bottom: 16px; }
 
-.foco-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+/* Card nenhum maior que o outro. Tinha align-items: start, e com isso cada
+   célula ficava da altura do próprio conteúdo: um nome de duas linhas, como
+   o da ABRALIMP, esticava a linha e deixava buraco embaixo dos vizinhos. */
+.foco-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
 .foco-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 12px;
   border-top: 3px solid var(--azul); transition: .15s; }
@@ -691,7 +694,9 @@ tbody tr.in-plan.incompleto td:first-child { box-shadow: inset 4px 0 0 var(--lar
 .fech-crm-nums { font-size: 12.5px; color: var(--ink); font-weight: 600; }
 .fech-crm-texto { flex-basis: 100%; margin: 2px 0 0; font-size: 12.5px; color: var(--muted);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.fech-opcoes { display: flex; gap: 8px; flex-wrap: wrap; }
+/* As opções descem para o rodapé do card, senão elas param na altura em que o
+   nome da empresa acabou e cada card decide a sua. */
+.fech-opcoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
 .fech-op { border: 1px solid var(--line); background: var(--surface); color: var(--muted);
   font: inherit; font-size: 12.5px; font-weight: 600; padding: 8px 13px; border-radius: 999px;
   cursor: pointer; transition: .15s; }

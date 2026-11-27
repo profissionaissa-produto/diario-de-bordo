@@ -207,7 +207,7 @@ export default function ApprovalCard({ plano, deals, dia, options = [], estrat }
                 <span className={"temp-atual t-" + (TEMP_STYLE[v.de] || "none")}>
                   {v.de ? label(v.de) : "sem temperatura"}
                 </span>
-                <span className="evo-seta">→</span>
+                <span className="evo-seta">para</span>
                 {editando ? (
                   <div className="act" data-v={TEMP_STYLE[v.para] || ""}>
                     <select

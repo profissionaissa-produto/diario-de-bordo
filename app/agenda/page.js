@@ -271,7 +271,7 @@ export default async function AgendaGeral({ searchParams }) {
                           <span className="dia-item-nome">{n.name}</span>
                           <span className="dia-item-evo">
                             <span className={"mini t-" + (TEMP_STYLE[v.de] || "none")}>{v.de || "—"}</span>
-                            <span className="evo-seta">→</span>
+                            <span className="evo-seta">para</span>
                             <span className={"mini forte t-" + (TEMP_STYLE[v.para] || "none")}>
                               {v.para || "—"}
                             </span>

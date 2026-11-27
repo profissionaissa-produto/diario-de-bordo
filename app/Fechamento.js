@@ -91,7 +91,7 @@ function Card({ r, item, inicial, crm, tarefa, ctx, onSalvo, estrategiaPorId = S
         )}
         <span className="fech-evo">
           <span className={"mini t-" + (TEMP_STYLE[item?.de] || "none")}>{item?.de || "—"}</span>
-          <span className="evo-seta">→</span>
+          <span className="evo-seta">para</span>
           <span className={"mini forte t-" + (TEMP_STYLE[item?.para] || "none")}>{item?.para || "—"}</span>
         </span>
       </div>

@@ -112,7 +112,7 @@ export default function FocoDia({ rows, briefing, ctx, options = [], estrat }) {
                 <span className={"temp-atual t-" + (TEMP_STYLE[it.de] || "none")}>
                   {it.de ? label(it.de) : "sem temperatura"}
                 </span>
-                <span className="evo-seta">→</span>
+                <span className="evo-seta">para</span>
                 <span className={"temp-alvo t-" + (TEMP_STYLE[it.para] || "none")}>
                   {it.para ? label(it.para) : "definir evolução"}
                 </span>

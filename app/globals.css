@@ -178,13 +178,17 @@ tbody tr:hover { background: var(--surface-2); }
 .plan-motivo { color: var(--laranja); font-weight: 600; }
 .plan-hint { color: var(--muted); font-size: 12px; font-style: italic; }
 
-/* Evolução pretendida: de (temperatura de hoje) → para (intenção do dia) */
+/* Evolução pretendida: a temperatura de hoje, a palavra "para", a intenção
+   do dia. Nada entre parênteses e sem seta. */
 /* Evolução na tabela: duas linhas rotuladas, alinhadas pela coluna do rótulo. */
 .evo { display: flex; flex-direction: column; gap: 6px; }
 .evo-linha { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 8px; }
 .evo-lab { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
   color: var(--muted); text-align: right; }
-.evo-seta { color: var(--muted); font-size: 14px; }
+/* Era a seta →, e virou a palavra "para" em 27/11/2026. Palavra se lê, seta
+   se decifra, e nenhum dos dois é o dado: por isso ela fica menor que os
+   selos de temperatura que ela liga. */
+.evo-seta { color: var(--muted); font-size: 12px; }
 .evo-vazio { color: var(--line); }
 .temp-atual, .temp-alvo { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 8px;
   background: var(--ink-soft); color: var(--muted); white-space: nowrap; }

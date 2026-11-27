@@ -77,7 +77,7 @@ export default function HistLinha({ registro, estrat }) {
                     )}
                     <span className="hist-neg-evo">
                       <span className={"mini t-" + (TEMP_STYLE[i.de] || "none")}>{i.de || "—"}</span>
-                      <span className="evo-seta">→</span>
+                      <span className="evo-seta">para</span>
                       <span className={"mini forte t-" + (TEMP_STYLE[i.para] || "none")}>
                         {i.para || "—"}
                       </span>

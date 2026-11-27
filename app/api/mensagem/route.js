@@ -1,5 +1,5 @@
 import { auth } from "../../../auth";
-import { getOwnerByEmail, criarNotaNaEmpresa } from "../../../lib/hubspot";
+import { getOwnerByEmail, criarNotaNaEmpresa, ultimaContratacao } from "../../../lib/hubspot";
 import {
   getListaDia,
   listarEstrategias,
@@ -75,10 +75,21 @@ export async function POST(req) {
   const idx = indexaPorId(porSeg);
   const estrategia = idx[c.empresa.estrategia] || null;
 
+  // Quem palestrou da última vez e qual era o tema. Sem isto a mensagem de
+  // retomada saía genérica, do tipo que o cliente lê como disparo em massa.
+  //
+  // Falha ou histórico vazio não derruba nada: o prompt tem regra para os dois
+  // casos e proíbe inventar nome de palestrante quando não há registro.
+  const contratacao = await ultimaContratacao(c.body.companyId).catch((e) => {
+    console.error("[mensagem] falha ao ler a última contratação:", e?.message);
+    return null;
+  });
+
   try {
     const texto = await geraMensagem({
       contextoBase: await lerTexto(chaveContexto(SEG_TRAMITACOES)),
       empresa: c.empresa.nome,
+      contratacao,
       contato: c.body.contato || null,
       canal: c.body.canal,
       tentativa: tentativasNo(c.tentativas, c.body.canal) + 1,
